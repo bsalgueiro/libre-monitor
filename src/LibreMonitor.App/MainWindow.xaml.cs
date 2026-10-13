@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly CredentialStore _store = new();
     private readonly WidgetSettings _settings = WidgetSettings.Load();
     private readonly DispatcherTimer _tick = new() { Interval = TimeSpan.FromSeconds(15) };
+    private readonly TrayController _tray;
 
     private GlucoseMonitor? _monitor;
     private (string Email, string Password) _credentials;
@@ -34,6 +35,8 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _client = new LibreLinkUpClient(_http);
+
+        _tray = new TrayController(() => IsVisible, ToggleWidget, Close) { Visible = _settings.ShowTrayIcon };
 
         Topmost = _settings.Topmost;
         Graph.Hours = RangeChoices.Contains(_settings.Hours) ? _settings.Hours : 6;
@@ -55,6 +58,7 @@ public partial class MainWindow : Window
         Closed += async (_, _) =>
         {
             SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
+            _tray.Dispose();
             _settings.Save();
             if (_monitor is not null) await _monitor.StopAsync();
             _http.Dispose();
@@ -170,11 +174,16 @@ public partial class MainWindow : Window
         RenderAge();
     }
 
+    private static string FormatAge(TimeSpan age) =>
+        age.TotalMinutes < 1 ? "just now" : $"{(int)age.TotalMinutes} min ago";
+
     private void RenderAge()
     {
         var current = _last?.Snapshot.Current;
         var age = current is null ? (TimeSpan?)null : DateTimeOffset.UtcNow - current.TimestampUtc;
         var stale = age > StaleAfter;
+
+        _tray.Update(current, _settings.Unit, stale, _problem, age is { } a0 ? FormatAge(a0) : string.Empty);
 
         if (current is not null)
         {
@@ -195,12 +204,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        AgeText.Text = age switch
-        {
-            null => _last is null ? "connecting" : "no reading",
-            { TotalMinutes: < 1 } => "just now",
-            { } a => $"{(int)a.TotalMinutes} min ago",
-        };
+        AgeText.Text = age is { } a ? FormatAge(a) : _last is null ? "connecting" : "no reading";
         AgeText.Foreground = Palette.Brush(stale ? Palette.High : Palette.Muted);
     }
 
@@ -325,6 +329,8 @@ public partial class MainWindow : Window
         Range6.IsChecked = (int)Graph.Hours == 6;
         Range12.IsChecked = (int)Graph.Hours == 12;
         TopmostItem.IsChecked = Topmost;
+        TrayItem.IsChecked = _settings.ShowTrayIcon;
+        HideItem.IsEnabled = _settings.ShowTrayIcon; // hiding the widget without a tray icon would leave no way to bring it back
         UnitMg.IsChecked = _settings.Unit == GlucoseUnit.MgPerDl;
         UnitMmol.IsChecked = _settings.Unit == GlucoseUnit.MmolPerL;
         ThemeSystem.IsChecked = _settings.Theme == ThemeChoice.System;
@@ -338,6 +344,29 @@ public partial class MainWindow : Window
         _settings.Save();
         Graph.Unit = _settings.Unit;
         RenderValue();
+        RenderAge(); // refreshes the tray icon, which shows the value in the chosen unit
+    }
+
+    private void TrayIcon_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.ShowTrayIcon = TrayItem.IsChecked;
+        _tray.Visible = _settings.ShowTrayIcon;
+        _settings.Save();
+    }
+
+    private void HideToTray_Click(object sender, RoutedEventArgs e) => ToggleWidget();
+
+    // The widget is only ever hidden while the tray icon is there to bring it back.
+    private void ToggleWidget()
+    {
+        if (IsVisible)
+        {
+            if (_tray.Visible) Hide();
+            return;
+        }
+
+        Show();
+        Activate();
     }
 
     private void Theme_Click(object sender, RoutedEventArgs e)

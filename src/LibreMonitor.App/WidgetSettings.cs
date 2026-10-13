@@ -17,6 +17,7 @@ public sealed class WidgetSettings
     public double? Height { get; set; }
     public int Hours { get; set; } = 6;
     public bool Topmost { get; set; } = true;
+    public bool ShowTrayIcon { get; set; } = true;
 
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlucoseUnit Unit { get; set; } = GlucoseUnit.MgPerDl;

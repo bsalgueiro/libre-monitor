@@ -62,6 +62,8 @@
                     <MenuItem Header="Bottom right" Click="Corner_Click" Tag="BottomRight"/>
                 </MenuItem>
                 <MenuItem x:Name="TopmostItem" Header="Always on top" IsCheckable="True" Click="Topmost_Click"/>
+                <MenuItem x:Name="TrayItem" Header="Show tray icon" IsCheckable="True" Click="TrayIcon_Click"/>
+                <MenuItem x:Name="HideItem" Header="Hide to tray" Click="HideToTray_Click"/>
                 <Separator/>
                 <MenuItem Header="About" Click="About_Click"/>
                 <MenuItem Header="Sign out and exit" Click="SignOut_Click"/>
