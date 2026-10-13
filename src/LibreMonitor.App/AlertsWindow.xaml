@@ -1,0 +1,47 @@
+<Window x:Class="LibreMonitor.App.AlertsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Alerts" Width="420" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen" ShowInTaskbar="False" Topmost="True">
+    <StackPanel Margin="24">
+        <TextBlock x:Name="HeadingText" Text="Glucose alerts" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock x:Name="IntroText" Margin="0,6,0,16" TextWrapping="Wrap"
+                   Text="Get a notification when a reading goes below or above your own limits. Both are off until you turn them on."/>
+
+        <CheckBox x:Name="LowBox" Content="Alert when glucose goes below" FontWeight="SemiBold"/>
+        <StackPanel Orientation="Horizontal" Margin="22,6,0,14">
+            <TextBox x:Name="LowValue" Width="72" Padding="5" VerticalContentAlignment="Center"/>
+            <TextBlock x:Name="LowUnit" Margin="8,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <CheckBox x:Name="HighBox" Content="Alert when glucose goes above" FontWeight="SemiBold"/>
+        <StackPanel Orientation="Horizontal" Margin="22,6,0,14">
+            <TextBox x:Name="HighValue" Width="72" Padding="5" VerticalContentAlignment="Center"/>
+            <TextBlock x:Name="HighUnit" Margin="8,0,0,0" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <TextBlock Text="While still out of range, remind me" FontWeight="SemiBold"/>
+        <ComboBox x:Name="RepeatBox" Width="190" Margin="0,6,0,14" HorizontalAlignment="Left">
+            <ComboBoxItem Content="Never (alert once)" Tag="0"/>
+            <ComboBoxItem Content="Every 15 minutes" Tag="15"/>
+            <ComboBoxItem Content="Every 30 minutes" Tag="30"/>
+            <ComboBoxItem Content="Every hour" Tag="60"/>
+        </ComboBox>
+
+        <CheckBox x:Name="SoundBox" Content="Play a sound"/>
+
+        <TextBlock x:Name="DisclaimerText" Margin="0,16,0,0" TextWrapping="Wrap" FontSize="12"
+                   Text="Alerts only work while this app is running, your PC is on and awake, and your phone is uploading. Readings can arrive minutes late, and Windows may hide notifications (for example in Focus mode). Do not rely on this for safety: keep your sensor's own alarms on."/>
+
+        <TextBlock x:Name="InfoText" Margin="0,12,0,0" TextWrapping="Wrap" Visibility="Collapsed"/>
+        <TextBlock x:Name="ErrorText" Margin="0,12,0,0" TextWrapping="Wrap" Foreground="#FF7B72" Visibility="Collapsed"/>
+
+        <Grid Margin="0,18,0,0">
+            <Button x:Name="TestButton" Content="Send test alert" Padding="12,6" HorizontalAlignment="Left" Click="Test_Click"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Width="90" Padding="6" Margin="0,0,8,0" IsCancel="True"/>
+                <Button Content="Save" Width="90" Padding="6" IsDefault="True" Click="Save_Click"/>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Window>

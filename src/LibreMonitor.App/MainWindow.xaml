@@ -55,6 +55,14 @@
                     <MenuItem x:Name="ThemeLight" Header="Light" Click="Theme_Click" Tag="Light"/>
                     <MenuItem x:Name="ThemeDark" Header="Dark" Click="Theme_Click" Tag="Dark"/>
                 </MenuItem>
+                <MenuItem Header="Alerts..." Click="Alerts_Click"/>
+                <MenuItem x:Name="SnoozeMenu" Header="Snooze alerts">
+                    <MenuItem Header="For 30 minutes" Click="Snooze_Click" Tag="30"/>
+                    <MenuItem Header="For 1 hour" Click="Snooze_Click" Tag="60"/>
+                    <MenuItem Header="For 2 hours" Click="Snooze_Click" Tag="120"/>
+                    <Separator/>
+                    <MenuItem x:Name="ResumeItem" Header="Resume alerts" Click="Resume_Click"/>
+                </MenuItem>
                 <MenuItem Header="Move to corner">
                     <MenuItem Header="Top left" Click="Corner_Click" Tag="TopLeft"/>
                     <MenuItem Header="Top right" Click="Corner_Click" Tag="TopRight"/>

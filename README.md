@@ -26,6 +26,7 @@ Everything you need to install and use the widget. No programming knowledge requ
 - Hover the graph for the value and time of any reading.
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - Tray icon showing the current value on a coloured tile.
+- Optional low and high [alerts](#alerts) with your own limits: a Windows notification, a sound and a coloured widget border, with reminders and snooze.
 - Your follower login is stored encrypted for your Windows user only. It is never shown or sent anywhere except to LibreView.
 - It only reads data. It never changes anything in your account.
 
@@ -58,6 +59,8 @@ Optional: to check the download is intact, compare the output of
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
 | Light, dark or follow Windows | Menu > Appearance |
+| Set up low and high alerts | Menu > Alerts... |
+| Pause alerts for a while | Menu > Snooze alerts |
 | Snap to a screen corner | Menu > Move to corner |
 | Hide it to the tray | Click the ✕, or Menu > Hide to tray |
 | Bring it back | Click the tray icon |
@@ -66,6 +69,25 @@ Optional: to check the download is intact, compare the output of
 | Sign out | Menu > Sign out and exit |
 
 Position, size and preferences are remembered.
+
+## Alerts
+
+Open **Menu > Alerts...** to turn on a low alert, a high alert, or both, and set your own limits (in mg/dL or mmol/L,
+whichever the widget shows). They are **off until you turn them on**. Use **Send test alert** to see what one looks like.
+
+- **When it alerts:** once, when a reading goes below the low limit or above the high limit. The widget border also turns
+  red (low) or amber (high) while the reading stays out of range.
+- **Reminders:** while still out of range you can be reminded every 15, 30 or 60 minutes, or not at all.
+- **No repeated alerts at the limit:** after an alert, the reading has to come back at least 5 mg/dL (about 0.3 mmol/L) inside
+  the range before the next crossing counts as a new alert, so a value hovering on the line does not alert over and over.
+- **Snooze:** **Menu > Snooze alerts** pauses notifications for 30 minutes, 1 hour or 2 hours. If you are still out of range
+  when the snooze ends, you are alerted then.
+- **Old readings are ignored:** a reading more than 10 minutes old does not trigger an alert.
+- **Notifications need the tray icon.** If you turn the tray icon off, alerts still play the sound and colour the border.
+
+**Do not rely on these alerts for safety.** They only work while this app is running, your PC is on and awake, and your
+phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in
+Focus assist or Do not disturb). Keep your sensor's own alarms on.
 
 ## Windows SmartScreen warning
 
@@ -84,7 +106,7 @@ flag the single-file build.
 
 ## Planned
 
-Local history database, configurable alerts, CSV export.
+Local history database, CSV export.
 
 ---
 
@@ -189,4 +211,8 @@ anyone else to use them.
 - Requests must carry a User-Agent or the service answers HTTP 403. The client sends an honest one (`LibreMonitor/0.1`).
 - The follower login is encrypted with Windows DPAPI (current user scope) in `%LOCALAPPDATA%\LibreMonitor`, next to the
   widget's settings file.
+- Alert rules live in `LibreMonitor.Core/Alerts.cs` (`AlertEvaluator`) with no UI or clock of its own, so every rule is
+  covered by unit tests in `AlertTests.cs`. Thresholds are stored in mg/dL in `settings.json` whatever unit is displayed.
+  In developer mode, simulated readings go through the same alert path, so alerts can be tried without real glucose
+  changing (the notification says SIMULATED).
 - The client never uploads or changes data. Apart from the login request, it only reads.

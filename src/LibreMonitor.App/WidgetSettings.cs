@@ -19,6 +19,9 @@ public sealed class WidgetSettings
     public bool Topmost { get; set; } = true;
     public bool ShowTrayIcon { get; set; } = true;
 
+    /// <summary>Thresholds are stored in mg/dL whatever unit is displayed. Both alerts start switched off.</summary>
+    public AlertSettings Alerts { get; set; } = new();
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlucoseUnit Unit { get; set; } = GlucoseUnit.MgPerDl;
 

@@ -73,6 +73,15 @@ public sealed class TrayController : IDisposable
         SetTooltip(problem is null ? tooltip : $"{tooltip} · {problem}");
     }
 
+    /// <summary>Shows a Windows notification from the tray icon. Returns false when the icon is hidden, which cannot notify.</summary>
+    public bool Notify(string title, string text)
+    {
+        if (!_icon.Visible) return false;
+
+        _icon.ShowBalloonTip(10_000, title, text, ToolTipIcon.Warning);
+        return true;
+    }
+
     public void Dispose()
     {
         // Disposing removes the icon from the tray; otherwise a ghost icon lingers until the mouse passes over it.

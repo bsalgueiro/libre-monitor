@@ -35,6 +35,7 @@ public partial class MainWindow : Window
 
     private GlucoseMonitor? _monitor;
     private (string Email, string Password) _credentials;
+    private readonly AlertEvaluator _alerts = new();
     private MonitorUpdate? _last;
     private MonitorUpdate? _lastReal;           // newest real update, kept while a simulation is showing
     private SimulationScenario? _simulation;    // developer branch: fake readings for checking colours
@@ -71,7 +72,7 @@ public partial class MainWindow : Window
         {
             // A simulated reading is rebuilt each tick so it does not age into the grey "old reading" state.
             if (_simulation is not null) ShowSimulation();
-            else { RenderAge(); Graph.Refresh(); }
+            else { RenderAge(); Graph.Refresh(); EvaluateAlerts(); }
         };
         _tick.Start();
 
@@ -131,6 +132,77 @@ public partial class MainWindow : Window
         Graph.Readings = readings;
         RenderValue();
         RenderAge();
+        EvaluateAlerts();
+    }
+
+    // ---- alerts ----------------------------------------------------------------------------
+
+    private void EvaluateAlerts()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var raised = _alerts.Evaluate(_settings.Alerts, _last?.Snapshot.Current, now);
+        if (raised is not null) Deliver(raised, now);
+
+        UpdateAlertBorder(now);
+    }
+
+    private void Deliver(AlertRaised alert, DateTimeOffset now)
+    {
+        var unit = _settings.Unit;
+        var low = alert.Kind == AlertKind.Low;
+        var title = (_simulation is not null ? "SIMULATED · " : string.Empty)
+            + (alert.IsReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose"));
+        var text = $"{GlucoseUnits.Format(alert.Reading.MgPerDl, unit, CultureInfo.CurrentCulture)} {unit.Label()} "
+            + $"{alert.Reading.Trend.ToArrow()} · {FormatAge(now - alert.Reading.TimestampUtc)}";
+
+        // The notification needs the tray icon. Without it the sound and the widget border still work.
+        _tray.Notify(title, text);
+        if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
+    }
+
+    /// <summary>A coloured border while the current reading is inside an alert zone, regardless of snooze.</summary>
+    private void UpdateAlertBorder(DateTimeOffset now)
+    {
+        var zone = AlertEvaluator.Classify(_settings.Alerts, _last?.Snapshot.Current, now);
+        if (zone is null)
+        {
+            Card.SetResourceReference(Border.BorderBrushProperty, "CardBorderBrush");
+            Card.BorderThickness = new Thickness(1);
+            return;
+        }
+
+        Card.BorderBrush = Palette.Brush(zone == AlertKind.Low ? Palette.Low : Palette.High);
+        Card.BorderThickness = new Thickness(2);
+    }
+
+    private void Alerts_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new AlertsWindow(_settings.Alerts, _settings.Unit, TestAlert) { Owner = this };
+        if (dialog.ShowDialog() != true || dialog.Result is not { } result) return;
+
+        _settings.Alerts = result;
+        _settings.Save();
+        _alerts.Reset(); // new thresholds start a fresh episode
+        EvaluateAlerts();
+    }
+
+    private bool TestAlert(bool sound)
+    {
+        var shown = _tray.Notify("Test alert", "This is how a glucose alert will look.");
+        if (sound) System.Media.SystemSounds.Exclamation.Play();
+        return shown;
+    }
+
+    private void Snooze_Click(object sender, RoutedEventArgs e)
+    {
+        var minutes = int.Parse((string)((MenuItem)sender).Tag);
+        _alerts.Snooze(DateTimeOffset.UtcNow.AddMinutes(minutes));
+    }
+
+    private void Resume_Click(object sender, RoutedEventArgs e)
+    {
+        _alerts.Resume();
+        EvaluateAlerts();
     }
 
     private void RenderValue()
@@ -168,6 +240,7 @@ public partial class MainWindow : Window
 
         RenderValue();
         RenderAge();
+        UpdateAlertBorder(DateTimeOffset.UtcNow); // the alert colours come from the theme
         Graph.Refresh();
     }
 
@@ -371,6 +444,12 @@ public partial class MainWindow : Window
         {
             item.IsChecked = index < 0 ? _simulation is null : _simulation == Simulation.Scenarios[index];
         }
+
+        var snoozedUntil = _alerts.SnoozedUntil(DateTimeOffset.UtcNow);
+        ResumeItem.IsEnabled = snoozedUntil is not null;
+        SnoozeMenu.Header = snoozedUntil is { } until
+            ? $"Snooze alerts (until {until.ToLocalTime():HH:mm})"
+            : "Snooze alerts";
 
         TrayItem.IsChecked = _settings.ShowTrayIcon;
         HideItem.IsEnabled = _settings.ShowTrayIcon; // hiding the widget without a tray icon would leave no way to bring it back
