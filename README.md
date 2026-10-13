@@ -98,10 +98,8 @@ mean the file is damaged or unsafe. To run it:
 Windows remembers the choice for that file. If the file came from the internet, you can also tick **Unblock** in the
 file's Properties before running it.
 
-The warning goes away with a code-signing certificate, which costs money each year. A newly signed program can still
-trigger the warning until it has built up download reputation, unless it uses a more expensive Extended Validation
-certificate. Some antivirus tools are also wary of single-file programs that unpack themselves on start. This has not
-been tested here; if it happens, the small build above, which does not unpack itself, is an alternative.
+Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also
+flag the single-file build.
 
 ## Notes
 
