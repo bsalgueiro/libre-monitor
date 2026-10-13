@@ -33,14 +33,19 @@ The colours for low, in range and high are for display only. They are not alarms
 
 ## Getting started
 
-You need Windows 10 or 11 (64-bit) and the `LibreMonitor.App.exe` file from whoever built it
-(see [Building an executable](#building-an-executable) if that is you).
+You need Windows 10 or 11 (64-bit). There is nothing to install and no need to build anything: you download one file
+and run it.
 
 1. In the LibreLink phone app open **Connected apps > LibreLinkUp** and invite a second email address.
 2. Accept the invitation in the official LibreLinkUp app with that account. This also clears the terms and email
    verification that the sign-in needs.
-3. Run `LibreMonitor.App.exe` and sign in with the **follower** account, not your main one.
+3. Download **`LibreMonitor-win-x64.exe`** from the
+   [latest release](https://github.com/bsalgueiro/libre-monitor/releases/latest) (under *Assets*).
+4. Run it and sign in with the **follower** account, not your main one.
    If Windows shows a blue warning, see [Windows SmartScreen warning](#windows-smartscreen-warning).
+
+Optional: to check the download is intact, compare the output of
+`Get-FileHash .\LibreMonitor-win-x64.exe -Algorithm SHA256` with the line in `SHA256SUMS.txt` from the same release.
 
 ## Using the widget
 
@@ -160,6 +165,23 @@ with .NET removed from the environment, but it has not been tried on a clean mac
 it does not receive .NET security updates unless it is rebuilt and handed out again.
 
 Whoever receives the executable will see the [SmartScreen warning](#windows-smartscreen-warning), because it is unsigned.
+
+## Publishing a release
+
+Users download the executable from the repository's Releases page. A release is made by pushing a version tag:
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow in `.github/workflows/release.yml` then runs the tests, publishes the self-contained single-file build
+above with the version taken from the tag, and creates a release with generated notes and two files:
+`LibreMonitor-win-x64.exe` and `SHA256SUMS.txt`. (A local build of the same command is named
+`LibreMonitor.App.exe`; the workflow renames it.)
+
+Downloads from the Releases page are only available to people who can see the repository, so it has to be public for
+anyone else to use them.
 
 ## Technical notes
 
