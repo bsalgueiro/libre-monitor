@@ -54,12 +54,14 @@ public sealed class TrayController : IDisposable
     }
 
     /// <param name="problem">Connection problem to show instead of the reading, if any.</param>
-    public void Update(GlucoseReading? current, GlucoseUnit unit, bool stale, string? problem, string age)
+    public void Update(GlucoseReading? current, GlucoseUnit unit, bool stale, string? problem, string age, bool simulated = false)
     {
+        var prefix = simulated ? "SIMULATED · " : string.Empty;
+
         if (current is null)
         {
             SetIcon(Render("?", TileColours.Muted));
-            SetTooltip(problem is null ? "Libre Monitor: no reading" : $"Libre Monitor: {problem}");
+            SetTooltip(prefix + (problem is null ? "Libre Monitor: no reading" : $"Libre Monitor: {problem}"));
             return;
         }
 
@@ -67,7 +69,7 @@ public sealed class TrayController : IDisposable
         var colour = stale || problem is not null ? TileColours.Muted : ColourFor(current.MgPerDl);
         SetIcon(Render(value, colour));
 
-        var tooltip = $"{value} {unit.Label()} {current.Trend.ToArrow()} · {age}";
+        var tooltip = $"{prefix}{value} {unit.Label()} {current.Trend.ToArrow()} · {age}";
         SetTooltip(problem is null ? tooltip : $"{tooltip} · {problem}");
     }
 

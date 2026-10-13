@@ -28,6 +28,9 @@ public partial class MainWindow : Window
     private GlucoseMonitor? _monitor;
     private (string Email, string Password) _credentials;
     private MonitorUpdate? _last;
+    private MonitorUpdate? _lastReal;           // newest real update, kept while a simulation is showing
+    private SimulationScenario? _simulation;    // developer branch: fake readings for checking colours
+    private readonly List<(MenuItem Item, int Index)> _simulationItems = [];
     private string? _problem;
     private bool _problemIsFatal;
 
@@ -51,7 +54,23 @@ public partial class MainWindow : Window
 
         ApplyPosition();
 
-        _tick.Tick += (_, _) => { RenderAge(); Graph.Refresh(); };
+        BuildSimulationMenu();
+
+        // Developer shortcut: LibreMonitor.App.exe --simulate 2 starts with scenario number 2 already showing.
+        var args = Environment.GetCommandLineArgs();
+        var flag = Array.IndexOf(args, "--simulate");
+        if (flag >= 0 && flag + 1 < args.Length
+            && int.TryParse(args[flag + 1], out var scenario) && scenario >= 0 && scenario < Simulation.Scenarios.Count)
+        {
+            Simulate(scenario);
+        }
+
+        _tick.Tick += (_, _) =>
+        {
+            // A simulated reading is rebuilt each tick so it does not age into the grey "old reading" state.
+            if (_simulation is not null) ShowSimulation();
+            else { RenderAge(); Graph.Refresh(); }
+        };
         _tick.Start();
 
         Loaded += async (_, _) => await StartAsync();
@@ -83,8 +102,15 @@ public partial class MainWindow : Window
 
         _credentials = saved.Value;
         _monitor = new GlucoseMonitor(_client, () => _credentials);
-        _monitor.Updated += update => Dispatcher.BeginInvoke(() => OnUpdated(update));
-        _monitor.Failed += (ex, fatal) => Dispatcher.BeginInvoke(() => OnFailed(ex, fatal));
+        _monitor.Updated += update => Dispatcher.BeginInvoke(() =>
+        {
+            _lastReal = update;
+            if (_simulation is null) OnUpdated(update);
+        });
+        _monitor.Failed += (ex, fatal) => Dispatcher.BeginInvoke(() =>
+        {
+            if (_simulation is null) OnFailed(ex, fatal);
+        });
         _monitor.Start();
         await Task.CompletedTask;
     }
@@ -183,7 +209,7 @@ public partial class MainWindow : Window
         var age = current is null ? (TimeSpan?)null : DateTimeOffset.UtcNow - current.TimestampUtc;
         var stale = age > StaleAfter;
 
-        _tray.Update(current, _settings.Unit, stale, _problem, age is { } a0 ? FormatAge(a0) : string.Empty);
+        _tray.Update(current, _settings.Unit, stale, _problem, age is { } a0 ? FormatAge(a0) : string.Empty, simulated: _simulation is not null);
 
         if (current is not null)
         {
@@ -195,6 +221,14 @@ public partial class MainWindow : Window
         else
         {
             ValueText.Foreground = Palette.Brush(Palette.Muted);
+        }
+
+        if (_simulation is not null)
+        {
+            // Make it impossible to mistake a fake value for a real one.
+            AgeText.Text = "SIMULATED";
+            AgeText.Foreground = Palette.Brush(Palette.High);
+            return;
         }
 
         if (_problem is not null)
@@ -331,6 +365,11 @@ public partial class MainWindow : Window
         Range6.IsChecked = (int)Graph.Hours == 6;
         Range12.IsChecked = (int)Graph.Hours == 12;
         TopmostItem.IsChecked = Topmost;
+        foreach (var (item, index) in _simulationItems)
+        {
+            item.IsChecked = index < 0 ? _simulation is null : _simulation == Simulation.Scenarios[index];
+        }
+
         TrayItem.IsChecked = _settings.ShowTrayIcon;
         HideItem.IsEnabled = _settings.ShowTrayIcon; // hiding the widget without a tray icon would leave no way to bring it back
         UnitMg.IsChecked = _settings.Unit == GlucoseUnit.MgPerDl;
@@ -376,6 +415,53 @@ public partial class MainWindow : Window
         _settings.Theme = Enum.Parse<ThemeChoice>((string)((MenuItem)sender).Tag);
         _settings.Save();
         ApplyTheme();
+    }
+
+    // ---- developer: simulated readings -----------------------------------------------------
+
+    private void BuildSimulationMenu()
+    {
+        var root = new MenuItem { Header = "Developer: simulate reading" };
+
+        var real = new MenuItem { Header = "Use real data" };
+        real.Click += (_, _) => Simulate(-1);
+        root.Items.Add(real);
+        _simulationItems.Add((real, -1));
+        root.Items.Add(new Separator());
+
+        for (var i = 0; i < Simulation.Scenarios.Count; i++)
+        {
+            var index = i;
+            var item = new MenuItem { Header = Simulation.Scenarios[i].Name };
+            item.Click += (_, _) => Simulate(index);
+            root.Items.Add(item);
+            _simulationItems.Add((item, index));
+        }
+
+        // Just above the separator that precedes About / Sign out / Exit.
+        Menu.Items.Insert(Menu.Items.Count - 4, root);
+    }
+
+    private void Simulate(int index)
+    {
+        _simulation = index < 0 ? null : Simulation.Scenarios[index];
+
+        if (_simulation is not null) ShowSimulation();
+        else if (_lastReal is not null) OnUpdated(_lastReal);
+        else
+        {
+            _last = null;
+            Graph.Readings = [];
+            RenderValue();
+            RenderAge();
+        }
+    }
+
+    private void ShowSimulation()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var fake = new Patient("simulated", "Simulated", "data");
+        OnUpdated(new MonitorUpdate(fake, Simulation.Build(_simulation!, now), now));
     }
 
     private void Range_Click(object sender, RoutedEventArgs e) => SetRange(int.Parse((string)((MenuItem)sender).Tag));
