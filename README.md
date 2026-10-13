@@ -62,15 +62,46 @@ show a simulated value.
 
 ## Building an executable
 
+Both builds below are Release builds, so developer mode cannot appear in them, even if started with `--dev`.
+`dotnet run` and `dotnet build` without `-c Release` make Debug builds, which are the ones that accept `--dev`.
+The `publish` folder is ignored by git.
+
+**For yourself (small).** Needs the .NET 10 Desktop Runtime on the machine that runs it, which most PCs do not have.
+
 ```powershell
 dotnet publish src/LibreMonitor.App -c Release -o publish
 ```
 
-This produces `publish\LibreMonitor.App.exe` and its few supporting files (about 0.3 MB in total). It is a Release build,
-so developer mode cannot appear in it, even if started with `--dev`. It needs the .NET 10 Desktop Runtime on the machine
-that runs it. The `publish` folder is ignored by git.
+This produces `publish\LibreMonitor.App.exe` and a few supporting files, about 0.3 MB in total.
 
-`dotnet run` and `dotnet build` without `-c Release` make Debug builds, which are the ones that accept `--dev`.
+**For sharing with other people (self-contained).** Carries its own copy of .NET, so nothing needs to be installed.
+
+```powershell
+dotnet publish src/LibreMonitor.App -c Release -r win-x64 --self-contained true `
+  -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+  -o publish
+```
+
+This produces a single `publish\LibreMonitor.App.exe` of about 72 MB for 64-bit Windows 10 or 11. It started and ran
+with .NET removed from the environment, but it has not been tried on a clean machine. Because it bundles its own .NET,
+it does not receive .NET security updates unless it is rebuilt and handed out again.
+
+### Windows SmartScreen warning
+
+The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue
+**"Windows protected your PC"** window. This is expected for any unsigned program from an unknown publisher; it does not
+mean the file is damaged or unsafe. To run it:
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
+Windows remembers the choice for that file. If the file came from the internet, you can also tick **Unblock** in the
+file's Properties before running it.
+
+The warning goes away with a code-signing certificate, which costs money each year. A newly signed program can still
+trigger the warning until it has built up download reputation, unless it uses a more expensive Extended Validation
+certificate. Some antivirus tools are also wary of single-file programs that unpack themselves on start. This has not
+been tested here; if it happens, the small build above, which does not unpack itself, is an alternative.
 
 ## Notes
 
