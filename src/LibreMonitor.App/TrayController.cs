@@ -17,7 +17,10 @@ namespace LibreMonitor.App;
 public sealed class TrayController : IDisposable
 {
     private const int IconSize = 32;
-    private static readonly DrawingColor Ink = DrawingColor.FromArgb(0x0E, 0x11, 0x16);
+    // White digits on a deep-coloured tile, like the flat white-on-colour glyphs elsewhere in the tray.
+    // The light theme's range colours are the darker ones, which keep white readable.
+    private static readonly DrawingColor Ink = DrawingColor.White;
+    private static readonly Theme TileColours = Theme.Light;
 
     private readonly NotifyIcon _icon;
     private readonly ToolStripMenuItem _toggleItem;
@@ -41,7 +44,7 @@ public sealed class TrayController : IDisposable
             if (e.Button == MouseButtons.Left) toggleWidget();
         };
 
-        SetIcon(Render("--", Theme.Dark.Muted));
+        SetIcon(Render("--", TileColours.Muted));
     }
 
     public bool Visible
@@ -55,13 +58,13 @@ public sealed class TrayController : IDisposable
     {
         if (current is null)
         {
-            SetIcon(Render("?", Theme.Dark.Muted));
+            SetIcon(Render("?", TileColours.Muted));
             SetTooltip(problem is null ? "Libre Monitor: no reading" : $"Libre Monitor: {problem}");
             return;
         }
 
         var value = GlucoseUnits.Format(current.MgPerDl, unit, CultureInfo.CurrentCulture);
-        var colour = stale || problem is not null ? Theme.Dark.Muted : ColourFor(current.MgPerDl);
+        var colour = stale || problem is not null ? TileColours.Muted : ColourFor(current.MgPerDl);
         SetIcon(Render(value, colour));
 
         var tooltip = $"{value} {unit.Label()} {current.Trend.ToArrow()} · {age}";
@@ -79,9 +82,9 @@ public sealed class TrayController : IDisposable
 
     private static MediaColor ColourFor(double mgPerDl) => mgPerDl switch
     {
-        < Palette.LowMgPerDl => Theme.Dark.Low,
-        > Palette.HighMgPerDl => Theme.Dark.High,
-        _ => Theme.Dark.InRange,
+        < Palette.LowMgPerDl => TileColours.Low,
+        > Palette.HighMgPerDl => TileColours.High,
+        _ => TileColours.InRange,
     };
 
     private void SetTooltip(string text) => _icon.Text = text.Length > 120 ? text[..120] : text;
@@ -101,7 +104,8 @@ public sealed class TrayController : IDisposable
             g.SmoothingMode = SmoothingMode.AntiAlias;
             g.TextRenderingHint = TextRenderingHint.AntiAliasGridFit;
 
-            using var path = RoundedRectangle(new RectangleF(0.5f, 0.5f, IconSize - 1, IconSize - 1), 7);
+            // Edge to edge, so the tile uses the whole icon area and reads as large as the tray allows.
+            using var path = RoundedRectangle(new RectangleF(0, 0, IconSize, IconSize), 6);
             using var background = new SolidBrush(DrawingColor.FromArgb(tile.R, tile.G, tile.B));
             g.FillPath(background, path);
 
@@ -129,10 +133,10 @@ public sealed class TrayController : IDisposable
         }
     }
 
-    /// <summary>The largest bold font, up to 24px, with which the text still fits inside the tile.</summary>
+    /// <summary>The largest bold font, up to 26px, with which the text still fits inside the tile.</summary>
     private static Font FitFont(Graphics g, string text, StringFormat format)
     {
-        const float Largest = 24, Smallest = 8;
+        const float Largest = 26, Smallest = 8;
         const float MaxWidth = IconSize - 2;
 
         var pixels = Largest;
