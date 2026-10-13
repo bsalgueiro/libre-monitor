@@ -16,6 +16,7 @@ Sensor --> LibreLink (phone) --> LibreView cloud --> libre-monitor (desktop)
 - 3, 6 or 12 hour range (mouse wheel or menu), mg/dL or mmol/L, light, dark or follow-the-system theme.
 - Drag to move, drag any edge to resize, snap to a screen corner. Position and preferences are remembered.
 - Right-click for the menu.
+- Tray icon showing the current value on a range-coloured tile. The ✕ on the widget hides it to the tray; click the tray icon to bring it back. Use the menu's Exit to quit. If the tray icon is turned off, the ✕ exits instead.
 - The follower login is stored encrypted with Windows DPAPI (current user only).
 
 ## Projects
@@ -61,4 +62,4 @@ dotnet test
 
 ## Planned
 
-Tray icon, local history database, configurable alerts, CSV export.
+Local history database, configurable alerts, CSV export.

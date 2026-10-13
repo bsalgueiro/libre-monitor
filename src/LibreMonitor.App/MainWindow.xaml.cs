@@ -296,10 +296,12 @@ public partial class MainWindow : Window
     }
 
     // DragMove swallows the button-up, so the close button acts on the press instead.
+    // With the tray icon shown it hides the widget there; without one it would strand the app, so it exits.
     private void Close_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
-        Close();
+        if (_tray.Visible) Hide();
+        else Close();
     }
 
     // The menu belongs to the card; the close button must not show it.
