@@ -60,6 +60,18 @@ dotnet run --project src/LibreMonitor.App -- --simulate 2   # start with scenari
 This only exists in Debug builds. A Release or published executable ignores `--dev` and `--simulate`, so it can never
 show a simulated value.
 
+## Building an executable
+
+```powershell
+dotnet publish src/LibreMonitor.App -c Release -o publish
+```
+
+This produces `publish\LibreMonitor.App.exe` and its few supporting files (about 0.3 MB in total). It is a Release build,
+so developer mode cannot appear in it, even if started with `--dev`. It needs the .NET 10 Desktop Runtime on the machine
+that runs it. The `publish` folder is ignored by git.
+
+`dotnet run` and `dotnet build` without `-c Release` make Debug builds, which are the ones that accept `--dev`.
+
 ## Notes
 
 - The API is unofficial and can change. The app version sent in headers lives in `LibreLinkUpOptions`.
