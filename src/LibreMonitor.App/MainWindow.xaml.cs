@@ -14,6 +14,14 @@ namespace LibreMonitor.App;
 
 public partial class MainWindow : Window
 {
+#if DEBUG
+    // Built and run from source: developer features may be switched on with --dev.
+    private const bool DevBuild = true;
+#else
+    // Release / published executable: developer features can never appear, whatever the command line says.
+    private const bool DevBuild = false;
+#endif
+
     private static readonly int[] RangeChoices = [3, 6, 12];
     private static readonly TimeSpan StaleAfter = TimeSpan.FromMinutes(10);
     private const double ScreenInset = 4; // plus the 12px shadow margin gives a 16px gap to the screen edge
@@ -54,16 +62,10 @@ public partial class MainWindow : Window
 
         ApplyPosition();
 
-        BuildSimulationMenu();
-
-        // Developer shortcut: LibreMonitor.App.exe --simulate 2 starts with scenario number 2 already showing.
-        var args = Environment.GetCommandLineArgs();
-        var flag = Array.IndexOf(args, "--simulate");
-        if (flag >= 0 && flag + 1 < args.Length
-            && int.TryParse(args[flag + 1], out var scenario) && scenario >= 0 && scenario < Simulation.Scenarios.Count)
-        {
-            Simulate(scenario);
-        }
+        // Developer mode (simulated readings) needs both a Debug build and --dev; see DevOptions.
+        var dev = DevOptions.Parse(Environment.GetCommandLineArgs(), allowed: DevBuild);
+        if (dev.Enabled) BuildSimulationMenu();
+        if (dev.Scenario is { } scenario) Simulate(scenario);
 
         _tick.Tick += (_, _) =>
         {

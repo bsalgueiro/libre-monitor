@@ -46,6 +46,20 @@ To only check the connection from a console (credentials from `LIBRE_EMAIL` / `L
 dotnet run --project src/LibreMonitor.Cli
 ```
 
+## Developer mode
+
+Running from source with `--dev` adds a **Developer: simulate reading** entry to the widget menu. It fakes a reading for
+each colour state (low, in range, high, old, none) so the display can be checked without waiting for real glucose to
+change. The widget and the tray tooltip say SIMULATED while it is active.
+
+```powershell
+dotnet run --project src/LibreMonitor.App -- --dev
+dotnet run --project src/LibreMonitor.App -- --simulate 2   # start with scenario 2 showing
+```
+
+This only exists in Debug builds. A Release or published executable ignores `--dev` and `--simulate`, so it can never
+show a simulated value.
+
 ## Notes
 
 - The API is unofficial and can change. The app version sent in headers lives in `LibreLinkUpOptions`.
