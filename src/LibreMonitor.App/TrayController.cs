@@ -105,10 +105,15 @@ public sealed class TrayController : IDisposable
             using var background = new SolidBrush(DrawingColor.FromArgb(tile.R, tile.G, tile.B));
             g.FillPath(background, path);
 
-            var pixels = text.Length switch { <= 2 => 22f, 3 => 18f, _ => 14f };
-            using var font = new Font("Segoe UI", pixels, FontStyle.Bold, GraphicsUnit.Pixel);
-            using var format = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center };
+            // Typographic format drops the default side padding, and NoWrap keeps a too-wide value on one line
+            // (wrapping used to push the second digit out of the tile, leaving only the first visible).
+            using var format = (StringFormat)StringFormat.GenericTypographic.Clone();
+            format.Alignment = StringAlignment.Center;
+            format.LineAlignment = StringAlignment.Center;
+            format.FormatFlags |= StringFormatFlags.NoWrap;
+
             using var foreground = new SolidBrush(Ink);
+            using var font = FitFont(g, text, format);
             g.DrawString(text, font, foreground, new RectangleF(0, 0, IconSize, IconSize), format);
         }
 
@@ -122,6 +127,24 @@ public sealed class TrayController : IDisposable
         {
             DestroyIcon(handle);
         }
+    }
+
+    /// <summary>The largest bold font, up to 24px, with which the text still fits inside the tile.</summary>
+    private static Font FitFont(Graphics g, string text, StringFormat format)
+    {
+        const float Largest = 24, Smallest = 8;
+        const float MaxWidth = IconSize - 2;
+
+        var pixels = Largest;
+        var font = new Font("Segoe UI", pixels, FontStyle.Bold, GraphicsUnit.Pixel);
+        while (pixels > Smallest && g.MeasureString(text, font, PointF.Empty, format).Width > MaxWidth)
+        {
+            font.Dispose();
+            pixels--;
+            font = new Font("Segoe UI", pixels, FontStyle.Bold, GraphicsUnit.Pixel);
+        }
+
+        return font;
     }
 
     private static GraphicsPath RoundedRectangle(RectangleF r, float radius)
