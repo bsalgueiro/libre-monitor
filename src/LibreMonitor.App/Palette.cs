@@ -39,7 +39,7 @@ public sealed record Theme(
         Low: Color.FromRgb(0xFF, 0x6B, 0x6B));
 
     public static readonly Theme Light = new(
-        CardBackground: Color.FromArgb(0xB8, 0xFA, 0xFB, 0xFD),
+        CardBackground: Color.FromArgb(0xDC, 0xFA, 0xFB, 0xFD),
         CardBorder: Color.FromArgb(0x2E, 0x00, 0x00, 0x00),
         Text: Color.FromRgb(0x14, 0x1A, 0x22),
         Muted: Color.FromRgb(0x5F, 0x6B, 0x7A),
