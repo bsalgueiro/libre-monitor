@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LibreMonitor.App/LibreMonitor.App.csproj" />
+    <Project Path="src/LibreMonitor.Cli/LibreMonitor.Cli.csproj" />
+    <Project Path="src/LibreMonitor.Core/LibreMonitor.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LibreMonitor.Core.Tests/LibreMonitor.Core.Tests.csproj" />
+  </Folder>
+</Solution>
