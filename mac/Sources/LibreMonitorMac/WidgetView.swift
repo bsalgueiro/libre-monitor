@@ -41,10 +41,13 @@ struct WidgetView: View {
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
 
-    // With the graph hidden, the header is scaled to fill the card. These describe the header at scale 1:
+    // With the graph hidden, the header is scaled to fill the card. These describe the two arrangements at scale 1:
     // the widest case is a 4-character value ("10.0") beside the longest status text ("sign-in needed").
-    private static let compactDesignWidth: CGFloat = 250
-    private static let compactDesignHeight: CGFloat = 62
+    //   side by side: value and arrow on the left, unit and status on the right (suits a wide, short card)
+    //   stacked:      value and arrow, with unit and status on one line underneath (lets the number grow on a small card)
+    private static let sideBySideDesign = CGSize(width: 250, height: 62)
+    private static let stackedDesign = CGSize(width: 140, height: 72)
+    private static let compactPadding = CGSize(width: 20, height: 14) // total, both sides
 
     var body: some View {
         let theme = WidgetTheme.forScheme(colorScheme)
@@ -122,15 +125,56 @@ struct WidgetView: View {
         .padding(.bottom, 6)
     }
 
-    /// The graph is hidden: the header alone fills the card, everything scaled together to fit whatever size it has.
+    /// The graph is hidden: the header alone fills the card. Both arrangements are tried and the one that lets the
+    /// number grow larger is used, so a small card is not left mostly empty beside a small number.
+    @ViewBuilder
     private func compactLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
-        let available = CGSize(width: size.width - 30, height: size.height - 16) // the card's own padding
-        let fit = min(max(min(available.width / Self.compactDesignWidth, available.height / Self.compactDesignHeight), 0.3), 8)
+        let available = CGSize(
+            width: size.width - Self.compactPadding.width, height: size.height - Self.compactPadding.height)
 
-        return header(valueScale: fit, infoScale: fit, spacingScale: fit, theme: theme, tint: tint, status: status)
-            .padding(.leading, 16)
-            .padding(.trailing, 14)
-            .frame(maxWidth: .infinity, maxHeight: .infinity) // centred vertically in the card
+        func fit(_ design: CGSize) -> CGFloat {
+            min(max(min(available.width / design.width, available.height / design.height), 0.3), 8)
+        }
+
+        let sideBySide = fit(Self.sideBySideDesign)
+        let stacked = fit(Self.stackedDesign)
+
+        Group {
+            if stacked > sideBySide {
+                stackedHeader(fit: stacked, theme: theme, tint: tint, status: status)
+            } else {
+                header(valueScale: sideBySide, infoScale: sideBySide, spacingScale: sideBySide,
+                       theme: theme, tint: tint, status: status)
+            }
+        }
+        .padding(.horizontal, Self.compactPadding.width / 2)
+        .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
+    }
+
+    /// Value and arrow on top, unit and status on one line underneath, all scaled by `fit`.
+    private func stackedHeader(fit: CGFloat, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        VStack(spacing: 2 * fit) {
+            HStack(alignment: .center, spacing: 8 * fit) {
+                Text(valueText)
+                    .font(.system(size: 46 * fit, weight: .semibold))
+                    .foregroundColor(tint)
+                    .opacity(model.isStale ? 0.5 : 1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+
+                Text(model.current?.trend.arrow ?? "")
+                    .font(.system(size: 30 * fit))
+                    .foregroundColor(tint)
+            }
+
+            HStack(spacing: 5 * fit) {
+                Text(model.settings.unit.label).foregroundColor(theme.muted)
+                Text("·").foregroundColor(theme.muted)
+                Text(status.text).foregroundColor(status.color)
+            }
+            .font(.system(size: 11 * fit))
+            .lineLimit(1)
+        }
     }
 
     /// Top-left, like the close button of a macOS window. Fades in while the pointer is over the widget.
