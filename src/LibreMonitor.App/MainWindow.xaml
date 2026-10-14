@@ -80,13 +80,19 @@
             </ContextMenu>
         </Border.ContextMenu>
 
-        <Grid Margin="16,10,14,6">
+        <Grid x:Name="ContentGrid" Margin="16,10,14,6">
             <Grid.RowDefinitions>
                 <RowDefinition x:Name="HeaderRow" Height="Auto"/>
                 <RowDefinition x:Name="GraphRow" Height="*"/>
             </Grid.RowDefinitions>
 
-            <Grid Grid.Row="0">
+            <!-- Two rows so the unit and age can sit under the number when the graph is hidden and the card is small. -->
+            <Grid x:Name="HeaderGrid" Grid.Row="0" VerticalAlignment="Center">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
                 <StackPanel x:Name="ValueStack" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <TextBlock x:Name="ValueText" Text="--" FontSize="46" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <TextBlock x:Name="ArrowText" FontSize="30" Margin="8,0,0,0" VerticalAlignment="Center"/>
