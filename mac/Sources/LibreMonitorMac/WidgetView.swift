@@ -72,7 +72,6 @@ struct WidgetView: View {
                             .font(.system(size: 11 * small))
                             .foregroundColor(status.color)
                     }
-                    .padding(.trailing, 12) // leaves room for the close button
                 }
 
                 GlucoseGraphView(
@@ -88,24 +87,29 @@ struct WidgetView: View {
         // Without a content shape only drawn pixels (the graph) are clickable, so the menu opened nowhere else.
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
-        .overlay(alignment: .topTrailing) {
+        .overlay(alignment: .topLeading) {
             if hovering { closeButton(theme) }
         }
         .contextMenu { menuContent }
     }
 
-    /// Appears while the pointer is over the widget. Hides it to the menu bar, or quits when the icon is off.
+    /// Top-left, like the close button of a macOS window. Appears while the pointer is over the widget.
+    /// Hides it to the menu bar, or quits when the icon is off.
     private func closeButton(_ theme: WidgetTheme) -> some View {
         Button { actions.close() } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundColor(theme.muted)
-                .frame(width: 22, height: 22)
-                .contentShape(Rectangle())
+            ZStack {
+                Circle().fill(theme.muted.opacity(0.28))
+                Image(systemName: "xmark")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundColor(theme.text.opacity(0.85))
+            }
+            .frame(width: 13, height: 13)
+            .frame(width: 22, height: 22) // a more generous click area than the drawn circle
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .padding(.top, 6)
-        .padding(.trailing, 8)
+        .padding(.top, 3)
+        .padding(.leading, 4)
     }
 
     @ViewBuilder
