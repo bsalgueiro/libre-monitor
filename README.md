@@ -75,7 +75,7 @@ The colours for low, in range and high are for display only. They are not alarms
 <sub>The border turns red or amber while a reading is outside your alert limits (these are simulated readings).</sub>
 </div>
 
-## On a Mac
+## Screenshots
 
 <div align="center">
 <img src="docs/images/mac-light.png" alt="The macOS widget in the light theme" width="250">
@@ -85,8 +85,6 @@ The colours for low, in range and high are for display only. They are not alarms
 <img src="docs/images/mac-alert-low.png" alt="The macOS widget with a red alert border and a reading tooltip" width="250">
 <br><br>
 <img src="docs/images/mac-menu.png" alt="The macOS right-click menu" width="360">
-<br>
-<sub>The macOS widget: light theme, compact view, a low alert (simulated), and the right-click menu.</sub>
 </div>
 
 ## Getting started
