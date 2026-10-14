@@ -100,6 +100,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             close: { [weak self] in self?.closeWidget() },
             moveToCorner: { [weak self] corner in self?.moveToCorner(corner) },
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
+            checkForUpdates: { NSWorkspace.shared.open(AppInfo.releasesUrl) },
             showAbout: { [weak self] in self?.showAbout() },
             signOut: { [weak self] in self?.signOutAndQuit() },
             quit: { NSApp.terminate(nil) })
@@ -216,6 +217,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.refreshStatusItem()
             }
         }
+        monitor.onServiceChanged = { [weak self] _ in
+            // LibreLinkUp has changed or blocked this client. The widget says so; the right-click menu has
+            // "Check for updates…". A system notification for this arrives with the alerts work.
+            Task { @MainActor in
+                #if DEBUG
+                if self?.model.isSimulated == true { return }
+                #endif
+                self?.model.markServiceChanged()
+                self?.refreshStatusItem()
+            }
+        }
         monitor.start()
         self.monitor = monitor
     }
@@ -246,9 +258,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let tile = greyed ? TileColors.muted : TileColors.color(forMgPerDl: current.mgPerDl)
         let age = formatAge(model.age ?? 0)
         let prefix = model.isSimulated ? "SIMULATED · " : ""
+        let note = model.problem == .serviceChanged ? " · service changed, check for updates" : ""
         statusItem.update(
             text: value, tile: tile,
-            tooltip: "\(prefix)\(value) \(unit.label) \(current.trend.arrow) · \(age)")
+            tooltip: "\(prefix)\(value) \(unit.label) \(current.trend.arrow) · \(age)\(note)")
     }
 
     // MARK: - Sign in and out

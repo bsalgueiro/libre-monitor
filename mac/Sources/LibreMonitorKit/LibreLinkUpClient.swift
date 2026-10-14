@@ -39,14 +39,18 @@ public actor LibreLinkUpClient {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
             let (data, status) = try await perform(request)
-            let root = try decode(data, status: status) as? [String: Any]
+            let json = try decode(data, status: status)
 
-            if let code = root?["status"] as? Int, code == 2 {
+            if let object = json as? [String: Any], let code = (object["status"] as? NSNumber)?.intValue, code == 2 {
                 throw LibreLinkUpError.invalidCredentials
             }
 
-            guard let payload = root?["data"] as? [String: Any] else {
-                throw LibreLinkUpError.invalidCredentials
+            // Anything else that is not a normal success is the service behaving differently, not a wrong password.
+            let root = try Self.requireObject(json)
+            try Self.throwIfUnexpectedStatus(root)
+
+            guard let payload = root["data"] as? [String: Any] else {
+                throw LibreLinkUpError.serviceChanged(detail: "the login response has no data")
             }
 
             if let redirect = payload["redirect"] as? Bool, redirect {
@@ -68,7 +72,7 @@ public actor LibreLinkUpClient {
                   let user = payload["user"] as? [String: Any],
                   let userId = user["id"] as? String
             else {
-                throw LibreLinkUpError.invalidCredentials
+                throw LibreLinkUpError.serviceChanged(detail: "the login response has no session details")
             }
 
             token = newToken
@@ -82,13 +86,18 @@ public actor LibreLinkUpClient {
     // MARK: - Reads
 
     public func getPatients() async throws -> [Patient] {
-        let json = try await get("/llu/connections")
-        guard let root = json as? [String: Any], let items = root["data"] as? [[String: Any]] else {
-            return []
+        let root = try Self.requireObject(try await get("/llu/connections"))
+        try Self.throwIfUnexpectedStatus(root)
+
+        // An empty list is a normal answer (nobody is shared yet); a missing list is not.
+        guard let items = root["data"] as? [[String: Any]] else {
+            throw LibreLinkUpError.serviceChanged(detail: "the connections response has no list")
         }
 
-        return items.compactMap { item in
-            guard let id = item["patientId"] as? String else { return nil }
+        return try items.map { item in
+            guard let id = item["patientId"] as? String else {
+                throw LibreLinkUpError.serviceChanged(detail: "a connection has no patient id")
+            }
             return Patient(
                 patientId: id,
                 firstName: item["firstName"] as? String ?? "",
@@ -97,24 +106,50 @@ public actor LibreLinkUpClient {
     }
 
     public func getGraph(patientId: String) async throws -> GlucoseSnapshot {
-        let json = try await get("/llu/connections/\(Self.escape(patientId))/graph")
+        let root = try Self.requireObject(try await get("/llu/connections/\(Self.escape(patientId))/graph"))
+        try Self.throwIfUnexpectedStatus(root)
 
+        guard let data = root["data"] as? [String: Any] else {
+            throw LibreLinkUpError.serviceChanged(detail: "the graph response has no data")
+        }
+
+        // No current measurement is a normal answer (sensor warming up or out of range); a changed format is not.
         var current: GlucoseReading?
         var history: [GlucoseReading] = []
 
-        if let root = json as? [String: Any], let data = root["data"] as? [String: Any] {
-            if let connection = data["connection"] as? [String: Any],
-               let latest = connection["glucoseMeasurement"] as? [String: Any]
-            {
-                current = try Self.parseReading(latest)
-            }
+        if let connection = data["connection"] as? [String: Any],
+           let latest = connection["glucoseMeasurement"] as? [String: Any]
+        {
+            current = try Self.parseReading(latest)
+        }
 
-            if let graph = data["graphData"] as? [[String: Any]] {
-                history = try graph.map { try Self.parseReading($0) }
-            }
+        if let graph = data["graphData"] as? [[String: Any]] {
+            history = try graph.map { try Self.parseReading($0) }
         }
 
         return GlucoseSnapshot(current: current, history: history)
+    }
+
+    private static func requireObject(_ json: Any) throws -> [String: Any] {
+        guard let object = json as? [String: Any] else {
+            throw LibreLinkUpError.serviceChanged(detail: "the response is not a JSON object")
+        }
+        return object
+    }
+
+    /// The API reports its own status in the body. 0 is success and 2 (bad credentials) is handled by the caller; any
+    /// other value, such as the one used to say that the client version is too old, means the service has changed.
+    private static func throwIfUnexpectedStatus(_ root: [String: Any]) throws {
+        guard let code = (root["status"] as? NSNumber)?.intValue, code != 0 else { return }
+
+        var minimumVersion: String?
+        if let data = root["data"] as? [String: Any], let minimum = data["minimumVersion"], !(minimum is NSNull) {
+            minimumVersion = "\(minimum)"
+        }
+
+        throw LibreLinkUpError.serviceChanged(detail: minimumVersion.map {
+            "status \(code), the service now asks for app version \($0) or newer"
+        } ?? "status \(code)")
     }
 
     // MARK: - Requests
@@ -166,13 +201,19 @@ public actor LibreLinkUpClient {
     /// Bad requests (400) still carry a JSON body that says why; any other failure status is an error.
     private func decode(_ data: Data, status: Int) throws -> Any {
         if !(200..<300).contains(status) && status != 400 {
+            // Forbidden (a blocked client), not found or gone (a removed endpoint) are not hiccups: the service has
+            // changed. Server errors and rate limits are, so those stay ordinary, retryable failures.
+            if status == 403 || status == 404 || status == 410 {
+                throw LibreLinkUpError.serviceChanged(detail: "HTTP \(status)")
+            }
             throw LibreLinkUpError.other("LibreLinkUp returned HTTP \(status).")
         }
 
         do {
             return try JSONSerialization.jsonObject(with: data)
         } catch {
-            throw LibreLinkUpError.other("LibreLinkUp returned a response that is not valid JSON.")
+            // A web page where JSON was expected is typically a block or challenge page.
+            throw LibreLinkUpError.serviceChanged(detail: "the response is not valid JSON")
         }
     }
 
@@ -199,7 +240,7 @@ public actor LibreLinkUpClient {
         formatter.dateFormat = "M/d/yyyy h:mm:ss a"
 
         guard let date = formatter.date(from: text) else {
-            throw LibreLinkUpError.other("Unrecognised timestamp format '\(text)'.")
+            throw LibreLinkUpError.serviceChanged(detail: "unrecognised timestamp format '\(text)'")
         }
 
         return date

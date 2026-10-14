@@ -23,6 +23,7 @@ struct WidgetActions {
     var close: () -> Void
     var moveToCorner: (Corner) -> Void
     var hideToMenuBar: () -> Void
+    var checkForUpdates: () -> Void
     var showAbout: () -> Void
     var signOut: () -> Void
     var quit: () -> Void
@@ -283,6 +284,7 @@ struct WidgetView: View {
 
         Divider()
 
+        Button("Check for updates…") { actions.checkForUpdates() }
         Button("About Libre Monitor") { actions.showAbout() }
         Button("Sign out and quit") { actions.signOut() }
         Button("Quit") { actions.quit() }
@@ -305,7 +307,11 @@ struct WidgetView: View {
         }
 
         if let problem = model.problem {
-            return problem == .signInNeeded ? ("sign-in needed", theme.low) : ("reconnecting", theme.high)
+            switch problem {
+            case .signInNeeded: return ("sign-in needed", theme.low)
+            case .serviceChanged: return ("service changed", theme.low)
+            case .reconnecting: return ("reconnecting", theme.high)
+            }
         }
 
         if let age = model.age {

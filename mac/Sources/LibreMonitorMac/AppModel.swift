@@ -8,6 +8,8 @@ final class AppModel: ObservableObject {
     enum Problem {
         case reconnecting
         case signInNeeded
+        /// LibreLinkUp keeps answering in a way this version does not understand; a newer version may be needed.
+        case serviceChanged
     }
 
     /// A reading older than this is shown as "old" (the same limit the alerts use).
@@ -15,6 +17,7 @@ final class AppModel: ObservableObject {
 
     @Published private(set) var realUpdate: MonitorUpdate?
     @Published private(set) var problem: Problem?
+    private var serviceChanged = false
     /// Refreshed on a timer so the age text and the graph's "now" edge keep moving between polls.
     @Published private(set) var now = Date()
     @Published var settings: WidgetSettings {
@@ -82,10 +85,18 @@ final class AppModel: ObservableObject {
     func apply(_ update: MonitorUpdate) {
         realUpdate = update
         problem = nil
+        serviceChanged = false // a good answer ends the episode
     }
 
     func fail(fatal: Bool) {
-        problem = fatal ? .signInNeeded : .reconnecting
+        // Once the service is known to have changed, keep saying so rather than going back to "reconnecting".
+        problem = serviceChanged ? .serviceChanged : (fatal ? .signInNeeded : .reconnecting)
+    }
+
+    /// The monitor found the service changed several times in a row. Retrying will not fix that.
+    func markServiceChanged() {
+        serviceChanged = true
+        problem = .serviceChanged
     }
 
     func tick() {

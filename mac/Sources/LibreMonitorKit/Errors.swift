@@ -12,6 +12,11 @@ public enum LibreLinkUpError: Error, Equatable, LocalizedError {
     /// The session token is missing or no longer accepted; log in again.
     case sessionExpired
 
+    /// LibreLinkUp answered, but not in a way this version understands: it blocked the request, asked for a newer
+    /// client, or returned a different format. The service has probably changed, so retrying the same request will
+    /// not help, and a newer version of the app may be needed. The detail never contains credentials.
+    case serviceChanged(detail: String)
+
     /// Anything else the service or the response got wrong. The message never contains credentials.
     case other(String)
 
@@ -24,6 +29,9 @@ public enum LibreLinkUpError: Error, Equatable, LocalizedError {
                 + "Open the official LibreLinkUp app with this account and complete it."
         case .sessionExpired:
             return "The LibreLinkUp session is missing or expired. Log in again."
+        case .serviceChanged(let detail):
+            return "LibreLinkUp no longer answers the way this app expects (\(detail)). "
+                + "Abbott may have changed or blocked the service."
         case .other(let message):
             return message
         }

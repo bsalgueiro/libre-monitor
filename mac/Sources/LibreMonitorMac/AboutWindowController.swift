@@ -6,9 +6,14 @@ import SwiftUI
 struct AboutView: View {
     let close: () -> Void
 
+    /// "Libre Monitor 0.1.0" in a built app (the version make-app.sh stamps into it); just the name otherwise.
+    private var title: String {
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String).map { "Libre Monitor \($0)" } ?? "Libre Monitor"
+    }
+
     var body: some View {
         VStack(spacing: 14) {
-            Text("Libre Monitor")
+            Text(title)
                 .font(.title3.weight(.semibold))
 
             Text("Shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. "
