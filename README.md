@@ -24,6 +24,8 @@ Everything you need to install and use the widget. No programming knowledge requ
 
 - Borderless, always-on-top corner widget: current value, trend arrow and a smooth graph with the 70-180 mg/dL band and a 100 reference line.
 - Hover the graph for the value and time of any reading.
+- The graph can be hidden. The number, arrow, unit and last-update time then scale up to fill the widget, whatever size you
+  make it. Each mode remembers its own size, so turning the graph back on restores the earlier layout.
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - Tray icon showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a Windows notification, a sound and a coloured widget border, with reminders and snooze.
@@ -57,6 +59,7 @@ Optional: to check the download is intact, compare the output of
 | Move it | Drag it |
 | Resize it | Drag any edge or corner |
 | Change the time range | Mouse wheel over the widget, or the menu |
+| Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the number) |
 | See a reading's value and time | Hover the graph |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |

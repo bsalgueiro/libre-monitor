@@ -13,8 +13,15 @@ public sealed class WidgetSettings
 
     public double? Left { get; set; }
     public double? Top { get; set; }
+    /// <summary>Size with the graph shown (also the size kept while the graph is hidden, so it can be restored).</summary>
     public double? Width { get; set; }
     public double? Height { get; set; }
+
+    /// <summary>Size with the graph hidden. Each mode remembers its own, so toggling the graph is reversible.</summary>
+    public double? CompactWidth { get; set; }
+    public double? CompactHeight { get; set; }
+
+    public bool ShowGraph { get; set; } = true;
     public int Hours { get; set; } = 6;
     public bool Topmost { get; set; } = true;
     public bool ShowTrayIcon { get; set; } = true;
