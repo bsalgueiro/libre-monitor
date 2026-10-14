@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libre Monitor</title>
+<meta name="description" content="A small, read-only desktop widget for your own FreeStyle Libre glucose data. Free and open source, for Windows and macOS. Unofficial.">
+<meta property="og:title" content="Libre Monitor">
+<meta property="og:description" content="Your FreeStyle Libre glucose, always visible on your desktop. Free, open source, read-only. Windows and macOS.">
+<meta property="og:image" content="https://bsalgueiro.github.io/libre-monitor/images/widget-dark.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="images/icon.png">
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --surface-2: #eef0f3;
+    --text: #1b1f24;
+    --muted: #5b6573;
+    --line: #dfe3e8;
+    --accent: #1f9d5b;
+    --accent-ink: #ffffff;
+    --low: #d63b3b;
+    --high: #c77a00;
+    --code: #eef0f3;
+    --shadow: 0 10px 30px rgba(20, 30, 45, .10);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101317;
+      --surface: #171b21;
+      --surface-2: #1e232a;
+      --text: #e8ebef;
+      --muted: #98a2b0;
+      --line: #28303a;
+      --accent: #4cc87d;
+      --accent-ink: #08140d;
+      --low: #ff6b6b;
+      --high: #ffb347;
+      --code: #1e232a;
+      --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101317; --surface: #171b21; --surface-2: #1e232a; --text: #e8ebef; --muted: #98a2b0;
+    --line: #28303a; --accent: #4cc87d; --accent-ink: #08140d; --low: #ff6b6b; --high: #ffb347;
+    --code: #1e232a; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  img { max-width: 100%; height: auto; display: block; }
+  code {
+    background: var(--code); border-radius: 6px; padding: .12em .4em; font-size: .9em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-word;
+  }
+  .wrap { width: min(1080px, 100% - 32px); margin-inline: auto; }
+
+  /* top bar */
+  header.bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  .bar .wrap { display: flex; align-items: center; gap: 20px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; color: var(--text); }
+  .brand img { width: 28px; height: 28px; }
+  .bar nav { margin-left: auto; display: flex; gap: 18px; font-size: .94rem; }
+  .bar nav a { color: var(--muted); }
+  .bar nav a:hover { color: var(--text); text-decoration: none; }
+  @media (max-width: 720px) { .bar nav a.hide-sm { display: none; } }
+
+  /* hero */
+  .hero { padding: 72px 0 40px; text-align: center; }
+  .hero .logo { width: 104px; height: 104px; margin: 0 auto 20px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.25)); }
+  h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.1; margin: 0 0 14px; letter-spacing: -.02em; }
+  .lead { font-size: clamp(1.05rem, 2vw, 1.28rem); color: var(--muted); max-width: 640px; margin: 0 auto 28px; }
+  .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 14px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 12px;
+    font-weight: 600; border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  }
+  .btn:hover { text-decoration: none; border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn svg { width: 20px; height: 20px; fill: currentColor; }
+  .small { font-size: .88rem; color: var(--muted); }
+  .shots { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; margin-top: 44px; }
+  .shots img { width: min(380px, 100%); filter: drop-shadow(var(--shadow)); }
+
+  .notice {
+    margin: 36px auto 0; max-width: 760px; padding: 14px 18px; border-radius: 12px; text-align: left;
+    background: color-mix(in srgb, var(--high) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--high) 40%, var(--line));
+    font-size: .95rem;
+  }
+
+  /* sections */
+  section { padding: 56px 0; }
+  section.alt { background: var(--surface); border-block: 1px solid var(--line); }
+  h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin: 0 0 8px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0 0 32px; max-width: 680px; }
+  h3 { font-size: 1.1rem; margin: 0 0 6px; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 10px; }
+  .flow .node { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; text-align: center; min-width: 150px; }
+  section.alt .flow .node { background: var(--bg); }
+  .flow .node b { display: block; }
+  .flow .node span { font-size: .85rem; color: var(--muted); }
+  .flow .arrow { align-self: center; color: var(--muted); font-size: 1.4rem; }
+  .flow .node.me { border-color: var(--accent); }
+  @media (max-width: 720px) { .flow .arrow { transform: rotate(90deg); width: 100%; text-align: center; } }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  section.alt .card { background: var(--bg); }
+  .card p { margin: 0; color: var(--muted); font-size: .96rem; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+  @media (max-width: 820px) { .split { grid-template-columns: 1fr; } }
+  .split img { margin-inline: auto; filter: drop-shadow(var(--shadow)); }
+  .pair { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
+  .pair figure { margin: 0; text-align: center; }
+  .pair img { width: 250px; filter: drop-shadow(var(--shadow)); }
+  .pair figcaption { margin-top: 10px; color: var(--muted); font-size: .9rem; }
+  .mac-row { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; align-items: flex-start; }
+  .mac-row img { filter: drop-shadow(var(--shadow)); }
+
+  ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 14px; }
+  ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 40px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  section.alt ol.steps > li { background: var(--bg); }
+  ol.steps > li::before {
+    content: counter(step); width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center; font-weight: 700;
+  }
+  ol.steps p { margin: 0; }
+  ol.steps ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
+  ol.steps ul li { display: list-item; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: .96rem; }
+  section.alt table { background: var(--bg); }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--surface-2); font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  section.alt th { background: var(--surface-2); }
+  tr:last-child td { border-bottom: 0; }
+  .t-amber { color: var(--high); font-weight: 600; }
+  .t-red { color: var(--low); font-weight: 600; }
+  .table-scroll { overflow-x: auto; }
+
+  .alerts-list { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
+  .alerts-list li { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  section.alt .alerts-list li { background: var(--bg); }
+  .alerts-list b { display: block; }
+
+  .warn {
+    padding: 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--low) 40%, var(--line));
+    background: color-mix(in srgb, var(--low) 9%, var(--surface)); margin-top: 22px; font-size: .96rem;
+  }
+
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 18px; margin-bottom: 12px; }
+  section.alt details { background: var(--bg); }
+  summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
+  details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
+  details p, details ol { color: var(--muted); }
+  details ol { padding-left: 20px; }
+
+  .legal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+
+  footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: .92rem; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
+  footer p { margin: 0; max-width: 640px; }
+  footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="images/icon.png" alt="">Libre Monitor</a>
+    <nav>
+      <a class="hide-sm" href="#features">Features</a>
+      <a class="hide-sm" href="#get-started">Get started</a>
+      <a class="hide-sm" href="#alerts">Alerts</a>
+      <a class="hide-sm" href="#help">Help</a>
+      <a href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- hero -->
+<div class="hero">
+  <div class="wrap">
+    <img class="logo" src="images/icon.png" alt="Libre Monitor app icon">
+    <h1>Your FreeStyle Libre glucose, always visible on your desktop.</h1>
+    <p class="lead">A small, read-only widget for Windows and macOS. Free and open source.</p>
+
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-win-x64.exe">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3h0v10.600l3.300-3.300 1.400 1.400L12 16.400l-4.700-4.700 1.400-1.400L11 13.600V3h1ZM5 18h14v2H5v-2Z"/></svg>
+        Download for Windows
+      </a>
+      <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-mac.zip">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3h0v10.600l3.300-3.300 1.400 1.400L12 16.400l-4.700-4.700 1.400-1.400L11 13.600V3h1ZM5 18h14v2H5v-2Z"/></svg>
+        Download for Mac
+      </a>
+      <a class="btn" href="https://github.com/bsalgueiro/libre-monitor/releases/latest">All downloads</a>
+    </div>
+    <p class="small">Windows 10 or 11 (64-bit) &nbsp;·&nbsp; macOS 13 or newer, Apple Silicon or Intel</p>
+
+    <div class="shots">
+      <img src="images/widget-dark.png" alt="The widget in the dark theme: 121 mg/dL, a steady arrow and a six-hour graph">
+      <img src="images/widget-light.png" alt="The widget in the light theme">
+    </div>
+
+    <div class="notice">
+      <b>Not a medical device. Do not make treatment decisions from this app.</b>
+      Independent project, not affiliated with or endorsed by Abbott. It relies on an unofficial service and can stop working without warning.
+    </div>
+  </div>
+</div>
+
+<!-- how it works -->
+<section class="alt" id="how">
+  <div class="wrap">
+    <h2>How it works</h2>
+    <p class="sub">The phone app reads the sensor and uploads to LibreView. Libre Monitor does <b>not</b> talk to the sensor. It signs in to the unofficial LibreLinkUp follower service and only reads what your phone has already uploaded.</p>
+    <div class="flow">
+      <div class="node"><b>Sensor</b><span>on your arm</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>LibreLink</b><span>your phone</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><b>LibreView</b><span>Abbott's cloud</span></div>
+      <div class="arrow">→</div>
+      <div class="node me"><b>Libre Monitor</b><span>your desktop</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- features -->
+<section id="features">
+  <div class="wrap">
+    <h2>What it does</h2>
+    <p class="sub">A glance at your number, trend and graph, without picking up your phone.</p>
+    <div class="split" style="margin-bottom:40px">
+      <div class="grid" style="grid-template-columns:1fr 1fr">
+        <div class="card"><h3>Always in view</h3><p>A borderless, always-on-top widget with the current value, trend arrow and a smooth graph with the 70–180 mg/dL band and a 100 reference line.</p></div>
+        <div class="card"><h3>Hover for detail</h3><p>Hover the graph to see the value and time of any reading.</p></div>
+        <div class="card"><h3>Make it yours</h3><p>3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.</p></div>
+        <div class="card"><h3>Tray or menu bar</h3><p>The current value on a coloured tile, so you can read it even when the widget is hidden.</p></div>
+      </div>
+      <div>
+        <img src="images/widget-compact.png" alt="The compact view: only the number, arrow, unit and time of the last reading" width="360">
+        <p class="small" style="text-align:center;margin-top:10px">Hide the graph and the number grows to fill the widget, at whatever size you make it.</p>
+      </div>
+    </div>
+    <div class="grid">
+      <div class="card"><h3>Optional alerts</h3><p>Low and high limits of your choice: a system notification, a sound and a coloured widget border, with reminders and snooze.</p></div>
+      <div class="card"><h3>Read-only</h3><p>It never changes anything in your account and never talks to the sensor.</p></div>
+      <div class="card"><h3>Your login stays yours</h3><p>Stored encrypted for your Windows user only, or in your Mac's Keychain. Never sent anywhere except to LibreView.</p></div>
+      <div class="card"><h3>No history kept</h3><p>It shows what LibreView provides right now. Nothing about your readings is saved on your computer. For history and reports, use LibreView.</p></div>
+    </div>
+    <p class="small" style="margin-top:18px">The colours for low, in range and high are for display only. They are not alarms.</p>
+  </div>
+</section>
+
+<!-- mac -->
+<section class="alt">
+  <div class="wrap">
+    <h2>On a Mac</h2>
+    <p class="sub">The same widget, native to macOS, with a menu bar item and Notification Centre alerts. The ✕ sits at the top-left and hides it to the menu bar.</p>
+    <div class="mac-row">
+      <img src="images/mac-light.png" alt="The macOS widget in the light theme" width="250">
+      <img src="images/mac-compact.png" alt="The macOS widget with the graph hidden" width="250">
+      <img src="images/mac-alert-low.png" alt="The macOS widget with a red alert border and a reading tooltip" width="250">
+      <img src="images/mac-menu.png" alt="The macOS right-click menu" width="300">
+    </div>
+  </div>
+</section>
+
+<!-- getting started -->
+<section id="get-started">
+  <div class="wrap">
+    <h2>Getting started</h2>
+    <p class="sub">There is nothing to install and nothing to build: you download one file and run it. You do need a second, free LibreLinkUp account to sign in with.</p>
+    <ol class="steps">
+      <li><div><p><b>Invite a follower.</b> In the LibreLink phone app open <i>Connected apps &gt; LibreLinkUp</i> and invite a second email address.</p></div></li>
+      <li><div><p><b>Create the follower account.</b> Install the official LibreLinkUp app on a phone and create the account there with that email, then accept the invitation. There is no website sign-up (see <a href="https://www.librelinkup.com">www.librelinkup.com</a>). This also clears the terms and email verification that signing in needs.</p></div></li>
+      <li><div><p><b>Download.</b> Get the file for your computer from the <a href="https://github.com/bsalgueiro/libre-monitor/releases/latest">latest release</a>.</p>
+        <ul><li>Windows: <code>LibreMonitor-win-x64.exe</code></li><li>Mac: <code>LibreMonitor-mac.zip</code></li></ul></div></li>
+      <li><div><p><b>Start it and sign in</b> with the <b>follower</b> account, not your main one.</p>
+        <ul>
+          <li>Windows: run the exe. If Windows shows a blue warning, see <a href="#warnings">first-open warnings</a>.</li>
+          <li>Mac: unzip, drag <b>LibreMonitor.app</b> into Applications and open it. macOS warns the first time, see <a href="#warnings">first-open warnings</a>. The app has no Dock icon: look for the widget and the menu bar item.</li>
+        </ul></div></li>
+    </ol>
+    <p class="small" style="margin-top:16px">Optional: check the download is intact by comparing its SHA-256 with <code>SHA256SUMS.txt</code> from the same release.
+      Windows: <code>Get-FileHash .\LibreMonitor-win-x64.exe -Algorithm SHA256</code>. Mac: <code>shasum -a 256 LibreMonitor-mac.zip</code>.</p>
+  </div>
+</section>
+
+<!-- using -->
+<section class="alt" id="using">
+  <div class="wrap">
+    <h2>Using the widget</h2>
+    <p class="sub">Position, size and preferences are remembered. Right-click the widget to open the menu.</p>
+    <div class="table-scroll">
+      <table>
+        <tr><th>To do this</th><th>Do this</th></tr>
+        <tr><td>Move it</td><td>Drag it</td></tr>
+        <tr><td>Resize it</td><td>Drag any edge or corner</td></tr>
+        <tr><td>Change the time range</td><td>Mouse wheel over the widget, or the menu</td></tr>
+        <tr><td>Hide or show the graph</td><td>Menu &gt; Show graph (untick it for a compact widget with just the number)</td></tr>
+        <tr><td>See a reading's value and time</td><td>Hover the graph</td></tr>
+        <tr><td>Switch mg/dL and mmol/L</td><td>Menu &gt; Units</td></tr>
+        <tr><td>Light, dark or follow the system</td><td>Menu &gt; Appearance</td></tr>
+        <tr><td>Set up low and high alerts</td><td>Menu &gt; Alerts…</td></tr>
+        <tr><td>Pause alerts for a while</td><td>Menu &gt; Snooze alerts</td></tr>
+        <tr><td>Snap to a screen corner</td><td>Menu &gt; Move to corner</td></tr>
+        <tr><td>Hide it to the tray or menu bar</td><td>Click the ✕, or Menu &gt; Hide to tray</td></tr>
+        <tr><td>Bring it back</td><td>Click the tray or menu bar icon</td></tr>
+        <tr><td>Turn the tray icon off</td><td>Menu &gt; untick Show tray icon (the ✕ then exits instead of hiding)</td></tr>
+        <tr><td>Sign out</td><td>Menu &gt; Sign out and exit</td></tr>
+        <tr><td>Quit</td><td>Menu &gt; Exit, or the tray icon's menu</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- alerts -->
+<section id="alerts">
+  <div class="wrap">
+    <h2>Alerts</h2>
+    <p class="sub">Open <i>Menu &gt; Alerts…</i> to turn on a low alert, a high alert, or both, and set your own limits in mg/dL or mmol/L. They are <b>off until you turn them on</b>. Use <i>Send test alert</i> to see what one looks like.</p>
+    <div class="split">
+      <div class="pair">
+        <figure><img src="images/alert-low.png" alt="A low reading: red number and a red border around the widget"><figcaption>Low</figcaption></figure>
+        <figure><img src="images/alert-high.png" alt="A high reading: amber number and an amber border around the widget"><figcaption>High</figcaption></figure>
+      </div>
+      <ul class="alerts-list">
+        <li><b>When it alerts</b>Once, when a reading goes below the low limit or above the high limit. The widget border turns red (low) or amber (high) while the reading stays out of range.</li>
+        <li><b>Reminders</b>While still out of range you can be reminded every 15, 30 or 60 minutes, or not at all.</li>
+        <li><b>No repeats at the limit</b>After an alert, the reading has to come back at least 5 mg/dL (about 0.3 mmol/L) inside the range before the next crossing counts as new.</li>
+        <li><b>Snooze</b>Pause notifications for 30 minutes, 1 hour or 2 hours. If you are still out of range when it ends, you are alerted then.</li>
+        <li><b>Old readings are ignored</b>A reading more than 10 minutes old does not trigger an alert.</li>
+      </ul>
+    </div>
+    <div class="warn"><b>Do not rely on these alerts for safety.</b> They only work while this app is running, your computer is on and awake, and your phone is uploading to LibreView. Readings can arrive minutes late, and your system can hide notifications (for example in Focus assist or Do not disturb). Keep your sensor's own alarms on.</div>
+  </div>
+</section>
+
+<!-- help -->
+<section class="alt" id="help">
+  <div class="wrap">
+    <h2>If the widget stops updating</h2>
+    <p class="sub">The widget says what is wrong in the small status text next to the number.</p>
+    <div class="table-scroll">
+      <table>
+        <tr><th>It says</th><th>What it means</th><th>What to do</th></tr>
+        <tr><td><span class="t-amber">reconnecting</span></td><td>A temporary problem: no internet, or LibreView is busy. After a couple of minutes it also says how old the number is ("not updating · 12 min ago").</td><td>Nothing. It tries again every minute.</td></tr>
+        <tr><td><span class="t-red">sign-in needed</span></td><td>The follower email or password is no longer accepted.</td><td>Menu &gt; Sign out, start it again and sign in.</td></tr>
+        <tr><td><span class="t-red">service changed</span></td><td>LibreLinkUp is no longer answering the way this app expects, three checks in a row. Abbott may have changed or blocked the unofficial service.</td><td>Menu &gt; <b>Check for updates…</b>. A notification tells you once, and clicking it opens the same page.</td></tr>
+      </table>
+    </div>
+    <p class="small" style="margin-top:16px">This app relies on a service that Abbott does not publish for third parties, so it can stop working without warning. If you are already on the newest version, it needs a fix from its developer: please <a href="https://github.com/bsalgueiro/libre-monitor/issues">report it on GitHub</a>. Your own data and your LibreLink app are not affected either way. <i>Menu &gt; About</i> shows which version you have.</p>
+
+    <h2 id="warnings" style="margin-top:44px">First-open warnings</h2>
+    <p class="sub">Neither app is signed with a paid certificate, so Windows and macOS each show a warning the first time. Both are expected and do not mean the file is damaged.</p>
+    <details>
+      <summary>Windows SmartScreen: "Windows protected your PC"</summary>
+      <p>The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue window. This is expected for any unsigned program from an unknown publisher. To run it:</p>
+      <ol><li>Click <b>More info</b>.</li><li>Click <b>Run anyway</b>.</li></ol>
+      <p>Windows remembers the choice for that file. If the file came from the internet, you can also tick <b>Unblock</b> in the file's Properties before running it. Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also flag the single-file build.</p>
+    </details>
+    <details>
+      <summary>macOS: "cannot check it for malicious software"</summary>
+      <p>The Mac app is not notarised by Apple (that needs a paid Apple Developer account), so the first time you open it macOS says it cannot check it for malicious software. To open it:</p>
+      <ol>
+        <li>Control-click (right-click) <b>LibreMonitor.app</b> in Applications and choose <b>Open</b>, then <b>Open</b> again. On recent macOS versions you may instead have to open <i>System Settings &gt; Privacy &amp; Security</i> and click <b>Open Anyway</b>.</li>
+        <li>If that does not work, run this once in Terminal, then open the app normally: <code>xattr -dr com.apple.quarantine /Applications/LibreMonitor.app</code></li>
+      </ol>
+      <p>The app is signed with a free ad-hoc signature, which Apple Silicon Macs require in order to run it at all.</p>
+    </details>
+  </div>
+</section>
+
+<!-- open source -->
+<section id="open-source">
+  <div class="wrap">
+    <h2>Free and open source</h2>
+    <p class="sub">The code is on GitHub. Read it, build it yourself, report problems or send improvements.</p>
+    <div class="legal-grid">
+      <div class="card"><h3>Licence</h3><p>Code under the <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/LICENSE">MIT licence</a>. Documentation under <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/LICENSE-DOCS.md">CC BY 4.0</a>. Bundled software is listed in the <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/THIRD-PARTY-NOTICES.md">third-party notices</a>.</p></div>
+      <div class="card"><h3>Contribute</h3><p>Read <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/CONTRIBUTING.md">CONTRIBUTING</a> first: the app stays read-only, keeps no glucose data, and sends nothing anywhere except LibreView.</p></div>
+      <div class="card"><h3>Security</h3><p>Found a security problem? Report it privately, as described in <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/SECURITY.md">SECURITY</a>.</p></div>
+      <div class="card"><h3>Build from source</h3><p>Developer instructions for the Windows (.NET) and macOS (Swift) apps are in the <a href="https://github.com/bsalgueiro/libre-monitor#for-developers">README</a>.</p></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><b>Trademarks and disclaimer.</b> FreeStyle, Libre, LibreLink, LibreLinkUp and LibreView are trademarks of Abbott, used here only to say what this software works with. This is an independent, unofficial project: it is not made, approved or supported by Abbott, and it uses an interface that Abbott does not publish for third parties and may change or block at any time. Provided as is, without warranty. Not a medical device.</p>
+    <nav>
+      <a href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
+      <a href="https://github.com/bsalgueiro/libre-monitor/releases">Releases</a>
+      <a href="https://github.com/bsalgueiro/libre-monitor/issues">Issues</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>

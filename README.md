@@ -12,6 +12,7 @@ A small, read-only widget for Windows and macOS.
 [![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-lightgrey)](LICENSE-DOCS.md)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS-555)
 
+[Website](https://bsalgueiro.github.io/libre-monitor/) ·
 [Download](https://github.com/bsalgueiro/libre-monitor/releases/latest) ·
 [Get started](#getting-started) ·
 [Alerts](#alerts) ·
