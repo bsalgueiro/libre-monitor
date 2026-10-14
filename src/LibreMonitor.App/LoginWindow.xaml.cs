@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Navigation;
 using LibreMonitor.Core;
 
 namespace LibreMonitor.App;
@@ -16,6 +18,13 @@ public partial class LoginWindow : Window
         InitializeComponent();
         _client = client;
         Loaded += (_, _) => EmailBox.Focus();
+    }
+
+    // Opens the link in the default browser. Only the fixed address in the XAML can reach this.
+    private void Link_RequestNavigate(object sender, RequestNavigateEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        e.Handled = true;
     }
 
     private void PasswordBox_KeyDown(object sender, KeyEventArgs e)
