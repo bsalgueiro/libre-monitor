@@ -29,6 +29,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: WidgetPanel!
     private var statusItem: StatusItemController!
     private var loginController: LoginWindowController?
+    private let aboutController = AboutWindowController()
     private var tickTimer: Timer?
     private var settingsObserver: AnyCancellable?
     private var lastScrollChange = Date.distantPast
@@ -151,13 +152,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func showAbout() {
-        let alert = NSAlert()
-        alert.messageText = "Libre Monitor"
-        alert.informativeText = "Shows glucose data that the LibreLink app has already uploaded, read through "
-            + "LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
-            + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions."
-        NSApp.activate(ignoringOtherApps: true)
-        alert.runModal()
+        aboutController.show()
     }
 
     // MARK: - Monitoring
