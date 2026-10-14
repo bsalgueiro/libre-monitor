@@ -95,6 +95,20 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in
 Focus assist or Do not disturb). Keep your sensor's own alarms on.
 
+## If the widget stops updating
+
+The widget shows what is wrong in the small status text next to the number:
+
+| It says | What it means | What to do |
+|---|---|---|
+| **reconnecting** (amber) | A temporary problem: no internet, or LibreView is busy. | Nothing. It tries again every minute. |
+| **sign-in needed** (red) | The follower email or password is no longer accepted. | Menu > Sign out and quit, start it again and sign in. |
+| **service changed** (red) | LibreLinkUp is no longer answering the way this app expects, three checks in a row. Abbott may have changed or blocked the unofficial service. | Menu > **Check for updates...**. On Windows a notification tells you once, and clicking it opens the same page. |
+
+This app relies on a service that Abbott does not publish for third parties, so it can stop working without warning. If you
+are already on the newest version, the app needs a fix from its developer, so please report it on the project's page.
+Your own data and your LibreLink app are not affected either way. **Menu > About** shows which version you have.
+
 ## Windows SmartScreen warning
 
 The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue
@@ -220,4 +234,10 @@ anyone else to use them.
 - No glucose data is written to disk, on purpose: the only files are the encrypted login and `settings.json`
   (preferences and alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out
   of scope, because LibreView already keeps the user's history.
+- Failures are classified so the user can be told the right thing. A response that does not look right (HTTP 403, 404 or 410,
+  a non-zero API status such as "client version too old", a page where JSON was expected, a missing field, an unrecognised
+  timestamp) is a `ServiceChangedException`, never a wrong-password error. Server errors and rate limits stay ordinary,
+  retryable failures. `GlucoseMonitor` raises `ServiceChanged` once per episode after
+  `ServiceChangedThreshold` (3) such answers in a row, and a good answer ends the episode. When Abbott raises the
+  minimum client version, `LibreLinkUpOptions.AppVersion` is the value to update.
 - The client never uploads or changes data. Apart from the login request, it only reads.

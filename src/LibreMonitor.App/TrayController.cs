@@ -26,6 +26,7 @@ public sealed class TrayController : IDisposable
     private readonly ToolStripMenuItem _toggleItem;
     private readonly Func<bool> _isWidgetVisible;
     private Icon? _current;
+    private Action? _balloonAction;
 
     public TrayController(Func<bool> isWidgetVisible, Action toggleWidget, Action exit)
     {
@@ -43,6 +44,8 @@ public sealed class TrayController : IDisposable
         {
             if (e.Button == MouseButtons.Left) toggleWidget();
         };
+        _icon.BalloonTipClicked += (_, _) => _balloonAction?.Invoke();
+        _icon.BalloonTipClosed += (_, _) => _balloonAction = null;
 
         SetIcon(Render("--", TileColours.Muted));
     }
@@ -74,10 +77,12 @@ public sealed class TrayController : IDisposable
     }
 
     /// <summary>Shows a Windows notification from the tray icon. Returns false when the icon is hidden, which cannot notify.</summary>
-    public bool Notify(string title, string text)
+    /// <param name="onClick">Run if the user clicks the notification itself.</param>
+    public bool Notify(string title, string text, Action? onClick = null)
     {
         if (!_icon.Visible) return false;
 
+        _balloonAction = onClick;
         _icon.ShowBalloonTip(10_000, title, text, ToolTipIcon.Warning);
         return true;
     }

@@ -47,14 +47,21 @@ public sealed partial class LibreLinkUpClient
             using var doc = await ReadJsonAsync(response, ct).ConfigureAwait(false);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty("status", out var status) && status.ValueKind == JsonValueKind.Number && status.GetInt32() == 2)
+            if (root.ValueKind == JsonValueKind.Object
+                && root.TryGetProperty("status", out var status)
+                && status.ValueKind == JsonValueKind.Number
+                && status.TryGetInt32(out var statusCode)
+                && statusCode == 2)
             {
                 throw new InvalidCredentialsException();
             }
 
+            // Anything else that is not a normal success is the service behaving differently, not a wrong password.
+            ThrowIfUnexpectedStatus(root);
+
             if (!root.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
             {
-                throw new InvalidCredentialsException();
+                throw new ServiceChangedException("the login response has no data");
             }
 
             if (data.TryGetProperty("redirect", out var redirect) && redirect.ValueKind == JsonValueKind.True)
@@ -80,7 +87,7 @@ public sealed partial class LibreLinkUpClient
                 || !data.TryGetProperty("user", out var user)
                 || !user.TryGetProperty("id", out var userId))
             {
-                throw new InvalidCredentialsException();
+                throw new ServiceChangedException("the login response has no session details");
             }
 
             _token = token.GetString();
@@ -94,16 +101,23 @@ public sealed partial class LibreLinkUpClient
     public async Task<IReadOnlyList<Patient>> GetPatientsAsync(CancellationToken ct = default)
     {
         using var doc = await GetAsync("/llu/connections", ct).ConfigureAwait(false);
-        var patients = new List<Patient>();
+        ThrowIfUnexpectedStatus(doc.RootElement);
 
-        if (doc.RootElement.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Array)
+        // An empty list is a normal answer (nobody is shared yet); a missing list is not.
+        if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Array)
         {
-            foreach (var item in data.EnumerateArray())
+            throw new ServiceChangedException("the connections response has no list");
+        }
+
+        var patients = new List<Patient>();
+        foreach (var item in data.EnumerateArray())
+        {
+            if (!item.TryGetProperty("patientId", out var id) || id.GetString() is not { } patientId)
             {
-                var id = item.GetProperty("patientId").GetString();
-                if (id is null) continue;
-                patients.Add(new Patient(id, GetString(item, "firstName"), GetString(item, "lastName")));
+                throw new ServiceChangedException("a connection has no patient id");
             }
+
+            patients.Add(new Patient(patientId, GetString(item, "firstName"), GetString(item, "lastName")));
         }
 
         return patients;
@@ -113,25 +127,61 @@ public sealed partial class LibreLinkUpClient
     {
         using var doc = await GetAsync($"/llu/connections/{Uri.EscapeDataString(patientId)}/graph", ct).ConfigureAwait(false);
 
+        ThrowIfUnexpectedStatus(doc.RootElement);
+
+        if (!doc.RootElement.TryGetProperty("data", out var data) || data.ValueKind != JsonValueKind.Object)
+        {
+            throw new ServiceChangedException("the graph response has no data");
+        }
+
+        // No current measurement is a normal answer (sensor warming up or out of range); a changed format is not.
         GlucoseReading? current = null;
         var history = new List<GlucoseReading>();
 
-        if (doc.RootElement.TryGetProperty("data", out var data))
+        if (data.TryGetProperty("connection", out var connection)
+            && connection.TryGetProperty("glucoseMeasurement", out var latest)
+            && latest.ValueKind == JsonValueKind.Object)
         {
-            if (data.TryGetProperty("connection", out var connection)
-                && connection.TryGetProperty("glucoseMeasurement", out var latest)
-                && latest.ValueKind == JsonValueKind.Object)
-            {
-                current = ParseReading(latest);
-            }
+            current = ParseReading(latest);
+        }
 
-            if (data.TryGetProperty("graphData", out var graph) && graph.ValueKind == JsonValueKind.Array)
-            {
-                history.AddRange(graph.EnumerateArray().Select(ParseReading));
-            }
+        if (data.TryGetProperty("graphData", out var graph) && graph.ValueKind == JsonValueKind.Array)
+        {
+            history.AddRange(graph.EnumerateArray().Select(ParseReading));
         }
 
         return new GlucoseSnapshot(current, history);
+    }
+
+    /// <summary>
+    /// The API reports its own status in the body. 0 is success and 2 (bad credentials) is handled by the caller; any
+    /// other value, such as the one used to say that the client version is too old, means the service has changed.
+    /// </summary>
+    private static void ThrowIfUnexpectedStatus(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object)
+        {
+            throw new ServiceChangedException("the response is not a JSON object");
+        }
+
+        if (!root.TryGetProperty("status", out var status)
+            || status.ValueKind != JsonValueKind.Number
+            || !status.TryGetInt32(out var code)
+            || code == 0)
+        {
+            return;
+        }
+
+        string? minimumVersion = null;
+        if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object
+            && data.TryGetProperty("minimumVersion", out var minimum) && minimum.ValueKind != JsonValueKind.Null)
+        {
+            minimumVersion = minimum.ToString();
+        }
+
+        throw new ServiceChangedException(minimumVersion is null
+            ? $"status {code}"
+            : $"status {code}, the service now asks for app version {minimumVersion} or newer");
     }
 
     private async Task<JsonDocument> GetAsync(string path, CancellationToken ct)
@@ -171,7 +221,12 @@ public sealed partial class LibreLinkUpClient
     {
         if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.BadRequest)
         {
-            throw new LibreLinkUpException($"LibreLinkUp returned HTTP {(int)response.StatusCode}.");
+            var code = (int)response.StatusCode;
+
+            // Forbidden (a blocked client), not found or gone (a removed endpoint) are not hiccups: the service has
+            // changed. Server errors and rate limits are, so those stay ordinary, retryable failures.
+            if (code is 403 or 404 or 410) throw new ServiceChangedException($"HTTP {code}");
+            throw new LibreLinkUpException($"LibreLinkUp returned HTTP {code}.");
         }
 
         try
@@ -181,7 +236,8 @@ public sealed partial class LibreLinkUpClient
         }
         catch (JsonException ex)
         {
-            throw new LibreLinkUpException("LibreLinkUp returned a response that is not valid JSON.", ex);
+            // A web page where JSON was expected is typically a block or challenge page.
+            throw new ServiceChangedException("the response is not valid JSON", ex);
         }
     }
 
@@ -211,7 +267,7 @@ public sealed partial class LibreLinkUpClient
             return parsed;
         }
 
-        throw new LibreLinkUpException($"Unrecognised timestamp format '{text}'.");
+        throw new ServiceChangedException($"unrecognised timestamp format '{text}'");
     }
 
     private static string GetString(JsonElement e, string name) =>

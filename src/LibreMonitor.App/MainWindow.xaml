@@ -74,6 +74,7 @@
                 <MenuItem x:Name="TrayItem" Header="Show tray icon" IsCheckable="True" Click="TrayIcon_Click"/>
                 <MenuItem x:Name="HideItem" Header="Hide to tray" Click="HideToTray_Click"/>
                 <Separator/>
+                <MenuItem Header="Check for updates..." Click="Updates_Click"/>
                 <MenuItem Header="About" Click="About_Click"/>
                 <MenuItem Header="Sign out and exit" Click="SignOut_Click"/>
                 <MenuItem Header="Exit" Click="Exit_Click"/>

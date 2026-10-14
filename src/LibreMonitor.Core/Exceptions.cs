@@ -31,6 +31,22 @@ public sealed class AccountActionRequiredException : LibreLinkUpException
     };
 }
 
+/// <summary>
+/// LibreLinkUp answered, but not in a way this version understands: it blocked the request, asked for a newer
+/// client, or returned a different format. The service has probably changed, so retrying the same request will not
+/// help, and a newer version of this app may be needed. The detail never contains credentials.
+/// </summary>
+public sealed class ServiceChangedException : LibreLinkUpException
+{
+    public string Detail { get; }
+
+    public ServiceChangedException(string detail, Exception? inner = null)
+        : base($"LibreLinkUp no longer answers the way this app expects ({detail}). Abbott may have changed or blocked the service.", inner)
+    {
+        Detail = detail;
+    }
+}
+
 /// <summary>The session token is missing or no longer accepted; log in again.</summary>
 public sealed class SessionExpiredException : LibreLinkUpException
 {
