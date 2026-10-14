@@ -127,8 +127,24 @@ struct WidgetView: View {
 
     /// The graph is hidden: the header alone fills the card. Both arrangements are tried and the one that lets the
     /// number grow larger is used, so a small card is not left mostly empty beside a small number.
-    @ViewBuilder
     private func compactLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        let plan = compactPlan(for: size)
+
+        // Only view construction in here: a view builder does not allow declarations such as local functions.
+        return Group {
+            if plan.stacked {
+                stackedHeader(fit: plan.fit, theme: theme, tint: tint, status: status)
+            } else {
+                header(valueScale: plan.fit, infoScale: plan.fit, spacingScale: plan.fit,
+                       theme: theme, tint: tint, status: status)
+            }
+        }
+        .padding(.horizontal, Self.compactPadding.width / 2)
+        .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
+    }
+
+    /// Which arrangement lets the number be larger at this size, and the scale to use for it.
+    private func compactPlan(for size: CGSize) -> (stacked: Bool, fit: CGFloat) {
         let available = CGSize(
             width: size.width - Self.compactPadding.width, height: size.height - Self.compactPadding.height)
 
@@ -138,17 +154,7 @@ struct WidgetView: View {
 
         let sideBySide = fit(Self.sideBySideDesign)
         let stacked = fit(Self.stackedDesign)
-
-        Group {
-            if stacked > sideBySide {
-                stackedHeader(fit: stacked, theme: theme, tint: tint, status: status)
-            } else {
-                header(valueScale: sideBySide, infoScale: sideBySide, spacingScale: sideBySide,
-                       theme: theme, tint: tint, status: status)
-            }
-        }
-        .padding(.horizontal, Self.compactPadding.width / 2)
-        .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
+        return stacked > sideBySide ? (true, stacked) : (false, sideBySide)
     }
 
     /// Value and arrow on top, unit and status on one line underneath, all scaled by `fit`.
