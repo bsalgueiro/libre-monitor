@@ -423,9 +423,70 @@ public partial class MainWindow : Window
 
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e) => ApplyLayoutScale();
 
+    private enum HeaderArrangement
+    {
+        /// <summary>Number and arrow on the left, unit and age on the right. Used with the graph, and on a wide, short card.</summary>
+        SideBySide,
+
+        /// <summary>Number and arrow, with the unit and age on one line underneath. Lets the number grow on a small card.</summary>
+        Stacked,
+    }
+
+    private void ArrangeHeader(HeaderArrangement arrangement)
+    {
+        if (arrangement == HeaderArrangement.Stacked)
+        {
+            Grid.SetRow(InfoStack, 1);
+            ValueStack.HorizontalAlignment = HorizontalAlignment.Center;
+            InfoStack.HorizontalAlignment = HorizontalAlignment.Center;
+            InfoStack.Orientation = Orientation.Horizontal;
+            UnitText.HorizontalAlignment = HorizontalAlignment.Left;
+            AgeText.HorizontalAlignment = HorizontalAlignment.Left;
+            UnitText.Margin = new Thickness(0, 0, 8, 0);
+        }
+        else
+        {
+            Grid.SetRow(InfoStack, 0);
+            ValueStack.HorizontalAlignment = HorizontalAlignment.Left;
+            InfoStack.HorizontalAlignment = HorizontalAlignment.Right;
+            InfoStack.Orientation = Orientation.Vertical;
+            UnitText.HorizontalAlignment = HorizontalAlignment.Right;
+            AgeText.HorizontalAlignment = HorizontalAlignment.Right;
+            UnitText.Margin = new Thickness(0);
+        }
+    }
+
+    private void SetHeaderFonts(double valueScale, double infoScale)
+    {
+        ValueText.FontSize = 46 * valueScale;
+        ArrowText.FontSize = 30 * valueScale;
+        UnitText.FontSize = 11 * infoScale;
+        AgeText.FontSize = 11 * infoScale;
+    }
+
+    /// <summary>Natural size of the header, at base font sizes, in the given arrangement.</summary>
+    private Size MeasureHeader(HeaderArrangement arrangement)
+    {
+        ArrangeHeader(arrangement);
+        SetHeaderFonts(1, 1);
+
+        var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        ValueStack.Measure(unbounded);
+        InfoStack.Measure(unbounded);
+
+        return arrangement == HeaderArrangement.Stacked
+            ? new Size(
+                Math.Max(ValueStack.DesiredSize.Width, InfoStack.DesiredSize.Width),
+                ValueStack.DesiredSize.Height + InfoStack.DesiredSize.Height)
+            : new Size(
+                ValueStack.DesiredSize.Width + InfoStack.DesiredSize.Width + 24,
+                Math.Max(ValueStack.DesiredSize.Height, InfoStack.DesiredSize.Height));
+    }
+
     /// <summary>
-    /// With the graph shown the text scales with the card as a whole. With the graph hidden the number, arrow, unit
-    /// and age are scaled together, by their own measured size, until they fill the space the card has.
+    /// With the graph shown the text scales with the card as a whole. With the graph hidden the header fills the card:
+    /// both arrangements are measured and the one that lets the number grow larger is used, so a small card is not
+    /// left mostly empty beside a small number.
     /// </summary>
     private void ApplyLayoutScale()
     {
@@ -434,39 +495,33 @@ public partial class MainWindow : Window
             var scale = Math.Clamp(Math.Min((ActualWidth - 24) / DefaultCardWidth, (ActualHeight - 24) / DefaultCardHeight), 0.75, 2.4);
             var small = Math.Clamp(scale, 1, 1.7);
 
-            ValueText.FontSize = 46 * scale;
-            ArrowText.FontSize = 30 * scale;
-            UnitText.FontSize = 11 * small;
-            AgeText.FontSize = 11 * small;
+            ContentGrid.Margin = new Thickness(16, 10, 14, 6);
+            ArrangeHeader(HeaderArrangement.SideBySide);
+            SetHeaderFonts(scale, small);
             InfoStack.Margin = new Thickness(0, 0, 18, 0); // room for the close button
             return;
         }
 
-        // Measure the header at its base size, then pick the largest scale at which it still fits.
         // The close-button margin is dropped here: it does not scale with the text, so keeping it would make
-        // the number and the info block collide in narrow cards.
+        // the number and the info block collide in narrow cards. The card padding is also tighter, to give the number room.
+        ContentGrid.Margin = new Thickness(10, 6, 10, 6);
         InfoStack.Margin = new Thickness(0);
-        ValueText.FontSize = 46;
-        ArrowText.FontSize = 30;
-        UnitText.FontSize = 11;
-        AgeText.FontSize = 11;
 
-        var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
-        ValueStack.Measure(unbounded);
-        InfoStack.Measure(unbounded);
+        var availableWidth = ActualWidth - 24 - 20; // shadow margin, then the card's own padding
+        var availableHeight = ActualHeight - 24 - 12;
 
-        var naturalWidth = ValueStack.DesiredSize.Width + InfoStack.DesiredSize.Width + 24;
-        var naturalHeight = Math.Max(ValueStack.DesiredSize.Height, InfoStack.DesiredSize.Height);
-        if (naturalWidth <= 0 || naturalHeight <= 0) return;
+        double Fit(Size natural) =>
+            natural.Width <= 0 || natural.Height <= 0
+                ? 1
+                : Math.Clamp(Math.Min(availableWidth / natural.Width, availableHeight / natural.Height), 0.3, 8);
 
-        var availableWidth = ActualWidth - 24 - 30; // shadow margin, then the card's own padding
-        var availableHeight = ActualHeight - 24 - 16;
-        var fit = Math.Clamp(Math.Min(availableWidth / naturalWidth, availableHeight / naturalHeight), 0.3, 8);
+        var sideBySide = Fit(MeasureHeader(HeaderArrangement.SideBySide));
+        var stacked = Fit(MeasureHeader(HeaderArrangement.Stacked));
 
-        ValueText.FontSize = 46 * fit;
-        ArrowText.FontSize = 30 * fit;
-        UnitText.FontSize = 11 * fit;
-        AgeText.FontSize = 11 * fit;
+        var useStacked = stacked > sideBySide;
+        ArrangeHeader(useStacked ? HeaderArrangement.Stacked : HeaderArrangement.SideBySide);
+        var fit = useStacked ? stacked : sideBySide;
+        SetHeaderFonts(fit, fit);
     }
 
     private void Resize_DragDelta(object sender, DragDeltaEventArgs e)
