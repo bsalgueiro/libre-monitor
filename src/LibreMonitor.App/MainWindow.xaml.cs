@@ -352,7 +352,10 @@ public partial class MainWindow : Window
 
         if (_problem is not null)
         {
-            AgeText.Text = _problem;
+            // The number on screen is getting old while the service cannot be reached: say how old.
+            AgeText.Text = _problem == "reconnecting" && age is { TotalMinutes: >= 2 } old
+                ? $"not updating · {FormatAge(old)}"
+                : _problem;
             AgeText.Foreground = Palette.Brush(_problemIsFatal ? Palette.Low : Palette.High);
             return;
         }

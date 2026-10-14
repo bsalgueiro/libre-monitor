@@ -121,7 +121,10 @@ struct WidgetView: View {
                 Text(status.text)
                     .font(.system(size: 11 * infoScale))
                     .foregroundColor(status.color)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false) // never break a word; the number shrinks instead
             }
+            .layoutPriority(1)
         }
     }
 
@@ -340,7 +343,10 @@ struct WidgetView: View {
             switch problem {
             case .signInNeeded: return ("sign-in needed", theme.low)
             case .serviceChanged: return ("service changed", theme.low)
-            case .reconnecting: return ("reconnecting", theme.high)
+            case .reconnecting:
+                // The number on screen is getting old while we cannot reach the service: say how old.
+                if let age = model.age, age >= 120 { return ("not updating · \(formatAge(age))", theme.high) }
+                return ("reconnecting", theme.high)
             }
         }
 
