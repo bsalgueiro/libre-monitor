@@ -1,6 +1,7 @@
 name: Mac
 
-# Builds and tests the native macOS code. Runs only when something under mac/ (or this file) changes.
+# Builds and tests the native macOS code, and builds the app bundle. Runs only when something under mac/
+# (or this file) changes.
 on:
   push:
     branches: [macos, main]
@@ -25,3 +26,34 @@ jobs:
 
       - name: Test
         run: swift test
+
+      - name: Build the app (debug, for testing)
+        run: |
+          chmod +x scripts/make-app.sh
+          ./scripts/make-app.sh --debug
+
+      - name: Debug build contains developer mode
+        run: strings build/LibreMonitor.app/Contents/MacOS/LibreMonitor | grep -q -- '--simulate'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LibreMonitor-mac-debug
+          path: mac/build/LibreMonitor-mac.zip
+
+      - name: Build the app (release, universal)
+        run: ./scripts/make-app.sh
+
+      # The guarantee that matters: a build users receive must not even contain the developer switches.
+      - name: Release build contains no developer mode
+        run: |
+          if strings build/LibreMonitor.app/Contents/MacOS/LibreMonitor | grep -q -- '--simulate'; then
+            echo "Release binary contains developer-mode code"; exit 1
+          fi
+
+      - name: Release build is universal
+        run: lipo -archs build/LibreMonitor.app/Contents/MacOS/LibreMonitor
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LibreMonitor-mac-release
+          path: mac/build/LibreMonitor-mac.zip
