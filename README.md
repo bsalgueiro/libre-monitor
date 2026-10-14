@@ -29,6 +29,8 @@ Everything you need to install and use the widget. No programming knowledge requ
 - Optional low and high [alerts](#alerts) with your own limits: a Windows notification, a sound and a coloured widget border, with reminders and snooze.
 - Your follower login is stored encrypted for your Windows user only. It is never shown or sent anywhere except to LibreView.
 - It only reads data. It never changes anything in your account.
+- It does **not** keep your glucose history. It shows what LibreView provides at the moment, and nothing about your
+  readings is saved on your PC. For history, reports and sharing, use LibreView.
 
 The colours for low, in range and high are for display only. They are not alarms.
 
@@ -103,10 +105,6 @@ file's Properties before running it.
 
 Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also
 flag the single-file build.
-
-## Planned
-
-Local history database, CSV export.
 
 ---
 
@@ -215,4 +213,7 @@ anyone else to use them.
   covered by unit tests in `AlertTests.cs`. Thresholds are stored in mg/dL in `settings.json` whatever unit is displayed.
   In developer mode, simulated readings go through the same alert path, so alerts can be tried without real glucose
   changing (the notification says SIMULATED).
+- No glucose data is written to disk, on purpose: the only files are the encrypted login and `settings.json`
+  (preferences and alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out
+  of scope, because LibreView already keeps the user's history.
 - The client never uploads or changes data. Apart from the login request, it only reads.
