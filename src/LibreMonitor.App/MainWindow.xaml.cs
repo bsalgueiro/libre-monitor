@@ -442,7 +442,6 @@ public partial class MainWindow : Window
             InfoStack.Orientation = Orientation.Horizontal;
             UnitText.HorizontalAlignment = HorizontalAlignment.Left;
             AgeText.HorizontalAlignment = HorizontalAlignment.Left;
-            UnitText.Margin = new Thickness(0, 0, 8, 0);
         }
         else
         {
@@ -452,7 +451,6 @@ public partial class MainWindow : Window
             InfoStack.Orientation = Orientation.Vertical;
             UnitText.HorizontalAlignment = HorizontalAlignment.Right;
             AgeText.HorizontalAlignment = HorizontalAlignment.Right;
-            UnitText.Margin = new Thickness(0);
         }
     }
 
@@ -462,6 +460,18 @@ public partial class MainWindow : Window
         ArrowText.FontSize = 30 * valueScale;
         UnitText.FontSize = 11 * infoScale;
         AgeText.FontSize = 11 * infoScale;
+
+        // The gaps scale with the text as well. Fixed pixel gaps look right at the default size but make a large
+        // number crowd its arrow, and the unit run into the age text.
+        ArrowText.Margin = new Thickness((_settings.ShowGraph ? 8 : 12) * valueScale, 0, 0, 0);
+
+        var stacked = InfoStack.Orientation == Orientation.Horizontal;
+        UnitText.Margin = stacked ? new Thickness(0, 0, 7 * infoScale, 0) : new Thickness(0);
+        if (!_settings.ShowGraph)
+        {
+            // Space between the number and the line under it (the right-hand margin is only used with the graph).
+            InfoStack.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
+        }
     }
 
     /// <summary>Natural size of the header, at base font sizes, in the given arrangement.</summary>

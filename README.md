@@ -42,8 +42,9 @@ You need Windows 10 or 11 (64-bit). There is nothing to install and no need to b
 and run it.
 
 1. In the LibreLink phone app open **Connected apps > LibreLinkUp** and invite a second email address.
-2. Accept the invitation in the official LibreLinkUp app with that account. This also clears the terms and email
-   verification that the sign-in needs.
+2. Install the official LibreLinkUp app on a phone and create the account there with that email, then accept the
+   invitation. There is no website sign-up (see [www.librelinkup.com](https://www.librelinkup.com)). This also clears the
+   terms and email verification that the sign-in needs.
 3. Download **`LibreMonitor-win-x64.exe`** from the
    [latest release](https://github.com/bsalgueiro/libre-monitor/releases/latest) (under *Assets*).
 4. Run it and sign in with the **follower** account, not your main one.

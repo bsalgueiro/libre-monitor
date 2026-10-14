@@ -5,8 +5,20 @@
         WindowStartupLocation="CenterScreen" Topmost="True" Background="#14181F" Foreground="#E8ECF2">
     <StackPanel Margin="24">
         <TextBlock Text="LibreLinkUp follower account" FontSize="18" FontWeight="SemiBold"/>
-        <TextBlock Margin="0,6,0,16" TextWrapping="Wrap" Foreground="#9AA4B2"
+        <TextBlock Margin="0,6,0,10" TextWrapping="Wrap" Foreground="#9AA4B2"
                    Text="Use the second account that follows you in LibreLinkUp, not your main LibreLink login. The password is stored encrypted for your Windows user only."/>
+
+        <!-- There is no website sign-up: the account is created inside the LibreLinkUp app, after an invitation from LibreLink. -->
+        <Border Margin="0,0,0,16" Padding="10,8" CornerRadius="6" Background="#1E2530">
+            <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#9AA4B2">
+                <Run FontWeight="SemiBold" Foreground="#C5CDD8">You need a LibreLinkUp account.</Run>
+                There is no website sign-up. In LibreLink, open Connected apps &gt; LibreLinkUp and invite an email address,
+                then install the LibreLinkUp app on a phone and create the account there with that email.
+                More information at
+                <Hyperlink NavigateUri="https://www.librelinkup.com" RequestNavigate="Link_RequestNavigate" Foreground="#6CB6FF">www.librelinkup.com</Hyperlink>.
+            </TextBlock>
+        </Border>
+
         <TextBlock Text="Email"/>
         <TextBox x:Name="EmailBox" Margin="0,4,0,12" Padding="6"/>
         <TextBlock Text="Password"/>
