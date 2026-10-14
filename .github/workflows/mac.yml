@@ -1,0 +1,64 @@
+name: Mac
+
+# Builds and tests the native macOS code, and builds the app bundle. Runs only when something under mac/
+# (or this file) changes.
+on:
+  push:
+    branches: [macos, main]
+    paths: ['mac/**', '.github/workflows/mac.yml']
+  pull_request:
+    paths: ['mac/**', '.github/workflows/mac.yml']
+
+jobs:
+  test:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: mac
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Build
+        run: swift build
+
+      - name: Test
+        run: swift test
+
+      - name: Build the app (debug, for testing)
+        run: |
+          chmod +x scripts/make-app.sh
+          ./scripts/make-app.sh --debug
+
+      # Output goes to a file first: `grep -q` quits at the first match and would make `strings` fail with a broken pipe.
+      - name: Debug build contains developer mode
+        run: |
+          strings build/LibreMonitor.app/Contents/MacOS/LibreMonitor > debug-strings.txt
+          grep -q -- '--simulate' debug-strings.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LibreMonitor-mac-debug
+          path: mac/build/LibreMonitor-mac.zip
+
+      - name: Build the app (release, universal)
+        run: ./scripts/make-app.sh
+
+      # The guarantee that matters: a build users receive must not even contain the developer switches.
+      - name: Release build contains no developer mode
+        run: |
+          strings build/LibreMonitor.app/Contents/MacOS/LibreMonitor > release-strings.txt
+          test -s release-strings.txt   # the check below is meaningless if the dump is empty
+          if grep -q -- '--simulate' release-strings.txt; then
+            echo "Release binary contains developer-mode code"; exit 1
+          fi
+
+      - name: Release build is universal
+        run: lipo -archs build/LibreMonitor.app/Contents/MacOS/LibreMonitor
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LibreMonitor-mac-release
+          path: mac/build/LibreMonitor-mac.zip

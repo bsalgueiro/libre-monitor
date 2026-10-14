@@ -1,0 +1,353 @@
+import LibreMonitorKit
+import SwiftUI
+
+enum Corner: CaseIterable {
+    case topLeft, topRight, bottomLeft, bottomRight
+
+    var title: String {
+        switch self {
+        case .topLeft: return "Top left"
+        case .topRight: return "Top right"
+        case .bottomLeft: return "Bottom left"
+        case .bottomRight: return "Bottom right"
+        }
+    }
+
+    var isLeft: Bool { self == .topLeft || self == .bottomLeft }
+    var isTop: Bool { self == .topLeft || self == .topRight }
+}
+
+/// What the widget's right-click menu can ask the app to do. Settings that are plain values (units, range,
+/// appearance, always on top, menu bar icon) are bound directly to the model instead.
+struct WidgetActions {
+    var close: () -> Void
+    var moveToCorner: (Corner) -> Void
+    var hideToMenuBar: () -> Void
+    var showAlerts: () -> Void
+    var snoozeAlerts: (Int) -> Void
+    var resumeAlerts: () -> Void
+    var checkForUpdates: () -> Void
+    var showAbout: () -> Void
+    var signOut: () -> Void
+    var quit: () -> Void
+}
+
+/// The widget content: current value, trend arrow, age, and the graph. Laid out for 280 x 172 points and scaled
+/// with the window, like the Windows widget.
+struct WidgetView: View {
+    @ObservedObject var model: AppModel
+    let actions: WidgetActions
+
+    @Environment(\.colorScheme) private var colorScheme
+    @State private var hovering = false
+    @State private var overCloseButton = false
+
+    private static let defaultWidth: CGFloat = 280
+    private static let defaultHeight: CGFloat = 172
+
+    private static let clock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
+
+    // With the graph hidden, the header is scaled to fill the card. These describe the two arrangements at scale 1:
+    // the widest case is a 4-character value ("10.0") beside the longest status text ("sign-in needed").
+    //   side by side: value and arrow on the left, unit and status on the right (suits a wide, short card)
+    //   stacked:      value and arrow, with unit and status on one line underneath (lets the number grow on a small card)
+    private static let sideBySideDesign = CGSize(width: 250, height: 62)
+    private static let stackedDesign = CGSize(width: 175, height: 78)
+    private static let compactPadding = CGSize(width: 20, height: 14) // total, both sides
+
+    var body: some View {
+        let theme = WidgetTheme.forScheme(colorScheme)
+
+        GeometryReader { geometry in
+            let tint = valueTint(theme)
+            let status = statusText(theme)
+
+            if model.settings.showGraph {
+                graphLayout(geometry.size, theme: theme, tint: tint, status: status)
+            } else {
+                compactLayout(geometry.size, theme: theme, tint: tint, status: status)
+            }
+        }
+        // Without a content shape only drawn pixels (the graph) are clickable, so the menu opened nowhere else.
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .overlay {
+            // A coloured border while the reading is inside an alert zone, whether or not notifications are snoozed.
+            if let zone = model.alertZone {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(zone == .low ? theme.low : theme.high, lineWidth: 2)
+                    .allowsHitTesting(false)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            // Always in the view tree and only faded: if it were added and removed with the hover state, the state
+            // flickering off as the pointer reaches the button would remove it from under the cursor.
+            closeButton(theme)
+                .opacity(hovering || overCloseButton ? 1 : 0)
+                .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
+        }
+        .contextMenu { menuContent }
+    }
+
+    /// Value, arrow and unit/status, shared by both layouts so they can never drift apart.
+    /// `valueScale` and `infoScale` size the text; `spacingScale` keeps the gaps in proportion.
+    private func header(
+        valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat, arrowGap: CGFloat = 0,
+        theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View
+    {
+        HStack(alignment: .center, spacing: 8 * spacingScale) {
+            Text(valueText)
+                .font(.system(size: 46 * valueScale, weight: .semibold))
+                .foregroundColor(tint)
+                .opacity(model.isStale ? 0.5 : 1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+
+            Text(model.current?.trend.arrow ?? "")
+                .font(.system(size: 30 * valueScale))
+                .foregroundColor(tint)
+                .padding(.leading, arrowGap) // grows with the text, so a large number keeps a proportional gap to its arrow
+
+            Spacer(minLength: 16 * spacingScale)
+
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(model.settings.unit.label)
+                    .font(.system(size: 11 * infoScale))
+                    .foregroundColor(theme.muted)
+                Text(status.text)
+                    .font(.system(size: 11 * infoScale))
+                    .foregroundColor(status.color)
+            }
+        }
+    }
+
+    /// The normal layout: header on top, graph below. Text scales with the card.
+    private func graphLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        let scale = min(max(min(size.width / Self.defaultWidth, size.height / Self.defaultHeight), 0.75), 2.4)
+        let small = min(max(scale, 1), 1.7)
+
+        return VStack(alignment: .leading, spacing: 2) {
+            header(valueScale: scale, infoScale: small, spacingScale: 1, theme: theme, tint: tint, status: status)
+
+            GlucoseGraphView(
+                readings: model.readings, hours: model.settings.hours, unit: model.settings.unit,
+                now: model.now, theme: theme)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+    }
+
+    /// The graph is hidden: the header alone fills the card. Both arrangements are tried and the one that lets the
+    /// number grow larger is used, so a small card is not left mostly empty beside a small number.
+    private func compactLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        let plan = compactPlan(for: size)
+
+        // Only view construction in here: a view builder does not allow declarations such as local functions.
+        return Group {
+            if plan.stacked {
+                stackedHeader(fit: plan.fit, theme: theme, tint: tint, status: status)
+            } else {
+                header(valueScale: plan.fit, infoScale: plan.fit, spacingScale: plan.fit, arrowGap: 6 * plan.fit,
+                       theme: theme, tint: tint, status: status)
+            }
+        }
+        .padding(.horizontal, Self.compactPadding.width / 2)
+        .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
+    }
+
+    /// Which arrangement lets the number be larger at this size, and the scale to use for it.
+    private func compactPlan(for size: CGSize) -> (stacked: Bool, fit: CGFloat) {
+        let available = CGSize(
+            width: size.width - Self.compactPadding.width, height: size.height - Self.compactPadding.height)
+
+        func fit(_ design: CGSize) -> CGFloat {
+            min(max(min(available.width / design.width, available.height / design.height), 0.3), 8)
+        }
+
+        let sideBySide = fit(Self.sideBySideDesign)
+        let stacked = fit(Self.stackedDesign)
+        return stacked > sideBySide ? (true, stacked) : (false, sideBySide)
+    }
+
+    /// Value and arrow on top, unit and status on one line underneath, all scaled by `fit`.
+    private func stackedHeader(fit: CGFloat, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        VStack(spacing: 5 * fit) {
+            HStack(alignment: .center, spacing: 14 * fit) {
+                Text(valueText)
+                    .font(.system(size: 46 * fit, weight: .semibold))
+                    .foregroundColor(tint)
+                    .opacity(model.isStale ? 0.5 : 1)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+
+                Text(model.current?.trend.arrow ?? "")
+                    .font(.system(size: 30 * fit))
+                    .foregroundColor(tint)
+            }
+
+            infoLine(fit: fit, theme: theme, status: status)
+        }
+    }
+
+    /// "mg/dL  ·  just now" as one run of text. The separator is spaces and a dot inside the string, so the gaps are
+    /// part of the font and grow exactly with it, however large the widget is made.
+    private func infoLine(fit: CGFloat, theme: WidgetTheme, status: (text: String, color: Color)) -> some View {
+        var line = AttributedString(model.settings.unit.label)
+        line.foregroundColor = theme.muted
+
+        var separator = AttributedString("   ·   ")
+        separator.foregroundColor = theme.muted
+
+        var state = AttributedString(status.text)
+        state.foregroundColor = status.color
+
+        line.append(separator)
+        line.append(state)
+
+        return Text(line)
+            .font(.system(size: 11 * fit))
+            .lineLimit(1)
+    }
+
+    /// Top-left, like the close button of a macOS window. Fades in while the pointer is over the widget.
+    /// Hides it to the menu bar, or quits when the icon is off.
+    private func closeButton(_ theme: WidgetTheme) -> some View {
+        Button { actions.close() } label: {
+            ZStack {
+                Circle().fill(theme.muted.opacity(0.28))
+                Image(systemName: "xmark")
+                    .font(.system(size: 7, weight: .bold))
+                    .foregroundColor(theme.text.opacity(0.85))
+            }
+            .frame(width: 13, height: 13)
+            .frame(width: 22, height: 22) // a more generous click area than the drawn circle
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { overCloseButton = $0 } // stays visible while the pointer is on it, whatever the card reports
+        .padding(.top, 3)
+        .padding(.leading, 4)
+    }
+
+    @ViewBuilder
+    private var menuContent: some View {
+        Menu("Time range") {
+            Picker("Time range", selection: $model.settings.hours) {
+                Text("Last 3 hours").tag(3)
+                Text("Last 6 hours").tag(6)
+                Text("Last 12 hours").tag(12)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        }
+        .disabled(!model.settings.showGraph) // the range only affects the graph
+
+        Toggle("Show graph", isOn: $model.settings.showGraph)
+
+        Menu("Units") {
+            Picker("Units", selection: $model.settings.unit) {
+                ForEach(GlucoseUnit.allCases, id: \.self) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        }
+
+        Menu("Appearance") {
+            Picker("Appearance", selection: $model.settings.theme) {
+                Text("Follow system").tag(ThemeChoice.system)
+                Text("Light").tag(ThemeChoice.light)
+                Text("Dark").tag(ThemeChoice.dark)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        }
+
+        Divider()
+
+        Button("Alerts…") { actions.showAlerts() }
+
+        let snoozed = model.snoozedUntil.flatMap { $0 > model.now ? $0 : nil }
+        Menu(snoozed.map { "Snooze alerts (until \(Self.clock.string(from: $0)))" } ?? "Snooze alerts") {
+            Button("For 30 minutes") { actions.snoozeAlerts(30) }
+            Button("For 1 hour") { actions.snoozeAlerts(60) }
+            Button("For 2 hours") { actions.snoozeAlerts(120) }
+            Divider()
+            Button("Resume alerts") { actions.resumeAlerts() }.disabled(snoozed == nil)
+        }
+
+        Divider()
+
+        Menu("Move to corner") {
+            ForEach(Corner.allCases, id: \.self) { corner in
+                Button(corner.title) { actions.moveToCorner(corner) }
+            }
+        }
+
+        Toggle("Always on top", isOn: $model.settings.alwaysOnTop)
+        Toggle("Show menu bar icon", isOn: $model.settings.showStatusIcon)
+        // Hiding the widget without the menu bar item would leave no way to bring it back.
+        Button("Hide to menu bar") { actions.hideToMenuBar() }
+            .disabled(!model.settings.showStatusIcon)
+
+        #if DEBUG
+        if model.devEnabled {
+            Divider()
+            Menu("Developer: simulate reading") {
+                Picker("Scenario", selection: $model.simulationIndex) {
+                    Text("Use real data").tag(-1)
+                    ForEach(Array(Simulation.scenarios.enumerated()), id: \.offset) { index, scenario in
+                        Text(scenario.name).tag(index)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+        }
+        #endif
+
+        Divider()
+
+        Button("Check for updates…") { actions.checkForUpdates() }
+        Button("About Libre Monitor") { actions.showAbout() }
+        Button("Sign out and quit") { actions.signOut() }
+        Button("Quit") { actions.quit() }
+    }
+
+    private var valueText: String {
+        guard let current = model.current else { return "--" }
+        return GlucoseUnits.format(current.mgPerDl, unit: model.settings.unit)
+    }
+
+    private func valueTint(_ theme: WidgetTheme) -> Color {
+        guard let current = model.current else { return theme.muted }
+        return model.isStale ? theme.muted : theme.color(forMgPerDl: current.mgPerDl)
+    }
+
+    private func statusText(_ theme: WidgetTheme) -> (text: String, color: Color) {
+        if model.isSimulated {
+            // Make it impossible to mistake a fake value for a real one.
+            return ("SIMULATED", theme.high)
+        }
+
+        if let problem = model.problem {
+            switch problem {
+            case .signInNeeded: return ("sign-in needed", theme.low)
+            case .serviceChanged: return ("service changed", theme.low)
+            case .reconnecting: return ("reconnecting", theme.high)
+            }
+        }
+
+        if let age = model.age {
+            return (formatAge(age), model.isStale ? theme.high : theme.muted)
+        }
+
+        return (model.realUpdate == nil ? "connecting" : "no reading", theme.muted)
+    }
+}
