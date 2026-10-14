@@ -30,6 +30,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController!
     private var loginController: LoginWindowController?
     private let aboutController = AboutWindowController()
+    private let alertsController = AlertsWindowController()
+    private let alertEvaluator = AlertEvaluator()
+    private var lastAlertSettings = AlertSettings()
     private var tickTimer: Timer?
     private var settingsObserver: AnyCancellable?
     private var lastScrollChange = Date.distantPast
@@ -44,6 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let compactDefaultSize = NSSize(width: 260, height: 132)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Notifier.shared.start()
+        lastAlertSettings = model.settings.alerts
         panel = makePanel()
         statusItem = StatusItemController(
             isWidgetVisible: { [weak self] in self?.panel.isVisible ?? false },
@@ -60,7 +65,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsObserver = model.$settings.sink { [weak self] settings in
             // @Published fires before the value is stored, so use the value it hands over and refresh afterwards.
             self?.applySettings(settings)
-            Task { @MainActor in self?.refreshStatusItem() }
+            if settings.alerts != self?.lastAlertSettings {
+                // New limits start a fresh episode.
+                self?.lastAlertSettings = settings.alerts
+                self?.alertEvaluator.reset()
+            }
+            Task { @MainActor in
+                self?.refreshStatusItem()
+                self?.evaluateAlerts()
+            }
         }
 
         observeWake()
@@ -100,6 +113,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             close: { [weak self] in self?.closeWidget() },
             moveToCorner: { [weak self] corner in self?.moveToCorner(corner) },
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
+            showAlerts: { [weak self] in self?.showAlerts() },
+            snoozeAlerts: { [weak self] minutes in self?.snoozeAlerts(minutes: minutes) },
+            resumeAlerts: { [weak self] in self?.resumeAlerts() },
             checkForUpdates: { NSWorkspace.shared.open(AppInfo.releasesUrl) },
             showAbout: { [weak self] in self?.showAbout() },
             signOut: { [weak self] in self?.signOutAndQuit() },
@@ -209,6 +225,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Task { @MainActor in
                 self?.model.apply(update)
                 self?.refreshStatusItem()
+                self?.evaluateAlerts()
             }
         }
         monitor.onFailure = { [weak self] _, fatal in
@@ -218,14 +235,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         monitor.onServiceChanged = { [weak self] _ in
-            // LibreLinkUp has changed or blocked this client. The widget says so; the right-click menu has
-            // "Check for updates…". A system notification for this arrives with the alerts work.
+            // LibreLinkUp has changed or blocked this client. The widget says so, a notification appears once (clicking
+            // it opens the releases page), and the right-click menu has "Check for updates…".
             Task { @MainActor in
                 #if DEBUG
                 if self?.model.isSimulated == true { return }
                 #endif
                 self?.model.markServiceChanged()
                 self?.refreshStatusItem()
+                Notifier.shared.post(
+                    title: "Can't read LibreLinkUp",
+                    body: "Abbott may have changed or blocked the service. Click here to look for a newer version of Libre Monitor.",
+                    sound: false, openURL: AppInfo.releasesUrl)
             }
         }
         monitor.start()
@@ -244,6 +265,64 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func tick() {
         model.tick()
         refreshStatusItem()
+        evaluateAlerts()
+    }
+
+    // MARK: - Alerts
+
+    private func evaluateAlerts() {
+        let now = Date()
+        let settings = model.settings.alerts
+        let current = model.current
+
+        if let raised = alertEvaluator.evaluate(settings, current, now: now) {
+            deliver(raised, now: now)
+        }
+
+        model.alertZone = AlertEvaluator.classify(settings, current, now: now)
+        if let until = model.snoozedUntil, until <= now { model.snoozedUntil = nil }
+    }
+
+    private func deliver(_ alert: AlertRaised, now: Date) {
+        let unit = model.settings.unit
+        let low = alert.kind == .low
+        var title = alert.isReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose")
+        if model.isSimulated { title = "SIMULATED · " + title }
+
+        let value = GlucoseUnits.format(alert.reading.mgPerDl, unit: unit)
+        let body = "\(value) \(unit.label) \(alert.reading.trend.arrow) · \(formatAge(now.timeIntervalSince(alert.reading.timestamp)))"
+        let sound = model.settings.alerts.sound
+
+        Notifier.shared.post(title: title, body: body, sound: sound) { posted in
+            // Without a notification (refused, or not running as an app) the sound and the card's border still work.
+            if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
+        }
+    }
+
+    private func showAlerts() {
+        alertsController.show(
+            unit: model.settings.unit, settings: model.settings.alerts,
+            sendTest: { sound, done in
+                Notifier.shared.post(title: "Test alert", body: "This is how a glucose alert will look.", sound: sound) { posted in
+                    DispatchQueue.main.async {
+                        if !posted && sound { NSSound.beep() }
+                        done(posted)
+                    }
+                }
+            },
+            onSave: { [weak self] new in self?.model.settings.alerts = new })
+    }
+
+    private func snoozeAlerts(minutes: Int) {
+        let until = Date().addingTimeInterval(TimeInterval(minutes * 60))
+        alertEvaluator.snooze(until: until)
+        model.snoozedUntil = until
+    }
+
+    private func resumeAlerts() {
+        alertEvaluator.resume()
+        model.snoozedUntil = nil
+        evaluateAlerts()
     }
 
     private func refreshStatusItem() {

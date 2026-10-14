@@ -23,6 +23,9 @@ struct WidgetActions {
     var close: () -> Void
     var moveToCorner: (Corner) -> Void
     var hideToMenuBar: () -> Void
+    var showAlerts: () -> Void
+    var snoozeAlerts: (Int) -> Void
+    var resumeAlerts: () -> Void
     var checkForUpdates: () -> Void
     var showAbout: () -> Void
     var signOut: () -> Void
@@ -41,6 +44,12 @@ struct WidgetView: View {
 
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
+
+    private static let clock: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter
+    }()
 
     // With the graph hidden, the header is scaled to fill the card. These describe the two arrangements at scale 1:
     // the widest case is a 4-character value ("10.0") beside the longest status text ("sign-in needed").
@@ -66,6 +75,14 @@ struct WidgetView: View {
         // Without a content shape only drawn pixels (the graph) are clickable, so the menu opened nowhere else.
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
+        .overlay {
+            // A coloured border while the reading is inside an alert zone, whether or not notifications are snoozed.
+            if let zone = model.alertZone {
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(zone == .low ? theme.low : theme.high, lineWidth: 2)
+                    .allowsHitTesting(false)
+            }
+        }
         .overlay(alignment: .topLeading) {
             // Always in the view tree and only faded: if it were added and removed with the hover state, the state
             // flickering off as the pointer reaches the button would remove it from under the cursor.
@@ -250,6 +267,19 @@ struct WidgetView: View {
             }
             .pickerStyle(.inline)
             .labelsHidden()
+        }
+
+        Divider()
+
+        Button("Alerts…") { actions.showAlerts() }
+
+        let snoozed = model.snoozedUntil.flatMap { $0 > model.now ? $0 : nil }
+        Menu(snoozed.map { "Snooze alerts (until \(Self.clock.string(from: $0)))" } ?? "Snooze alerts") {
+            Button("For 30 minutes") { actions.snoozeAlerts(30) }
+            Button("For 1 hour") { actions.snoozeAlerts(60) }
+            Button("For 2 hours") { actions.snoozeAlerts(120) }
+            Divider()
+            Button("Resume alerts") { actions.resumeAlerts() }.disabled(snoozed == nil)
         }
 
         Divider()

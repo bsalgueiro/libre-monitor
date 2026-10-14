@@ -18,6 +18,11 @@ final class AppModel: ObservableObject {
     @Published private(set) var realUpdate: MonitorUpdate?
     @Published private(set) var problem: Problem?
     private var serviceChanged = false
+
+    /// Which alert zone the current reading is in (drives the coloured card border); nil when in range or alerts are off.
+    @Published var alertZone: AlertKind?
+    /// While set (and in the future), alert notifications are paused. Shown in the menu.
+    @Published var snoozedUntil: Date?
     /// Refreshed on a timer so the age text and the graph's "now" edge keep moving between polls.
     @Published private(set) var now = Date()
     @Published var settings: WidgetSettings {
