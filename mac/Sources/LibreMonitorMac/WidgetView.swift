@@ -36,6 +36,7 @@ struct WidgetView: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var hovering = false
+    @State private var overCloseButton = false
 
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
@@ -88,12 +89,16 @@ struct WidgetView: View {
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
         .overlay(alignment: .topLeading) {
-            if hovering { closeButton(theme) }
+            // Always in the view tree and only faded: if it were added and removed with the hover state, the state
+            // flickering off as the pointer reaches the button would remove it from under the cursor.
+            closeButton(theme)
+                .opacity(hovering || overCloseButton ? 1 : 0)
+                .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
         }
         .contextMenu { menuContent }
     }
 
-    /// Top-left, like the close button of a macOS window. Appears while the pointer is over the widget.
+    /// Top-left, like the close button of a macOS window. Fades in while the pointer is over the widget.
     /// Hides it to the menu bar, or quits when the icon is off.
     private func closeButton(_ theme: WidgetTheme) -> some View {
         Button { actions.close() } label: {
@@ -108,6 +113,7 @@ struct WidgetView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { overCloseButton = $0 } // stays visible while the pointer is on it, whatever the card reports
         .padding(.top, 3)
         .padding(.leading, 4)
     }
