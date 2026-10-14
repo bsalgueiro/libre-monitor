@@ -45,6 +45,7 @@
                 <MenuItem x:Name="Range3" Header="Last 3 hours" Click="Range_Click" Tag="3"/>
                 <MenuItem x:Name="Range6" Header="Last 6 hours" Click="Range_Click" Tag="6"/>
                 <MenuItem x:Name="Range12" Header="Last 12 hours" Click="Range_Click" Tag="12"/>
+                <MenuItem x:Name="GraphItem" Header="Show graph" IsCheckable="True" Click="Graph_Click"/>
                 <Separator/>
                 <MenuItem Header="Units">
                     <MenuItem x:Name="UnitMg" Header="mg/dL" Click="Unit_Click" Tag="MgPerDl"/>
@@ -81,17 +82,17 @@
 
         <Grid Margin="16,10,14,6">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
+                <RowDefinition x:Name="HeaderRow" Height="Auto"/>
+                <RowDefinition x:Name="GraphRow" Height="*"/>
             </Grid.RowDefinitions>
 
             <Grid Grid.Row="0">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                <StackPanel x:Name="ValueStack" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                     <TextBlock x:Name="ValueText" Text="--" FontSize="46" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <TextBlock x:Name="ArrowText" FontSize="30" Margin="8,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,18,0">
+                <StackPanel x:Name="InfoStack" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,18,0">
                     <TextBlock x:Name="UnitText" Text="mg/dL" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"/>
                     <TextBlock x:Name="AgeText" Text="connecting" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"/>
                 </StackPanel>

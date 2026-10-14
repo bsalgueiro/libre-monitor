@@ -53,12 +53,20 @@ public partial class MainWindow : Window
         Topmost = _settings.Topmost;
         Graph.Hours = RangeChoices.Contains(_settings.Hours) ? _settings.Hours : 6;
         Graph.Unit = _settings.Unit;
+        ApplyGraphMode(); // sets the minimum size for the mode before the saved size is applied
         ApplyTheme();
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
-        if (_settings is { Width: { } width, Height: { } height })
+
+        var (savedWidth, savedHeight) = SizeForCurrentMode();
+        if (savedWidth is { } width && savedHeight is { } height)
         {
             Width = Math.Clamp(width, MinWidth, MaxWidth);
             Height = Math.Clamp(height, MinHeight, MaxHeight);
+        }
+        else if (!_settings.ShowGraph)
+        {
+            Width = CompactDefaultWidth;
+            Height = CompactDefaultHeight;
         }
 
         ApplyPosition();
@@ -280,6 +288,12 @@ public partial class MainWindow : Window
 
     private void RenderAge()
     {
+        RenderAgeCore();
+        ApplyLayoutScale(); // the age text changes width ("just now" to "12 min ago"), which matters when the header fills the card
+    }
+
+    private void RenderAgeCore()
+    {
         var current = _last?.Snapshot.Current;
         var age = current is null ? (TimeSpan?)null : DateTimeOffset.UtcNow - current.TimestampUtc;
         var stale = age > StaleAfter;
@@ -349,9 +363,56 @@ public partial class MainWindow : Window
     {
         _settings.Left = Left;
         _settings.Top = Top;
-        _settings.Width = Width;
-        _settings.Height = Height;
+
+        // Each mode (graph shown or hidden) remembers its own size.
+        if (_settings.ShowGraph)
+        {
+            _settings.Width = Width;
+            _settings.Height = Height;
+        }
+        else
+        {
+            _settings.CompactWidth = Width;
+            _settings.CompactHeight = Height;
+        }
+
         _settings.Save();
+    }
+
+    // ---- graph on / off --------------------------------------------------------------------
+
+    private const double CompactDefaultWidth = 260;
+    private const double CompactDefaultHeight = 132;
+
+    private (double? Width, double? Height) SizeForCurrentMode() =>
+        _settings.ShowGraph ? (_settings.Width, _settings.Height) : (_settings.CompactWidth, _settings.CompactHeight);
+
+    /// <summary>Shows or hides the graph. Without it the header takes the whole card and can be made much smaller.</summary>
+    private void ApplyGraphMode()
+    {
+        var show = _settings.ShowGraph;
+
+        Graph.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        HeaderRow.Height = show ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        GraphRow.Height = show ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+        MinWidth = show ? 224 : 190;  // below this the unit and age text become unreadably small
+        MinHeight = show ? 148 : 100;
+
+        ApplyLayoutScale();
+    }
+
+    private void Graph_Click(object sender, RoutedEventArgs e)
+    {
+        RememberPosition(); // keeps the size of the mode being left, so switching back restores it
+
+        _settings.ShowGraph = GraphItem.IsChecked;
+        ApplyGraphMode();
+
+        var (width, height) = SizeForCurrentMode();
+        Width = Math.Clamp(width ?? (_settings.ShowGraph ? 304 : CompactDefaultWidth), MinWidth, MaxWidth);
+        Height = Math.Clamp(height ?? (_settings.ShowGraph ? 196 : CompactDefaultHeight), MinHeight, MaxHeight);
+
+        RememberPosition();
     }
 
     // ---- resizing --------------------------------------------------------------------------
@@ -360,15 +421,52 @@ public partial class MainWindow : Window
     private const double DefaultCardWidth = 280;
     private const double DefaultCardHeight = 172;
 
-    private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
-    {
-        var scale = Math.Clamp(Math.Min((ActualWidth - 24) / DefaultCardWidth, (ActualHeight - 24) / DefaultCardHeight), 0.75, 2.4);
-        var small = Math.Clamp(scale, 1, 1.7);
+    private void Window_SizeChanged(object sender, SizeChangedEventArgs e) => ApplyLayoutScale();
 
-        ValueText.FontSize = 46 * scale;
-        ArrowText.FontSize = 30 * scale;
-        UnitText.FontSize = 11 * small;
-        AgeText.FontSize = 11 * small;
+    /// <summary>
+    /// With the graph shown the text scales with the card as a whole. With the graph hidden the number, arrow, unit
+    /// and age are scaled together, by their own measured size, until they fill the space the card has.
+    /// </summary>
+    private void ApplyLayoutScale()
+    {
+        if (_settings.ShowGraph)
+        {
+            var scale = Math.Clamp(Math.Min((ActualWidth - 24) / DefaultCardWidth, (ActualHeight - 24) / DefaultCardHeight), 0.75, 2.4);
+            var small = Math.Clamp(scale, 1, 1.7);
+
+            ValueText.FontSize = 46 * scale;
+            ArrowText.FontSize = 30 * scale;
+            UnitText.FontSize = 11 * small;
+            AgeText.FontSize = 11 * small;
+            InfoStack.Margin = new Thickness(0, 0, 18, 0); // room for the close button
+            return;
+        }
+
+        // Measure the header at its base size, then pick the largest scale at which it still fits.
+        // The close-button margin is dropped here: it does not scale with the text, so keeping it would make
+        // the number and the info block collide in narrow cards.
+        InfoStack.Margin = new Thickness(0);
+        ValueText.FontSize = 46;
+        ArrowText.FontSize = 30;
+        UnitText.FontSize = 11;
+        AgeText.FontSize = 11;
+
+        var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        ValueStack.Measure(unbounded);
+        InfoStack.Measure(unbounded);
+
+        var naturalWidth = ValueStack.DesiredSize.Width + InfoStack.DesiredSize.Width + 24;
+        var naturalHeight = Math.Max(ValueStack.DesiredSize.Height, InfoStack.DesiredSize.Height);
+        if (naturalWidth <= 0 || naturalHeight <= 0) return;
+
+        var availableWidth = ActualWidth - 24 - 30; // shadow margin, then the card's own padding
+        var availableHeight = ActualHeight - 24 - 16;
+        var fit = Math.Clamp(Math.Min(availableWidth / naturalWidth, availableHeight / naturalHeight), 0.3, 8);
+
+        ValueText.FontSize = 46 * fit;
+        ArrowText.FontSize = 30 * fit;
+        UnitText.FontSize = 11 * fit;
+        AgeText.FontSize = 11 * fit;
     }
 
     private void Resize_DragDelta(object sender, DragDeltaEventArgs e)
@@ -418,6 +516,8 @@ public partial class MainWindow : Window
 
     private void Window_MouseWheel(object sender, MouseWheelEventArgs e)
     {
+        if (!_settings.ShowGraph) return; // the range only affects the graph
+
         var index = Array.IndexOf(RangeChoices, (int)Graph.Hours);
         index = Math.Clamp(index + (e.Delta > 0 ? -1 : 1), 0, RangeChoices.Length - 1);
         SetRange(RangeChoices[index]);
@@ -439,6 +539,7 @@ public partial class MainWindow : Window
         Range3.IsChecked = (int)Graph.Hours == 3;
         Range6.IsChecked = (int)Graph.Hours == 6;
         Range12.IsChecked = (int)Graph.Hours == 12;
+        GraphItem.IsChecked = _settings.ShowGraph;
         TopmostItem.IsChecked = Topmost;
         foreach (var (item, index) in _simulationItems)
         {
