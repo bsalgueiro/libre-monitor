@@ -28,7 +28,7 @@ A small, read-only widget for Windows and macOS.
 </div>
 
 > **Not a medical device. Do not make treatment decisions from this app.**
-> Independent project, not affiliated with or endorsed by Abbott.
+> A free hobby project, not made for money. Independent, not affiliated with or endorsed by Abbott.
 
 ## How it works
 
@@ -355,6 +355,7 @@ standard open-source licence to CC BY.
 ## Trademarks and disclaimer
 
 FreeStyle, Libre, LibreLink, LibreLinkUp and LibreView are trademarks of Abbott. They are used here only to say what this
-software works with. This is an independent, unofficial project: it is not made, approved or supported by Abbott, and it
-uses an interface that Abbott does not publish for third parties and may change or block at any time. It is provided
+software works with. This is a free, non-commercial hobby project, made as a personal project and not for money: it is not
+sold, has no ads and earns nothing. It is independent and unofficial: it is not made, approved or supported by Abbott, and
+it uses an interface that Abbott does not publish for third parties and may change or block at any time. It is provided
 as is, without warranty, and is not a medical device.
