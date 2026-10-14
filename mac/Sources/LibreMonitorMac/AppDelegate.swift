@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import LibreMonitorKit
 import SwiftUI
 
@@ -29,6 +30,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController!
     private var loginController: LoginWindowController?
     private var tickTimer: Timer?
+    private var settingsObserver: AnyCancellable?
+    private var lastScrollChange = Date.distantPast
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         panel = makePanel()
@@ -36,7 +39,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isWidgetVisible: { [weak self] in self?.panel.isVisible ?? false },
             toggleWidget: { [weak self] in self?.toggleWidget() },
             quit: { NSApp.terminate(nil) })
-        statusItem.isVisible = model.settings.showStatusIcon
+        applySettings(model.settings)
+        settingsObserver = model.$settings.sink { [weak self] settings in
+            // @Published fires before the value is stored, so use the value it hands over and refresh afterwards.
+            self?.applySettings(settings)
+            Task { @MainActor in self?.refreshStatusItem() }
+        }
 
         observeWake()
         tickTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { [weak self] _ in
@@ -46,6 +54,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         #if DEBUG
         // Developer mode (Debug builds only): --simulate N starts with scenario N showing.
         let dev = DevOptions.parse(CommandLine.arguments, allowed: true)
+        model.devEnabled = dev.enabled
         if let scenario = dev.scenario {
             model.simulate(Simulation.scenarios[scenario])
         }
@@ -71,9 +80,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makePanel() -> WidgetPanel {
         let panel = WidgetPanel()
         let actions = WidgetActions(
+            moveToCorner: { [weak self] corner in self?.moveToCorner(corner) },
+            hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
+            showAbout: { [weak self] in self?.showAbout() },
             signOut: { [weak self] in self?.signOutAndQuit() },
             quit: { NSApp.terminate(nil) })
         panel.contentView = WidgetPanel.makeContent(rootView: WidgetView(model: model, actions: actions))
+        panel.onScroll = { [weak self] delta in self?.scrolled(delta) }
 
         let name = "LibreMonitorWidget"
         if !panel.setFrameUsingName(name) {
@@ -87,7 +100,58 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func toggleWidget() {
-        if panel.isVisible { panel.orderOut(nil) } else { panel.orderFrontRegardless() }
+        if panel.isVisible { hideToMenuBar() } else { panel.orderFrontRegardless() }
+    }
+
+    /// The widget is only ever hidden while the menu bar item is there to bring it back.
+    private func hideToMenuBar() {
+        guard model.settings.showStatusIcon else { return }
+        panel.orderOut(nil)
+    }
+
+    private func moveToCorner(_ corner: Corner) {
+        guard let area = (panel.screen ?? NSScreen.main)?.visibleFrame else { return }
+
+        let inset: CGFloat = 16
+        let size = panel.frame.size
+        let x = corner.isLeft ? area.minX + inset : area.maxX - size.width - inset
+        let y = corner.isTop ? area.maxY - size.height - inset : area.minY + inset
+        panel.setFrameOrigin(NSPoint(x: x, y: y)) // the frame autosave remembers the new place
+    }
+
+    /// Scrolling over the widget steps the graph range between 3, 6 and 12 hours, like the Windows wheel.
+    private func scrolled(_ delta: CGFloat) {
+        // A trackpad flick sends a long stream of events; one step per gesture is enough.
+        guard abs(delta) > 0.5, Date().timeIntervalSince(lastScrollChange) > 0.3 else { return }
+
+        let choices = [3, 6, 12]
+        let index = choices.firstIndex(of: model.settings.hours) ?? 1
+        let next = min(max(index + (delta > 0 ? -1 : 1), 0), choices.count - 1)
+        guard next != index else { return }
+
+        model.settings.hours = choices[next]
+        lastScrollChange = Date()
+    }
+
+    private func applySettings(_ settings: WidgetSettings) {
+        panel.level = settings.alwaysOnTop ? .floating : .normal
+        statusItem.isVisible = settings.showStatusIcon
+
+        switch settings.theme {
+        case .system: panel.appearance = nil
+        case .light: panel.appearance = NSAppearance(named: .aqua)
+        case .dark: panel.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+
+    private func showAbout() {
+        let alert = NSAlert()
+        alert.messageText = "Libre Monitor"
+        alert.informativeText = "Shows glucose data that the LibreLink app has already uploaded, read through "
+            + "LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
+            + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions."
+        NSApp.activate(ignoringOtherApps: true)
+        alert.runModal()
     }
 
     // MARK: - Monitoring

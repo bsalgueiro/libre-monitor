@@ -25,6 +25,14 @@ final class AppModel: ObservableObject {
     /// Developer mode: a fake reading standing in for the real one. Never exists in a Release build.
     @Published private(set) var simulation: SimulationScenario?
     @Published private(set) var simulatedUpdate: MonitorUpdate?
+    /// True only when started with --dev (or --simulate N): shows the "simulate reading" menu.
+    @Published var devEnabled = false
+
+    /// -1 means real data; otherwise the index into `Simulation.scenarios`. Bound to the developer menu.
+    var simulationIndex: Int {
+        get { simulation.flatMap { Simulation.scenarios.firstIndex(of: $0) } ?? -1 }
+        set { simulate(newValue < 0 ? nil : Simulation.scenarios[newValue]) }
+    }
     #endif
 
     init(settings: WidgetSettings = SettingsStore.load()) {

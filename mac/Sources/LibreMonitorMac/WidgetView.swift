@@ -1,8 +1,28 @@
 import LibreMonitorKit
 import SwiftUI
 
-/// What the widget's right-click menu can ask the app to do. Grows as menu items are added.
+enum Corner: CaseIterable {
+    case topLeft, topRight, bottomLeft, bottomRight
+
+    var title: String {
+        switch self {
+        case .topLeft: return "Top left"
+        case .topRight: return "Top right"
+        case .bottomLeft: return "Bottom left"
+        case .bottomRight: return "Bottom right"
+        }
+    }
+
+    var isLeft: Bool { self == .topLeft || self == .bottomLeft }
+    var isTop: Bool { self == .topLeft || self == .topRight }
+}
+
+/// What the widget's right-click menu can ask the app to do. Settings that are plain values (units, range,
+/// appearance, always on top, menu bar icon) are bound directly to the model instead.
 struct WidgetActions {
+    var moveToCorner: (Corner) -> Void
+    var hideToMenuBar: () -> Void
+    var showAbout: () -> Void
     var signOut: () -> Void
     var quit: () -> Void
 }
@@ -62,10 +82,74 @@ struct WidgetView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
         }
-        .contextMenu {
-            Button("Sign out and quit") { actions.signOut() }
-            Button("Quit") { actions.quit() }
+        .contextMenu { menuContent }
+    }
+
+    @ViewBuilder
+    private var menuContent: some View {
+        Menu("Time range") {
+            Picker("Time range", selection: $model.settings.hours) {
+                Text("Last 3 hours").tag(3)
+                Text("Last 6 hours").tag(6)
+                Text("Last 12 hours").tag(12)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
         }
+
+        Menu("Units") {
+            Picker("Units", selection: $model.settings.unit) {
+                ForEach(GlucoseUnit.allCases, id: \.self) { Text($0.label).tag($0) }
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        }
+
+        Menu("Appearance") {
+            Picker("Appearance", selection: $model.settings.theme) {
+                Text("Follow system").tag(ThemeChoice.system)
+                Text("Light").tag(ThemeChoice.light)
+                Text("Dark").tag(ThemeChoice.dark)
+            }
+            .pickerStyle(.inline)
+            .labelsHidden()
+        }
+
+        Divider()
+
+        Menu("Move to corner") {
+            ForEach(Corner.allCases, id: \.self) { corner in
+                Button(corner.title) { actions.moveToCorner(corner) }
+            }
+        }
+
+        Toggle("Always on top", isOn: $model.settings.alwaysOnTop)
+        Toggle("Show menu bar icon", isOn: $model.settings.showStatusIcon)
+        // Hiding the widget without the menu bar item would leave no way to bring it back.
+        Button("Hide to menu bar") { actions.hideToMenuBar() }
+            .disabled(!model.settings.showStatusIcon)
+
+        #if DEBUG
+        if model.devEnabled {
+            Divider()
+            Menu("Developer: simulate reading") {
+                Picker("Scenario", selection: $model.simulationIndex) {
+                    Text("Use real data").tag(-1)
+                    ForEach(Array(Simulation.scenarios.enumerated()), id: \.offset) { index, scenario in
+                        Text(scenario.name).tag(index)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+        }
+        #endif
+
+        Divider()
+
+        Button("About Libre Monitor") { actions.showAbout() }
+        Button("Sign out and quit") { actions.signOut() }
+        Button("Quit") { actions.quit() }
     }
 
     private var valueText: String {

@@ -23,6 +23,13 @@ final class WidgetPanel: NSPanel {
         maxSize = NSSize(width: 900, height: 640)
     }
 
+    /// Called with the vertical scroll amount when the wheel or trackpad scrolls over the widget.
+    var onScroll: ((CGFloat) -> Void)?
+
+    override func scrollWheel(with event: NSEvent) {
+        onScroll?(event.scrollingDeltaY)
+    }
+
     // A key window receives mouse-moved events, which the graph's hover readout needs.
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
