@@ -80,6 +80,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func makePanel() -> WidgetPanel {
         let panel = WidgetPanel()
         let actions = WidgetActions(
+            close: { [weak self] in self?.closeWidget() },
             moveToCorner: { [weak self] corner in self?.moveToCorner(corner) },
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
             showAbout: { [weak self] in self?.showAbout() },
@@ -101,6 +102,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func toggleWidget() {
         if panel.isVisible { hideToMenuBar() } else { panel.orderFrontRegardless() }
+    }
+
+    /// The close button: with the menu bar icon shown it hides there; without one, hiding would strand the app, so it quits.
+    private func closeWidget() {
+        if model.settings.showStatusIcon { hideToMenuBar() } else { NSApp.terminate(nil) }
     }
 
     /// The widget is only ever hidden while the menu bar item is there to bring it back.

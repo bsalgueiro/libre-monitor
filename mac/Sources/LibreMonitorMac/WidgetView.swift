@@ -20,6 +20,7 @@ enum Corner: CaseIterable {
 /// What the widget's right-click menu can ask the app to do. Settings that are plain values (units, range,
 /// appearance, always on top, menu bar icon) are bound directly to the model instead.
 struct WidgetActions {
+    var close: () -> Void
     var moveToCorner: (Corner) -> Void
     var hideToMenuBar: () -> Void
     var showAbout: () -> Void
@@ -34,6 +35,7 @@ struct WidgetView: View {
     let actions: WidgetActions
 
     @Environment(\.colorScheme) private var colorScheme
+    @State private var hovering = false
 
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
@@ -70,6 +72,7 @@ struct WidgetView: View {
                             .font(.system(size: 11 * small))
                             .foregroundColor(status.color)
                     }
+                    .padding(.trailing, 12) // leaves room for the close button
                 }
 
                 GlucoseGraphView(
@@ -82,7 +85,27 @@ struct WidgetView: View {
             .padding(.top, 10)
             .padding(.bottom, 6)
         }
+        // Without a content shape only drawn pixels (the graph) are clickable, so the menu opened nowhere else.
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .overlay(alignment: .topTrailing) {
+            if hovering { closeButton(theme) }
+        }
         .contextMenu { menuContent }
+    }
+
+    /// Appears while the pointer is over the widget. Hides it to the menu bar, or quits when the icon is off.
+    private func closeButton(_ theme: WidgetTheme) -> some View {
+        Button { actions.close() } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundColor(theme.muted)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .padding(.top, 6)
+        .padding(.trailing, 8)
     }
 
     @ViewBuilder
