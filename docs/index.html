@@ -115,6 +115,7 @@
   .flow .node span { font-size: .85rem; color: var(--muted); }
   .flow .arrow { align-self: center; color: var(--muted); font-size: 1.4rem; }
   .flow .node.me { border-color: var(--accent); }
+  .flow .node svg { display: block; width: 30px; height: 30px; margin: 0 auto 8px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   @media (max-width: 720px) { .flow .arrow { transform: rotate(90deg); width: 100%; text-align: center; } }
 
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
@@ -238,13 +239,13 @@
     <h2>How it works</h2>
     <p class="sub">The phone app reads the sensor and uploads to LibreView. Libre Monitor does <b>not</b> talk to the sensor. It signs in to the unofficial LibreLinkUp follower service and only reads what your phone has already uploaded.</p>
     <div class="flow">
-      <div class="node"><b>Sensor</b><span>on your arm</span></div>
+      <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg><b>Sensor</b><span>on your arm</span></div>
       <div class="arrow">→</div>
-      <div class="node"><b>LibreLink</b><span>your phone</span></div>
+      <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><path d="M11 18.5h2"/></svg><b>LibreLink</b><span>your phone</span></div>
       <div class="arrow">→</div>
-      <div class="node"><b>LibreView</b><span>Abbott's cloud</span></div>
+      <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.2 9.1 4.5 4.5 0 0 0 7 18Z"/></svg><b>LibreView</b><span>Abbott's cloud</span></div>
       <div class="arrow">→</div>
-      <div class="node me"><b>Libre Monitor</b><span>your desktop</span></div>
+      <div class="node me"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><b>Libre Monitor</b><span>your desktop</span></div>
     </div>
   </div>
 </section>
