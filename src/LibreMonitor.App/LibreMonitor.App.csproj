@@ -14,6 +14,8 @@
     <Version>0.1.0</Version>
     <!-- Windows Forms is only used for the notification-area icon (NotifyIcon). -->
     <UseWindowsForms>true</UseWindowsForms>
+    <!-- The icon of the exe in Explorer, the taskbar and Alt+Tab. Same artwork as the Mac app (mac/Resources/AppIcon.png). -->
+    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
