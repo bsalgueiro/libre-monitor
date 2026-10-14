@@ -22,6 +22,18 @@ struct LoginView: View {
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            // There is no website sign-up: the account is created inside the LibreLinkUp app, after an invitation from LibreLink.
+            // The markdown link opens in the default browser.
+            Text("**You need a LibreLinkUp account.** There is no website sign-up. In LibreLink, open "
+                + "Connected apps > LibreLinkUp and invite an email address, then install the LibreLinkUp app on a "
+                + "phone and create the account there with that email. More information at "
+                + "[www.librelinkup.com](https://www.librelinkup.com).")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(10)
+                .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.06)))
+
             TextField("Email", text: $email)
                 .textFieldStyle(.roundedBorder)
 

@@ -46,7 +46,7 @@ struct WidgetView: View {
     //   side by side: value and arrow on the left, unit and status on the right (suits a wide, short card)
     //   stacked:      value and arrow, with unit and status on one line underneath (lets the number grow on a small card)
     private static let sideBySideDesign = CGSize(width: 250, height: 62)
-    private static let stackedDesign = CGSize(width: 140, height: 72)
+    private static let stackedDesign = CGSize(width: 175, height: 78)
     private static let compactPadding = CGSize(width: 20, height: 14) // total, both sides
 
     var body: some View {
@@ -78,7 +78,7 @@ struct WidgetView: View {
     /// Value, arrow and unit/status, shared by both layouts so they can never drift apart.
     /// `valueScale` and `infoScale` size the text; `spacingScale` keeps the gaps in proportion.
     private func header(
-        valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat,
+        valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat, arrowGap: CGFloat = 0,
         theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View
     {
         HStack(alignment: .center, spacing: 8 * spacingScale) {
@@ -92,8 +92,9 @@ struct WidgetView: View {
             Text(model.current?.trend.arrow ?? "")
                 .font(.system(size: 30 * valueScale))
                 .foregroundColor(tint)
+                .padding(.leading, arrowGap) // grows with the text, so a large number keeps a proportional gap to its arrow
 
-            Spacer(minLength: 8 * spacingScale)
+            Spacer(minLength: 16 * spacingScale)
 
             VStack(alignment: .trailing, spacing: 0) {
                 Text(model.settings.unit.label)
@@ -135,7 +136,7 @@ struct WidgetView: View {
             if plan.stacked {
                 stackedHeader(fit: plan.fit, theme: theme, tint: tint, status: status)
             } else {
-                header(valueScale: plan.fit, infoScale: plan.fit, spacingScale: plan.fit,
+                header(valueScale: plan.fit, infoScale: plan.fit, spacingScale: plan.fit, arrowGap: 6 * plan.fit,
                        theme: theme, tint: tint, status: status)
             }
         }
@@ -159,8 +160,8 @@ struct WidgetView: View {
 
     /// Value and arrow on top, unit and status on one line underneath, all scaled by `fit`.
     private func stackedHeader(fit: CGFloat, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
-        VStack(spacing: 2 * fit) {
-            HStack(alignment: .center, spacing: 8 * fit) {
+        VStack(spacing: 5 * fit) {
+            HStack(alignment: .center, spacing: 14 * fit) {
                 Text(valueText)
                     .font(.system(size: 46 * fit, weight: .semibold))
                     .foregroundColor(tint)
@@ -173,14 +174,28 @@ struct WidgetView: View {
                     .foregroundColor(tint)
             }
 
-            HStack(spacing: 5 * fit) {
-                Text(model.settings.unit.label).foregroundColor(theme.muted)
-                Text("·").foregroundColor(theme.muted)
-                Text(status.text).foregroundColor(status.color)
-            }
+            infoLine(fit: fit, theme: theme, status: status)
+        }
+    }
+
+    /// "mg/dL  ·  just now" as one run of text. The separator is spaces and a dot inside the string, so the gaps are
+    /// part of the font and grow exactly with it, however large the widget is made.
+    private func infoLine(fit: CGFloat, theme: WidgetTheme, status: (text: String, color: Color)) -> some View {
+        var line = AttributedString(model.settings.unit.label)
+        line.foregroundColor = theme.muted
+
+        var separator = AttributedString("   ·   ")
+        separator.foregroundColor = theme.muted
+
+        var state = AttributedString(status.text)
+        state.foregroundColor = status.color
+
+        line.append(separator)
+        line.append(state)
+
+        return Text(line)
             .font(.system(size: 11 * fit))
             .lineLimit(1)
-        }
     }
 
     /// Top-left, like the close button of a macOS window. Fades in while the pointer is over the widget.
