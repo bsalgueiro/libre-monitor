@@ -52,6 +52,11 @@ enum KeychainStore {
     /// readable only by the exact app that created it, so macOS asked for permission again after every new build.
     /// Here the item allows any application to read it without asking. That is weaker: any program running as the
     /// user could read this login. Release builds never do this.
+    ///
+    /// SecAccess is deprecated, but it is the only way to build such an access list for the file-based keychain, which
+    /// is the only keychain an app without an Apple Developer account can use. Marking this function deprecated says
+    /// so on purpose and keeps the build free of warnings.
+    @available(macOS, deprecated: 10.10, message: "Deliberate: debug builds only, see the comment above.")
     private static func saveReadableByAnyBuild(_ data: Data) throws {
         // An item made earlier keeps its old restrictions on update, so replace it.
         SecItemDelete(baseQuery() as CFDictionary)
