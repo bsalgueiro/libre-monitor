@@ -16,6 +16,11 @@ struct AboutView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
+            Text("Nothing about your glucose readings is saved on this Mac. The only things stored are your login, in "
+                + "your Keychain, and your display preferences, such as units, theme, window position and alert limits.")
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
             Text("It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions.")
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
