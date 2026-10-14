@@ -1,27 +1,53 @@
-# libre-monitor
+<div align="center">
 
-A small, read-only desktop widget for your own FreeStyle Libre glucose data, for **Windows** and **macOS**.
-Free and open source: code under the [MIT licence](LICENSE), documentation under [CC BY 4.0](LICENSE-DOCS.md).
+<img src="docs/images/icon.png" alt="" width="120">
 
-The phone app reads the sensor and uploads to LibreView. This project does **not** talk to the sensor.
-It signs in to the unofficial LibreLinkUp follower API and only reads what the phone has already uploaded.
+# Libre Monitor
 
-```
-Sensor --> LibreLink (phone) --> LibreView cloud --> libre-monitor (desktop)
-```
+**Your FreeStyle Libre glucose, always visible on your desktop.**
+A small, read-only widget for Windows and macOS.
+
+[![Latest release](https://img.shields.io/github/v/release/bsalgueiro/libre-monitor?label=download&color=2ea44f)](https://github.com/bsalgueiro/libre-monitor/releases/latest)
+[![Licence: MIT](https://img.shields.io/badge/code-MIT-blue)](LICENSE)
+[![Docs: CC BY 4.0](https://img.shields.io/badge/docs-CC%20BY%204.0-lightgrey)](LICENSE-DOCS.md)
+![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20macOS-555)
+
+[Download](https://github.com/bsalgueiro/libre-monitor/releases/latest) ·
+[Get started](#getting-started) ·
+[Alerts](#alerts) ·
+[Troubleshooting](#if-the-widget-stops-updating) ·
+[For developers](#for-developers)
+
+<br>
+
+<img src="docs/images/widget-dark.png" alt="The widget in the dark theme: 121 mg/dL, a steady arrow and a six-hour graph" width="330">
+&nbsp;
+<img src="docs/images/widget-light.png" alt="The widget in the light theme" width="330">
+
+</div>
 
 > **Not a medical device. Do not make treatment decisions from this app.**
-> Not affiliated with or endorsed by Abbott.
+> Independent project, not affiliated with or endorsed by Abbott.
+
+## How it works
+
+The phone app reads the sensor and uploads to LibreView. This project does **not** talk to the sensor. It signs in to the
+unofficial LibreLinkUp follower service and only reads what the phone has already uploaded.
+
+```
+Sensor  -->  LibreLink (phone)  -->  LibreView cloud  -->  Libre Monitor (your desktop)
+```
 
 **Contents:** [For users](#for-users) · [For developers](#for-developers) · [License](#license) · [Trademarks](#trademarks-and-disclaimer)
 
 ---
-
 # For users
 
 Everything you need to install and use the widget. No programming knowledge required.
 
 ## What it does
+
+<img src="docs/images/widget-compact.png" alt="The compact view: only the number, arrow, unit and time of the last reading" width="260" align="right">
 
 - Borderless, always-on-top corner widget: current value, trend arrow and a smooth graph with the 70-180 mg/dL band and a 100 reference line.
 - Hover the graph for the value and time of any reading.
@@ -37,6 +63,30 @@ Everything you need to install and use the widget. No programming knowledge requ
   readings is saved on your PC. For history, reports and sharing, use LibreView.
 
 The colours for low, in range and high are for display only. They are not alarms.
+
+<br clear="all">
+
+<div align="center">
+<img src="docs/images/alert-low.png" alt="A low reading: red number and a red border around the widget" width="250">
+&nbsp;
+<img src="docs/images/alert-high.png" alt="A high reading: amber number and an amber border around the widget" width="250">
+<br>
+<sub>The border turns red or amber while a reading is outside your alert limits (these are simulated readings).</sub>
+</div>
+
+## On a Mac
+
+<div align="center">
+<img src="docs/images/mac-light.png" alt="The macOS widget in the light theme" width="250">
+&nbsp;
+<img src="docs/images/mac-compact.png" alt="The macOS widget with the graph hidden" width="250">
+&nbsp;
+<img src="docs/images/mac-alert-low.png" alt="The macOS widget with a red alert border and a reading tooltip" width="250">
+<br><br>
+<img src="docs/images/mac-menu.png" alt="The macOS right-click menu" width="360">
+<br>
+<sub>The macOS widget: light theme, compact view, a low alert (simulated), and the right-click menu.</sub>
+</div>
 
 ## Getting started
 
@@ -119,7 +169,13 @@ This app relies on a service that Abbott does not publish for third parties, so 
 are already on the newest version, the app needs a fix from its developer, so please report it on the project's page.
 Your own data and your LibreLink app are not affected either way. **Menu > About** shows which version you have.
 
-## macOS first-open warning
+## First-open warnings
+
+Neither app is signed with a paid certificate, so Windows and macOS each show a warning the first time. Both are expected
+and do not mean the file is damaged.
+
+<details>
+<summary><b>macOS first-open warning</b></summary>
 
 The Mac app is not notarised by Apple (that needs a paid Apple Developer account), so the first time you open it macOS says
 it cannot check it for malicious software. This is expected for an app from an independent developer; it does not mean
@@ -133,7 +189,10 @@ the file is damaged. To open it:
 Removing the warning needs an Apple Developer ID, which costs money every year. The app is signed with a free ad-hoc
 signature, which Apple Silicon Macs require in order to run it at all.
 
-## Windows SmartScreen warning
+</details>
+
+<details>
+<summary><b>Windows SmartScreen warning</b></summary>
 
 The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue
 **"Windows protected your PC"** window. This is expected for any unsigned program from an unknown publisher; it does not
@@ -147,6 +206,8 @@ file's Properties before running it.
 
 Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also
 flag the single-file build.
+
+</details>
 
 ---
 
