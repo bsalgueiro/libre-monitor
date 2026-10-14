@@ -27,15 +27,39 @@ final class WidgetPanel: NSPanel {
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 
+    private static let cornerRadius: CGFloat = 16
+
+    /// A blur that follows the card's rounded shape.
+    ///
+    /// A blur behind the window is drawn by the window server, so a layer corner radius does not clip it: the
+    /// square blur and the square shadow would show around the rounded card. A stretchable mask image is the
+    /// supported way to round it, and the shadow is recomputed whenever the layout changes so it follows the mask.
+    private final class RoundedBlurView: NSVisualEffectView {
+        override func layout() {
+            super.layout()
+            window?.invalidateShadow()
+        }
+    }
+
+    private static func roundedMask(radius: CGFloat) -> NSImage {
+        let edge = radius * 2 + 1
+        let image = NSImage(size: NSSize(width: edge, height: edge), flipped: false) { rect in
+            NSColor.black.setFill()
+            NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+            return true
+        }
+        image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+        image.resizingMode = .stretch
+        return image
+    }
+
     /// Native blur behind the SwiftUI content, rounded to match the card shape.
     static func makeContent(rootView: some View) -> NSView {
-        let effect = NSVisualEffectView()
+        let effect = RoundedBlurView()
         effect.material = .popover
         effect.blendingMode = .behindWindow
         effect.state = .active
-        effect.wantsLayer = true
-        effect.layer?.cornerRadius = 16
-        effect.layer?.masksToBounds = true
+        effect.maskImage = roundedMask(radius: cornerRadius)
 
         let hosting = NSHostingView(rootView: rootView)
         hosting.translatesAutoresizingMaskIntoConstraints = false
