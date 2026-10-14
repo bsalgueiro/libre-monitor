@@ -327,8 +327,31 @@
   </div>
 </section>
 
+<!-- first-open warnings -->
+<section>
+  <div class="wrap">
+    <h2 id="warnings">First-open warnings</h2>
+    <p class="sub">Neither app is signed with a paid certificate, so Windows and macOS each show a warning the first time. Both are expected and do not mean the file is damaged.</p>
+    <details>
+      <summary>Windows SmartScreen: "Windows protected your PC"</summary>
+      <p>The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue window. This is expected for any unsigned program from an unknown publisher. To run it:</p>
+      <ol><li>Click <b>More info</b>.</li><li>Click <b>Run anyway</b>.</li></ol>
+      <p>Windows remembers the choice for that file. If the file came from the internet, you can also tick <b>Unblock</b> in the file's Properties before running it. Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also flag the single-file build.</p>
+    </details>
+    <details>
+      <summary>macOS: "cannot check it for malicious software"</summary>
+      <p>The Mac app is not notarised by Apple (that needs a paid Apple Developer account), so the first time you open it macOS says it cannot check it for malicious software. To open it:</p>
+      <ol>
+        <li>Control-click (right-click) <b>LibreMonitor.app</b> in Applications and choose <b>Open</b>, then <b>Open</b> again. On recent macOS versions you may instead have to open <i>System Settings &gt; Privacy &amp; Security</i> and click <b>Open Anyway</b>.</li>
+        <li>If that does not work, run this once in Terminal, then open the app normally: <code>xattr -dr com.apple.quarantine /Applications/LibreMonitor.app</code></li>
+      </ol>
+      <p>The app is signed with a free ad-hoc signature, which Apple Silicon Macs require in order to run it at all.</p>
+    </details>
+  </div>
+</section>
+
 <!-- using -->
-<section id="using">
+<section class="alt" id="using">
   <div class="wrap">
     <h2>Using the widget</h2>
     <p class="sub">Position, size and preferences are remembered. Right-click the widget to open the menu.</p>
@@ -356,7 +379,7 @@
 </section>
 
 <!-- alerts -->
-<section class="alt" id="alerts">
+<section id="alerts">
   <div class="wrap">
     <h2>Alerts</h2>
     <p class="sub">Open <i>Menu &gt; Alerts…</i> to turn on a low alert, a high alert, or both, and set your own limits in mg/dL or mmol/L. They are <b>off until you turn them on</b>. Use <i>Send test alert</i> to see what one looks like.</p>
@@ -378,7 +401,7 @@
 </section>
 
 <!-- help -->
-<section id="help">
+<section class="alt" id="help">
   <div class="wrap">
     <h2>Troubleshoot</h2>
     <p class="sub">The widget says what is wrong in the small status text next to the number.</p>
@@ -391,29 +414,11 @@
       </table>
     </div>
     <p class="small" style="margin-top:16px">This app relies on a service that Abbott does not publish for third parties, so it can stop working without warning. If you are already on the newest version, it needs a fix from its developer: please <a href="https://github.com/bsalgueiro/libre-monitor/issues">report it on GitHub</a>. Your own data and your LibreLink app are not affected either way. <i>Menu &gt; About</i> shows which version you have.</p>
-
-    <h2 id="warnings" style="margin-top:44px">First-open warnings</h2>
-    <p class="sub">Neither app is signed with a paid certificate, so Windows and macOS each show a warning the first time. Both are expected and do not mean the file is damaged.</p>
-    <details>
-      <summary>Windows SmartScreen: "Windows protected your PC"</summary>
-      <p>The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue window. This is expected for any unsigned program from an unknown publisher. To run it:</p>
-      <ol><li>Click <b>More info</b>.</li><li>Click <b>Run anyway</b>.</li></ol>
-      <p>Windows remembers the choice for that file. If the file came from the internet, you can also tick <b>Unblock</b> in the file's Properties before running it. Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also flag the single-file build.</p>
-    </details>
-    <details>
-      <summary>macOS: "cannot check it for malicious software"</summary>
-      <p>The Mac app is not notarised by Apple (that needs a paid Apple Developer account), so the first time you open it macOS says it cannot check it for malicious software. To open it:</p>
-      <ol>
-        <li>Control-click (right-click) <b>LibreMonitor.app</b> in Applications and choose <b>Open</b>, then <b>Open</b> again. On recent macOS versions you may instead have to open <i>System Settings &gt; Privacy &amp; Security</i> and click <b>Open Anyway</b>.</li>
-        <li>If that does not work, run this once in Terminal, then open the app normally: <code>xattr -dr com.apple.quarantine /Applications/LibreMonitor.app</code></li>
-      </ol>
-      <p>The app is signed with a free ad-hoc signature, which Apple Silicon Macs require in order to run it at all.</p>
-    </details>
   </div>
 </section>
 
 <!-- open source -->
-<section class="alt" id="open-source">
+<section id="open-source">
   <div class="wrap">
     <h2>Free and open source</h2>
     <p class="sub">The code is on GitHub. Read it, build it yourself, report problems or send improvements.</p>
