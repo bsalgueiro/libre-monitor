@@ -100,12 +100,52 @@ and no need to build anything: you download one file and run it.
    - **Windows:** `LibreMonitor-win-x64.exe`
    - **Mac:** `LibreMonitor-mac.zip`
 4. Start it and sign in with the **follower** account, not your main one.
-   - **Windows:** run the exe. If Windows shows a blue warning, see [Windows SmartScreen warning](#windows-smartscreen-warning).
+   - **Windows:** run the exe. If Windows shows a blue warning, see [first-open warnings](#first-open-warnings).
    - **Mac:** unzip, drag **LibreMonitor.app** into Applications and open it. macOS will warn about it the first time, see
-     [macOS first-open warning](#macos-first-open-warning). The app has no Dock icon: look for the widget and the menu bar item.
+     [first-open warnings](#first-open-warnings). The app has no Dock icon: look for the widget and the menu bar item.
 
 Optional: to check the download is intact, compare its SHA-256 with the line in `SHA256SUMS.txt` from the same release
 (Windows: `Get-FileHash .\LibreMonitor-win-x64.exe -Algorithm SHA256`; Mac: `shasum -a 256 LibreMonitor-mac.zip`).
+
+## First-open warnings
+
+Neither app is signed with a paid certificate, so Windows and macOS each show a warning the first time. Both are expected
+and do not mean the file is damaged.
+
+<details>
+<summary><b>macOS first-open warning</b></summary>
+
+The Mac app is not notarised by Apple (that needs a paid Apple Developer account), so the first time you open it macOS says
+it cannot check it for malicious software. This is expected for an app from an independent developer; it does not mean
+the file is damaged. To open it:
+
+1. Control-click (right-click) **LibreMonitor.app** in Applications and choose **Open**, then **Open** again. On recent
+   macOS versions you may instead have to open **System Settings > Privacy & Security** and click **Open Anyway**.
+2. If that does not work, run this once in Terminal, then open the app normally:
+   `xattr -dr com.apple.quarantine /Applications/LibreMonitor.app`
+
+Removing the warning needs an Apple Developer ID, which costs money every year. The app is signed with a free ad-hoc
+signature, which Apple Silicon Macs require in order to run it at all.
+
+</details>
+
+<details>
+<summary><b>Windows SmartScreen warning</b></summary>
+
+The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue
+**"Windows protected your PC"** window. This is expected for any unsigned program from an unknown publisher; it does not
+mean the file is damaged or unsafe. To run it:
+
+1. Click **More info**.
+2. Click **Run anyway**.
+
+Windows remembers the choice for that file. If the file came from the internet, you can also tick **Unblock** in the
+file's Properties before running it.
+
+Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also
+flag the single-file build.
+
+</details>
 
 ## Using the widget
 
@@ -167,46 +207,6 @@ The widget shows what is wrong in the small status text next to the number:
 This app relies on a service that Abbott does not publish for third parties, so it can stop working without warning. If you
 are already on the newest version, the app needs a fix from its developer, so please report it on the project's page.
 Your own data and your LibreLink app are not affected either way. **Menu > About** shows which version you have.
-
-## First-open warnings
-
-Neither app is signed with a paid certificate, so Windows and macOS each show a warning the first time. Both are expected
-and do not mean the file is damaged.
-
-<details>
-<summary><b>macOS first-open warning</b></summary>
-
-The Mac app is not notarised by Apple (that needs a paid Apple Developer account), so the first time you open it macOS says
-it cannot check it for malicious software. This is expected for an app from an independent developer; it does not mean
-the file is damaged. To open it:
-
-1. Control-click (right-click) **LibreMonitor.app** in Applications and choose **Open**, then **Open** again. On recent
-   macOS versions you may instead have to open **System Settings > Privacy & Security** and click **Open Anyway**.
-2. If that does not work, run this once in Terminal, then open the app normally:
-   `xattr -dr com.apple.quarantine /Applications/LibreMonitor.app`
-
-Removing the warning needs an Apple Developer ID, which costs money every year. The app is signed with a free ad-hoc
-signature, which Apple Silicon Macs require in order to run it at all.
-
-</details>
-
-<details>
-<summary><b>Windows SmartScreen warning</b></summary>
-
-The executable is not code-signed, so the first time someone runs it, Windows SmartScreen shows a blue
-**"Windows protected your PC"** window. This is expected for any unsigned program from an unknown publisher; it does not
-mean the file is damaged or unsafe. To run it:
-
-1. Click **More info**.
-2. Click **Run anyway**.
-
-Windows remembers the choice for that file. If the file came from the internet, you can also tick **Unblock** in the
-file's Properties before running it.
-
-Removing the warning needs a code-signing certificate, which costs money every year. Some antivirus tools may also
-flag the single-file build.
-
-</details>
 
 ---
 
@@ -299,7 +299,7 @@ This produces a single `publish\LibreMonitor.App.exe` of about 72 MB for 64-bit 
 with .NET removed from the environment, but it has not been tried on a clean machine. Because it bundles its own .NET,
 it does not receive .NET security updates unless it is rebuilt and handed out again.
 
-Whoever receives the executable will see the [SmartScreen warning](#windows-smartscreen-warning), because it is unsigned.
+Whoever receives the executable will see the [SmartScreen warning](#first-open-warnings), because it is unsigned.
 
 ## Publishing a release
 
