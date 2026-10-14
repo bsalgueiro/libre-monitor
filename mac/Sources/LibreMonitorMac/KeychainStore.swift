@@ -41,6 +41,36 @@ enum KeychainStore {
     static func save(email: String, password: String) throws {
         let data = try JSONEncoder().encode(Stored(email: email, password: password))
 
+        #if DEBUG
+        try saveReadableByAnyBuild(data)
+        #else
+        try saveRestrictedToThisApp(data)
+        #endif
+    }
+
+    /// Debug (test) builds only. Every build is ad-hoc signed with a new signature, and a Keychain item is normally
+    /// readable only by the exact app that created it, so macOS asked for permission again after every new build.
+    /// Here the item allows any application to read it without asking. That is weaker: any program running as the
+    /// user could read this login. Release builds never do this.
+    private static func saveReadableByAnyBuild(_ data: Data) throws {
+        // An item made earlier keeps its old restrictions on update, so replace it.
+        SecItemDelete(baseQuery() as CFDictionary)
+
+        var add = baseQuery()
+        add[kSecValueData as String] = data
+
+        var access: SecAccess?
+        // A nil trusted-application list means "any application".
+        if SecAccessCreate("Libre Monitor test login" as CFString, nil, &access) == errSecSuccess, let access {
+            add[kSecAttrAccess as String] = access
+        }
+
+        let status = SecItemAdd(add as CFDictionary, nil)
+        guard status == errSecSuccess else { throw KeychainError(status: status) }
+    }
+
+    /// Release builds: only the app that stored the login may read it (the default Keychain behaviour).
+    private static func saveRestrictedToThisApp(_ data: Data) throws {
         let status = SecItemUpdate(baseQuery() as CFDictionary, [kSecValueData as String: data] as CFDictionary)
         if status == errSecItemNotFound {
             var add = baseQuery()
