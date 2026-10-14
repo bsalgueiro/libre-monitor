@@ -724,6 +724,8 @@ public partial class MainWindow : Window
 
     private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(
         "Libre Monitor shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
+        + "Nothing about your glucose readings is saved on this PC. The only things stored are your login (encrypted, and readable only by your Windows user) "
+        + "and your display preferences, such as units, theme, window position and alert limits.\n\n"
         + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions.",
         "About Libre Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
 
