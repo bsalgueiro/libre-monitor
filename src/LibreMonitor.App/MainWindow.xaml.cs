@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net.Http;
@@ -42,6 +43,7 @@ public partial class MainWindow : Window
     private readonly List<(MenuItem Item, int Index)> _simulationItems = [];
     private string? _problem;
     private bool _problemIsFatal;
+    private bool _serviceChanged;
 
     public MainWindow()
     {
@@ -122,6 +124,10 @@ public partial class MainWindow : Window
         {
             if (_simulation is null) OnFailed(ex, fatal);
         });
+        _monitor.ServiceChanged += ex => Dispatcher.BeginInvoke(() =>
+        {
+            if (_simulation is null) OnServiceChanged(ex);
+        });
         _monitor.Start();
         await Task.CompletedTask;
     }
@@ -130,6 +136,7 @@ public partial class MainWindow : Window
     {
         _last = update;
         _problem = null;
+        _serviceChanged = false; // a good answer ends the episode
 
         var readings = update.Snapshot.History.ToList();
         if (update.Snapshot.Current is { } current && (readings.Count == 0 || current.TimestampUtc > readings[^1].TimestampUtc))
@@ -278,10 +285,33 @@ public partial class MainWindow : Window
 
     private void OnFailed(Exception ex, bool fatal)
     {
-        _problem = fatal ? "sign-in needed" : "reconnecting";
-        _problemIsFatal = fatal;
+        // Once the service is known to have changed, keep saying so rather than going back to "reconnecting".
+        _problem = _serviceChanged ? "service changed" : fatal ? "sign-in needed" : "reconnecting";
+        _problemIsFatal = fatal || _serviceChanged;
         RenderAge();
     }
+
+    /// <summary>
+    /// LibreLinkUp has kept answering in a way this version does not understand. Retrying will not fix that, so
+    /// say it plainly and point to where a newer version would be published.
+    /// </summary>
+    private void OnServiceChanged(ServiceChangedException ex)
+    {
+        _serviceChanged = true;
+        _problem = "service changed";
+        _problemIsFatal = true;
+        RenderAge();
+
+        _tray.Notify(
+            "Can't read LibreLinkUp",
+            "Abbott may have changed or blocked the service. Click here to look for a newer version of Libre Monitor.",
+            OpenReleasesPage);
+    }
+
+    private static void OpenReleasesPage() =>
+        Process.Start(new ProcessStartInfo(AppInfo.ReleasesUrl) { UseShellExecute = true });
+
+    private void Updates_Click(object sender, RoutedEventArgs e) => OpenReleasesPage();
 
     private static string FormatAge(TimeSpan age) =>
         age.TotalMinutes < 1 ? "just now" : $"{(int)age.TotalMinutes} min ago";
@@ -723,7 +753,8 @@ public partial class MainWindow : Window
     }
 
     private void About_Click(object sender, RoutedEventArgs e) => MessageBox.Show(
-        "Libre Monitor shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
+        $"Libre Monitor {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n\n"
+        + "Libre Monitor shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
         + "Nothing about your glucose readings is saved on this PC. The only things stored are your login (encrypted, and readable only by your Windows user) "
         + "and your display preferences, such as units, theme, window position and alert limits.\n\n"
         + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions.",

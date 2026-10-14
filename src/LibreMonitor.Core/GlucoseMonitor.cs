@@ -15,9 +15,17 @@ public sealed class GlucoseMonitor : IAsyncDisposable
     private readonly Func<(string Email, string Password)> _credentials;
     private readonly TimeSpan _interval;
 
+    /// <summary>
+    /// How many polls in a row must find the service changed before <see cref="ServiceChanged"/> is raised. One odd
+    /// response can be a hiccup; a few in a row (about three minutes at the default interval) is a real change.
+    /// </summary>
+    public const int ServiceChangedThreshold = 3;
+
     private CancellationTokenSource? _cts;
     private Task? _loop;
     private Patient? _patient;
+    private int _changedStreak;
+    private bool _changedReported;
 
     public GlucoseMonitor(
         LibreLinkUpClient client,
@@ -33,6 +41,13 @@ public sealed class GlucoseMonitor : IAsyncDisposable
 
     /// <summary>A poll failed. The bool is true for fatal failures, which stop the monitor; the rest are retried on the next tick.</summary>
     public event Action<Exception, bool>? Failed;
+
+    /// <summary>
+    /// The service has kept answering in a way this version does not understand (blocked, new format, newer client
+    /// required). Raised once per episode, after <see cref="ServiceChangedThreshold"/> failures in a row; a successful
+    /// poll ends the episode, so a later change is reported again. A newer version of the app may be needed.
+    /// </summary>
+    public event Action<ServiceChangedException>? ServiceChanged;
 
     public void Start()
     {
@@ -79,6 +94,9 @@ public sealed class GlucoseMonitor : IAsyncDisposable
                 ?? throw new LibreLinkUpException("This account is not following anyone yet.");
 
             var snapshot = await _client.GetGraphAsync(_patient.PatientId, ct).ConfigureAwait(false);
+
+            _changedStreak = 0;
+            _changedReported = false;
             Updated?.Invoke(new MonitorUpdate(_patient, snapshot, DateTimeOffset.UtcNow));
             return true;
         }
@@ -91,9 +109,23 @@ public sealed class GlucoseMonitor : IAsyncDisposable
             Failed?.Invoke(ex, true);
             return false;
         }
+        catch (ServiceChangedException ex)
+        {
+            Failed?.Invoke(ex, false);
+
+            if (++_changedStreak >= ServiceChangedThreshold && !_changedReported)
+            {
+                _changedReported = true;
+                ServiceChanged?.Invoke(ex);
+            }
+
+            return true;
+        }
         catch (Exception ex) when (ex is LibreLinkUpException or HttpRequestException or TaskCanceledException)
         {
-            // Session expiry already cleared the token, so the next tick logs in again.
+            // Session expiry already cleared the token, so the next tick logs in again. Only an unbroken run of
+            // "service changed" answers counts towards the warning, so any other outcome starts the count again.
+            _changedStreak = 0;
             Failed?.Invoke(ex, false);
             return true;
         }
