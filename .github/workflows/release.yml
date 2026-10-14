@@ -1,17 +1,29 @@
 name: Release
 
-# Pushing a tag such as v0.1.0 builds the widget and publishes it as a GitHub release,
-# so people can download LibreMonitor-win-x64.exe and run it with nothing else installed.
+# Pushing a tag such as v0.1.0 builds the widget for Windows and macOS and publishes it as a GitHub release,
+# so people can download LibreMonitor-win-x64.exe or LibreMonitor-mac.zip and run it with nothing else installed.
 on:
   push:
     tags:
       - 'v*'
 
 permissions:
-  contents: write # needed to create the release
+  contents: write # needed to create the release and attach files
 
 jobs:
-  release:
+  create:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: gh release create "$TAG" THIRD-PARTY-NOTICES.md --title "$TAG" --generate-notes
+
+  windows:
+    needs: create
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,17 +45,61 @@ jobs:
             -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
             -p:Version=$version -o publish
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-
           Rename-Item publish/LibreMonitor.App.exe LibreMonitor-win-x64.exe
-          $hash = (Get-FileHash publish/LibreMonitor-win-x64.exe -Algorithm SHA256).Hash.ToLower()
-          "$hash  LibreMonitor-win-x64.exe" | Set-Content publish/SHA256SUMS.txt
 
-      - name: Create release
+      - name: Upload to the release
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
+        run: gh release upload $env:TAG publish/LibreMonitor-win-x64.exe
+
+  mac:
+    needs: create
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        working-directory: mac
+        run: swift test
+
+      - name: Build the universal app
+        working-directory: mac
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
-          gh release create $env:TAG `
-            publish/LibreMonitor-win-x64.exe publish/SHA256SUMS.txt `
-            --title $env:TAG --generate-notes
+          chmod +x scripts/make-app.sh
+          VERSION="${TAG#v}" ./scripts/make-app.sh
+
+      # A release build must not contain the developer switches.
+      - name: Release build contains no developer mode
+        working-directory: mac
+        run: |
+          strings build/LibreMonitor.app/Contents/MacOS/LibreMonitor > release-strings.txt
+          test -s release-strings.txt
+          if grep -q -- '--simulate' release-strings.txt; then
+            echo "Release binary contains developer-mode code"; exit 1
+          fi
+
+      - name: Upload to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: gh release upload "$TAG" mac/build/LibreMonitor-mac.zip
+
+  checksums:
+    needs: [windows, mac]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write SHA256SUMS.txt from the uploaded files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir dl && cd dl
+          gh release download "$TAG" --pattern 'LibreMonitor-*'
+          sha256sum LibreMonitor-* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release upload "$TAG" SHA256SUMS.txt
