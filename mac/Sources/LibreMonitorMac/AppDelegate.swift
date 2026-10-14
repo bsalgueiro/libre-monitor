@@ -33,6 +33,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var tickTimer: Timer?
     private var settingsObserver: AnyCancellable?
     private var lastScrollChange = Date.distantPast
+    private var graphShown = true
+
+    // Each mode (graph shown or hidden) remembers its own size, so turning the graph back on restores the layout.
+    private static let graphSizeKey = "widgetSize.graph"
+    private static let compactSizeKey = "widgetSize.compact"
+    private static let graphMinSize = NSSize(width: 224, height: 148)
+    private static let compactMinSize = NSSize(width: 190, height: 100) // below this the unit and status text are too small
+    private static let graphDefaultSize = NSSize(width: 280, height: 172)
+    private static let compactDefaultSize = NSSize(width: 260, height: 132)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         panel = makePanel()
@@ -40,6 +49,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             isWidgetVisible: { [weak self] in self?.panel.isVisible ?? false },
             toggleWidget: { [weak self] in self?.toggleWidget() },
             quit: { NSApp.terminate(nil) })
+        graphShown = model.settings.showGraph
+        panel.minSize = graphShown ? Self.graphMinSize : Self.compactMinSize
+        if !graphShown, !UserDefaults.standard.bool(forKey: "widgetSize.compact.initialised") {
+            // First run with the graph hidden: the remembered frame is the graph-sized one, so start from a compact size.
+            applyGraphMode(show: false, force: true)
+        }
+
         applySettings(model.settings)
         settingsObserver = model.$settings.sink { [weak self] settings in
             // @Published fires before the value is stored, so use the value it hands over and refresh afterwards.
@@ -128,8 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Scrolling over the widget steps the graph range between 3, 6 and 12 hours, like the Windows wheel.
     private func scrolled(_ delta: CGFloat) {
-        // A trackpad flick sends a long stream of events; one step per gesture is enough.
-        guard abs(delta) > 0.5, Date().timeIntervalSince(lastScrollChange) > 0.3 else { return }
+        // The range only affects the graph. A trackpad flick sends a long stream of events; one step per gesture is enough.
+        guard graphShown, abs(delta) > 0.5, Date().timeIntervalSince(lastScrollChange) > 0.3 else { return }
 
         let choices = [3, 6, 12]
         let index = choices.firstIndex(of: model.settings.hours) ?? 1
@@ -140,7 +156,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lastScrollChange = Date()
     }
 
+    /// Switches between the graph layout and the compact (number only) layout, keeping the widget's top-left corner.
+    private func applyGraphMode(show: Bool, force: Bool = false) {
+        guard force || show != graphShown else { return }
+
+        let defaults = UserDefaults.standard
+        // Remember the size of the mode being left (unless this is the very first compact start, where it is not meaningful).
+        if !force {
+            defaults.set(NSStringFromSize(panel.frame.size), forKey: graphShown ? Self.graphSizeKey : Self.compactSizeKey)
+        }
+
+        graphShown = show
+        panel.minSize = show ? Self.graphMinSize : Self.compactMinSize
+
+        let key = show ? Self.graphSizeKey : Self.compactSizeKey
+        let fallback = show ? Self.graphDefaultSize : Self.compactDefaultSize
+        var target = defaults.string(forKey: key).map(NSSizeFromString) ?? fallback
+        target.width = max(target.width, panel.minSize.width)
+        target.height = max(target.height, panel.minSize.height)
+
+        let old = panel.frame
+        let frame = NSRect(x: old.minX, y: old.maxY - target.height, width: target.width, height: target.height)
+        panel.setFrame(frame, display: true, animate: !force)
+        defaults.set(true, forKey: "widgetSize.compact.initialised")
+    }
+
     private func applySettings(_ settings: WidgetSettings) {
+        applyGraphMode(show: settings.showGraph)
         panel.level = settings.alwaysOnTop ? .floating : .normal
         statusItem.isVisible = settings.showStatusIcon
 

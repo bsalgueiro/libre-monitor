@@ -15,6 +15,7 @@ struct WidgetSettings: Codable, Equatable {
     var hours: Int = 6
     var theme: ThemeChoice = .system
     var showStatusIcon = true
+    var showGraph = true
     var alwaysOnTop = true
     var alerts = AlertSettings()
 }

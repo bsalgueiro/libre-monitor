@@ -41,49 +41,23 @@ struct WidgetView: View {
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
 
+    // With the graph hidden, the header is scaled to fill the card. These describe the header at scale 1:
+    // the widest case is a 4-character value ("10.0") beside the longest status text ("sign-in needed").
+    private static let compactDesignWidth: CGFloat = 250
+    private static let compactDesignHeight: CGFloat = 62
+
     var body: some View {
         let theme = WidgetTheme.forScheme(colorScheme)
 
         GeometryReader { geometry in
-            let scale = min(max(min(geometry.size.width / Self.defaultWidth, geometry.size.height / Self.defaultHeight), 0.75), 2.4)
-            let small = min(max(scale, 1), 1.7)
             let tint = valueTint(theme)
             let status = statusText(theme)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .center, spacing: 8) {
-                    Text(valueText)
-                        .font(.system(size: 46 * scale, weight: .semibold))
-                        .foregroundColor(tint)
-                        .opacity(model.isStale ? 0.5 : 1)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
-
-                    Text(model.current?.trend.arrow ?? "")
-                        .font(.system(size: 30 * scale))
-                        .foregroundColor(tint)
-
-                    Spacer(minLength: 8)
-
-                    VStack(alignment: .trailing, spacing: 0) {
-                        Text(model.settings.unit.label)
-                            .font(.system(size: 11 * small))
-                            .foregroundColor(theme.muted)
-                        Text(status.text)
-                            .font(.system(size: 11 * small))
-                            .foregroundColor(status.color)
-                    }
-                }
-
-                GlucoseGraphView(
-                    readings: model.readings, hours: model.settings.hours, unit: model.settings.unit,
-                    now: model.now, theme: theme)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            if model.settings.showGraph {
+                graphLayout(geometry.size, theme: theme, tint: tint, status: status)
+            } else {
+                compactLayout(geometry.size, theme: theme, tint: tint, status: status)
             }
-            .padding(.leading, 16)
-            .padding(.trailing, 14)
-            .padding(.top, 10)
-            .padding(.bottom, 6)
         }
         // Without a content shape only drawn pixels (the graph) are clickable, so the menu opened nowhere else.
         .contentShape(Rectangle())
@@ -96,6 +70,67 @@ struct WidgetView: View {
                 .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
         }
         .contextMenu { menuContent }
+    }
+
+    /// Value, arrow and unit/status, shared by both layouts so they can never drift apart.
+    /// `valueScale` and `infoScale` size the text; `spacingScale` keeps the gaps in proportion.
+    private func header(
+        valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat,
+        theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View
+    {
+        HStack(alignment: .center, spacing: 8 * spacingScale) {
+            Text(valueText)
+                .font(.system(size: 46 * valueScale, weight: .semibold))
+                .foregroundColor(tint)
+                .opacity(model.isStale ? 0.5 : 1)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5)
+
+            Text(model.current?.trend.arrow ?? "")
+                .font(.system(size: 30 * valueScale))
+                .foregroundColor(tint)
+
+            Spacer(minLength: 8 * spacingScale)
+
+            VStack(alignment: .trailing, spacing: 0) {
+                Text(model.settings.unit.label)
+                    .font(.system(size: 11 * infoScale))
+                    .foregroundColor(theme.muted)
+                Text(status.text)
+                    .font(.system(size: 11 * infoScale))
+                    .foregroundColor(status.color)
+            }
+        }
+    }
+
+    /// The normal layout: header on top, graph below. Text scales with the card.
+    private func graphLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        let scale = min(max(min(size.width / Self.defaultWidth, size.height / Self.defaultHeight), 0.75), 2.4)
+        let small = min(max(scale, 1), 1.7)
+
+        return VStack(alignment: .leading, spacing: 2) {
+            header(valueScale: scale, infoScale: small, spacingScale: 1, theme: theme, tint: tint, status: status)
+
+            GlucoseGraphView(
+                readings: model.readings, hours: model.settings.hours, unit: model.settings.unit,
+                now: model.now, theme: theme)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 14)
+        .padding(.top, 10)
+        .padding(.bottom, 6)
+    }
+
+    /// The graph is hidden: the header alone fills the card, everything scaled together to fit whatever size it has.
+    private func compactLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
+        let available = CGSize(width: size.width - 30, height: size.height - 16) // the card's own padding
+        let fit = min(max(min(available.width / Self.compactDesignWidth, available.height / Self.compactDesignHeight), 0.3), 8)
+
+        return header(valueScale: fit, infoScale: fit, spacingScale: fit, theme: theme, tint: tint, status: status)
+            .padding(.leading, 16)
+            .padding(.trailing, 14)
+            .frame(maxWidth: .infinity, maxHeight: .infinity) // centred vertically in the card
     }
 
     /// Top-left, like the close button of a macOS window. Fades in while the pointer is over the widget.
@@ -129,6 +164,9 @@ struct WidgetView: View {
             .pickerStyle(.inline)
             .labelsHidden()
         }
+        .disabled(!model.settings.showGraph) // the range only affects the graph
+
+        Toggle("Show graph", isOn: $model.settings.showGraph)
 
         Menu("Units") {
             Picker("Units", selection: $model.settings.unit) {
