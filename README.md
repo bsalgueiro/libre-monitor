@@ -194,7 +194,7 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in
 Focus assist or Do not disturb). Keep your sensor's own alarms on.
 
-## If the widget stops updating
+## Troubleshooting
 
 The widget shows what is wrong in the small status text next to the number:
 
