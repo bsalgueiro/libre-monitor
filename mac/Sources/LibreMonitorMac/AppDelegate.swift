@@ -48,12 +48,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let graphDefaultSize = NSSize(width: 280, height: 172)
     private static let compactDefaultSize = NSSize(width: 260, height: 132)
     /// The syringe takes room in the header, so the card must be wider while it is shown; otherwise the number shrinks.
-    private static let insulinExtraWidth: CGFloat = 40
+    private static let insulinExtraWidth: CGFloat = 16
+    private static let insulinExtraCompactWidth: CGFloat = 24 // the strip beside the number when the graph is hidden
     private var insulinShown = false
 
     private func minimumSize(graph: Bool, insulin: Bool) -> NSSize {
         var size = graph ? Self.graphMinSize : Self.compactMinSize
-        if insulin { size.width += Self.insulinExtraWidth }
+        if insulin { size.width += graph ? Self.insulinExtraWidth : Self.insulinExtraCompactWidth }
         return size
     }
 
@@ -328,7 +329,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Long-acting insulin
+    // MARK: - Insulin
 
     private func evaluateInsulin() {
         let now = Date()
@@ -338,7 +339,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         else { return }
 
         let sound = model.settings.alerts.sound
-        let title = raised.isReminder ? "Reminder: long-acting insulin" : "Long-acting insulin"
+        let title = raised.isReminder ? "Reminder: insulin" : "Insulin"
         Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as taken yet.", sound: sound) { posted in
             if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
         }
@@ -361,7 +362,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             alert.informativeText = "Only do this if you did not take it."
             alert.addButton(withTitle: "Remove mark")
         } else {
-            alert.messageText = "Mark the \(clockText(status.slot)) long-acting insulin dose as taken?"
+            alert.messageText = "Mark the \(clockText(status.slot)) insulin dose as taken?"
             alert.addButton(withTitle: "Mark as taken")
         }
         alert.addButton(withTitle: "Cancel")

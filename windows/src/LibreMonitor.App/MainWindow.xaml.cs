@@ -210,7 +210,7 @@ public partial class MainWindow : Window
         EvaluateInsulin();
     }
 
-    // ---- long-acting insulin ---------------------------------------------------------------
+    // ---- insulin ---------------------------------------------------------------
 
     private void EvaluateInsulin()
     {
@@ -218,7 +218,7 @@ public partial class MainWindow : Window
         var raised = _insulinReminder.Evaluate(_settings.Insulin, now, TimeZoneInfo.Local, _alerts.SnoozedUntil(now));
         if (raised is not null)
         {
-            var title = raised.IsReminder ? "Reminder: long-acting insulin" : "Long-acting insulin";
+            var title = raised.IsReminder ? "Reminder: insulin" : "Insulin";
             _tray.Notify(title, $"Due at {raised.Slot:HH:mm}. Not marked as taken yet.");
             if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
         }
@@ -257,7 +257,7 @@ public partial class MainWindow : Window
                 InsulinBadge.Background = Palette.Brush(theme.InRange);
                 InsulinBadgeText.Text = "✓";
                 InsulinBadge.Visibility = Visibility.Visible;
-                InsulinButton.ToolTip = $"Long-acting insulin: marked as taken at {DayAndTime(status.TakenAt!.Value)}. Click to undo.";
+                InsulinButton.ToolTip = $"Insulin: marked as taken at {DayAndTime(status.TakenAt!.Value)}. Click to undo.";
                 break;
 
             case DoseState.Due:
@@ -265,13 +265,13 @@ public partial class MainWindow : Window
                 InsulinBadge.Background = Palette.Brush(theme.High);
                 InsulinBadgeText.Text = "!";
                 InsulinBadge.Visibility = Visibility.Visible;
-                InsulinButton.ToolTip = $"Long-acting insulin: due since {DayAndTime(status.Slot)}, not marked as taken. Click to mark it.";
+                InsulinButton.ToolTip = $"Insulin: due since {DayAndTime(status.Slot)}, not marked as taken. Click to mark it.";
                 break;
 
             default:
                 SyringePath.Stroke = Palette.Brush(theme.Muted);
                 InsulinBadge.Visibility = Visibility.Collapsed;
-                InsulinButton.ToolTip = $"Long-acting insulin: next dose at {slot}. Click to mark it as taken early.";
+                InsulinButton.ToolTip = $"Insulin: next dose at {slot}. Click to mark it as taken early.";
                 break;
         }
     }
@@ -304,7 +304,7 @@ public partial class MainWindow : Window
         {
             var undo = MessageBox.Show(this,
                 $"Remove the \"taken\" mark for the {slot} dose?\n\nOnly do this if you did not take it.",
-                "Long-acting insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (undo != MessageBoxResult.Yes) return;
 
             _settings.Insulin = _settings.Insulin.Undo();
@@ -312,8 +312,8 @@ public partial class MainWindow : Window
         else
         {
             var mark = MessageBox.Show(this,
-                $"Mark the {slot} long-acting insulin dose as taken?",
-                "Long-acting insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+                $"Mark the {slot} insulin dose as taken?",
+                "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (mark != MessageBoxResult.Yes) return;
 
             _settings.Insulin = _settings.Insulin.MarkTaken(DateTimeOffset.UtcNow);
@@ -553,7 +553,7 @@ public partial class MainWindow : Window
         HeaderRow.Height = show ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         GraphRow.Height = show ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
         // Below this the unit and age text become unreadably small. The syringe needs room too, or the number shrinks.
-        MinWidth = (show ? 224 : 190) + (_settings.Insulin.Enabled ? 40 : 0);
+        MinWidth = (show ? 224 : 190) + (_settings.Insulin.Enabled ? (show ? 16 : 24) : 0);
         MinHeight = show ? 148 : 100;
 
         ApplyLayoutScale();
@@ -663,18 +663,18 @@ public partial class MainWindow : Window
             var scale = Math.Clamp(Math.Min((ActualWidth - 24) / DefaultCardWidth, (ActualHeight - 24) / DefaultCardHeight), 0.75, 2.4);
             var small = Math.Clamp(scale, 1, 1.7);
 
-            ContentGrid.Margin = new Thickness(16, 10, 14, 6);
+            ContentGrid.Margin = new Thickness(16, 10, 16, 6); // the same on both sides, matching the graph
             ArrangeHeader(HeaderArrangement.SideBySide);
             SetHeaderFonts(scale, small);
-            InfoStack.Margin = new Thickness(0, 0, 18, 0); // room for the close button
+            InfoStack.Margin = new Thickness(0);
 
             // The syringe sits in the header row, centred vertically, just left of the unit and age text.
             InfoStack.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Grid.SetRow(InsulinButton, 0);
             Grid.SetRowSpan(InsulinButton, 1);
             InsulinButton.VerticalAlignment = VerticalAlignment.Center;
-            InsulinButton.Width = InsulinButton.Height = 28 * small;
-            InsulinButton.Margin = new Thickness(0, 0, 18 + InfoStack.DesiredSize.Width + 6 * small, 0);
+            InsulinButton.Width = InsulinButton.Height = 28 * Math.Clamp(scale, 0.8, 1.7);
+            InsulinButton.Margin = new Thickness(0, 0, InfoStack.DesiredSize.Width + 4 * small, 0);
             return;
         }
 
@@ -787,8 +787,8 @@ public partial class MainWindow : Window
         InsulinItem.Visibility = InsulinOffItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
         InsulinSetupItem.Visibility = _settings.Insulin.Enabled ? Visibility.Collapsed : Visibility.Visible;
         InsulinItem.Header = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local).State == DoseState.Taken
-            ? "Long-acting insulin: undo \"taken\""
-            : "Long-acting insulin: mark as taken";
+            ? "Insulin: undo \"taken\""
+            : "Insulin: mark as taken";
 
         var snoozedUntil = _alerts.SnoozedUntil(DateTimeOffset.UtcNow);
         ResumeItem.IsEnabled = snoozedUntil is not null;
@@ -905,7 +905,7 @@ public partial class MainWindow : Window
         $"Libre Monitor {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n\n"
         + "Libre Monitor shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
         + "Nothing about your glucose readings is saved on this PC. The only things stored are your login (encrypted, and readable only by your Windows user) "
-        + "and your preferences, such as units, theme, window position, alert limits and the long-acting insulin reminder (its times, and when you last marked a dose as taken).\n\n"
+        + "and your preferences, such as units, theme, window position, alert limits and the insulin reminder (its times, and when you last marked a dose as taken).\n\n"
         + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions.",
         "About Libre Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
 

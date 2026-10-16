@@ -141,7 +141,7 @@ struct AlertsView: View {
 
     private var insulinSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Long-acting insulin").font(.headline)
+            Text("Insulin").font(.headline)
 
             Text("A reminder at your usual time, and a syringe icon on the widget to tap once the dose is taken, so you "
                 + "can check later whether you already did. Off until you turn it on.")
@@ -149,7 +149,7 @@ struct AlertsView: View {
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Toggle("Remind me to take my long-acting insulin", isOn: $insulinEnabled).fontWeight(.semibold)
+            Toggle("Remind me to take my insulin", isOn: $insulinEnabled).fontWeight(.semibold)
 
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $dosesPerDay) {

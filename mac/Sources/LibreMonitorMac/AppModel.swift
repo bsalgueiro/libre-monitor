@@ -77,7 +77,7 @@ final class AppModel: ObservableObject {
         return list
     }
 
-    /// Where the current long-acting insulin dose stands; nil while the reminder is off.
+    /// Where the current insulin dose stands; nil while the reminder is off.
     var insulinStatus: DoseStatus? {
         settings.insulin.enabled ? InsulinSchedule.status(settings.insulin, now: now, calendar: .current) : nil
     }

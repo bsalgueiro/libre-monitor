@@ -105,7 +105,7 @@ struct WidgetView: View {
         .contextMenu { menuContent }
     }
 
-    /// The long-acting insulin check: grey = not due yet, amber ! = due, green tick = taken. Only shown while the
+    /// The insulin check: grey = not due yet, amber ! = due, green tick = taken. Only shown while the
     /// reminder is on. Clicking asks to mark the dose as taken (or to undo that).
     private func insulinButton(_ status: DoseStatus, theme: WidgetTheme, scale: CGFloat = 1) -> some View {
         let color: Color
@@ -115,15 +115,15 @@ struct WidgetView: View {
         case .taken:
             color = theme.inRange
             mark = "✓"
-            help = "Long-acting insulin: marked as taken at \(dayAndTime(status.takenAt ?? status.slot)). Click to undo."
+            help = "Insulin: marked as taken at \(dayAndTime(status.takenAt ?? status.slot)). Click to undo."
         case .due:
             color = theme.high
             mark = "!"
-            help = "Long-acting insulin: due since \(dayAndTime(status.slot)), not marked as taken. Click to mark it."
+            help = "Insulin: due since \(dayAndTime(status.slot)), not marked as taken. Click to mark it."
         case .upcoming:
             color = theme.muted
             mark = nil
-            help = "Long-acting insulin: next dose at \(dayAndTime(status.slot)). Click to mark it as taken early."
+            help = "Insulin: next dose at \(dayAndTime(status.slot)). Click to mark it as taken early."
         }
 
         return Button { actions.toggleInsulin() } label: {
@@ -175,8 +175,8 @@ struct WidgetView: View {
             Spacer(minLength: 16 * spacingScale)
 
             if insulinInHeader, let dose = model.insulinStatus {
-                insulinButton(dose, theme: theme, scale: infoScale)
-                    .padding(.trailing, 4 * infoScale) // a clear gap before the unit and age
+                insulinButton(dose, theme: theme, scale: min(max(valueScale, 0.8), 1.7))
+                    .padding(.trailing, 3 * infoScale) // a clear gap before the unit and age
             }
 
             VStack(alignment: .trailing, spacing: 0) {
@@ -207,8 +207,7 @@ struct WidgetView: View {
                 now: model.now, theme: theme)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(.leading, 16)
-        .padding(.trailing, 14)
+        .padding(.horizontal, 16) // the same on both sides, so the graph and the header line up evenly in the card
         .padding(.top, 10)
         .padding(.bottom, 6)
     }
@@ -344,7 +343,7 @@ struct WidgetView: View {
         Button("Alerts…") { actions.showAlerts() }
 
         if let status = model.insulinStatus {
-            Button(status.state == .taken ? "Long-acting insulin: undo “taken”" : "Long-acting insulin: mark as taken") {
+            Button(status.state == .taken ? "Insulin: undo “taken”" : "Insulin: mark as taken") {
                 actions.toggleInsulin()
             }
             // Turning it off also forgets the last "taken" time, so nothing about it stays saved.

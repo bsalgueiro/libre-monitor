@@ -32,11 +32,11 @@
 
         <Separator Margin="0,16,0,12"/>
 
-        <TextBlock Text="Long-acting insulin" FontSize="16" FontWeight="SemiBold"/>
+        <TextBlock Text="Insulin" FontSize="16" FontWeight="SemiBold"/>
         <TextBlock x:Name="InsulinIntroText" Margin="0,4,0,10" TextWrapping="Wrap"
                    Text="A reminder at your usual time, and a syringe icon on the widget to tap once the dose is taken, so you can check later whether you already did. Off until you turn it on."/>
 
-        <CheckBox x:Name="InsulinBox" Content="Remind me to take my long-acting insulin" FontWeight="SemiBold" Checked="Insulin_Changed" Unchecked="Insulin_Changed"/>
+        <CheckBox x:Name="InsulinBox" Content="Remind me to take my insulin" FontWeight="SemiBold" Checked="Insulin_Changed" Unchecked="Insulin_Changed"/>
         <StackPanel x:Name="InsulinPanel" Margin="22,8,0,0">
             <ComboBox x:Name="DosesBox" Width="190" HorizontalAlignment="Left" SelectionChanged="Doses_SelectionChanged">
                 <ComboBoxItem Content="Once a day" Tag="1"/>

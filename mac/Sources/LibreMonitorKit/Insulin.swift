@@ -2,7 +2,7 @@ import Foundation
 
 // Port of windows/src/LibreMonitor.Core/Insulin.cs
 
-/// Where one daily long-acting insulin dose stands. Only a memory aid: the app cannot know about doses that were not tapped.
+/// Where one daily insulin dose stands. Only a memory aid: the app cannot know about doses that were not tapped.
 public enum DoseState: Sendable, Equatable {
     /// The next dose is not due yet and nothing has been marked for it.
     case upcoming
@@ -12,7 +12,7 @@ public enum DoseState: Sendable, Equatable {
     case taken
 }
 
-/// Settings for the daily long-acting insulin reminder, plus the time the user last marked a dose as taken.
+/// Settings for the daily insulin reminder, plus the time the user last marked a dose as taken.
 /// That one timestamp is all that is kept: no amounts and no history. The reminder is off by default.
 public struct InsulinSettings: Codable, Equatable, Sendable {
     /// With two doses a day, the two times must be at least this far apart (both ways round the clock).

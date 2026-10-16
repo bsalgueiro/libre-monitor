@@ -1,6 +1,6 @@
 namespace LibreMonitor.Core;
 
-/// <summary>Where one daily long-acting insulin dose stands. Only a memory aid: the app cannot know about doses that were not tapped.</summary>
+/// <summary>Where one daily insulin dose stands. Only a memory aid: the app cannot know about doses that were not tapped.</summary>
 public enum DoseState
 {
     /// <summary>The next dose is not due yet and nothing has been marked for it.</summary>
@@ -14,7 +14,7 @@ public enum DoseState
 }
 
 /// <summary>
-/// Settings for the daily long-acting insulin reminder, plus the time the user last marked a dose as taken.
+/// Settings for the daily insulin reminder, plus the time the user last marked a dose as taken.
 /// That one timestamp is all that is kept: no amounts and no history. The reminder is off by default.
 /// </summary>
 /// <param name="DosesPerDay">1 or 2.</param>

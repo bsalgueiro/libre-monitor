@@ -30,7 +30,7 @@ public sealed class WidgetSettings
     public AlertSettings Alerts { get; set; } = new();
 
     /// <summary>
-    /// The long-acting insulin reminder: its schedule and the time the dose was last marked as taken. That one
+    /// The insulin reminder: its schedule and the time the dose was last marked as taken. That one
     /// timestamp is the only thing recorded about it (no amounts, no history). Off by default.
     /// </summary>
     public InsulinSettings Insulin { get; set; } = new();

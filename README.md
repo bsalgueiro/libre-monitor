@@ -57,7 +57,7 @@ Everything you need to install and use the widget. No programming knowledge requ
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
-- An optional [long-acting insulin reminder](#long-acting-insulin-reminder): a reminder at your usual time, and a small syringe on the widget that you tap once the dose is taken, so you can check later whether you already did.
+- An optional [insulin reminder](#insulin-reminder): a reminder at your usual time, and a small syringe on the widget that you tap once the dose is taken, so you can check later whether you already did.
 - Your follower login is stored encrypted for your Windows user only, or in your Mac's Keychain. It is never shown or sent
   anywhere except to LibreView.
 - It only reads data. It never changes anything in your account.
@@ -196,17 +196,17 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in
 Focus assist or Do not disturb). Keep your sensor's own alarms on.
 
-## Long-acting insulin reminder
+## Insulin reminder
 
-If you take a long-acting insulin once or twice a day, the app can remind you and help you check whether you already took
-it, so you do not take it twice by mistake. Open **Menu > Alerts...**, scroll to **Long-acting insulin** and turn it on.
+If you take insulin once or twice a day, the app can remind you and help you check whether you already took
+it, so you do not take it twice by mistake. Open **Menu > Alerts...**, scroll to **Insulin** and turn it on.
 It is **off until you turn it on**.
 
 - **Set it up:** choose once or twice a day, the time of each dose (24-hour clock on Windows, your Mac's clock format on a
   Mac), and how often to be reminded again if you have not marked the dose.
 - **The syringe:** a small syringe appears on the widget. **Grey** means the next dose is not due yet. **Amber with "!"**
   means the dose time has passed and you have not marked it. **Green with a tick** means you marked it as taken.
-- **Mark a dose:** click the syringe (or **Menu > Long-acting insulin**) and confirm. To undo a tap made by mistake, click
+- **Mark a dose:** click the syringe (or **Menu > Insulin**) and confirm. To undo a tap made by mistake, click
   it again and choose to remove the mark. Marking asks first, because a wrong "taken" would hide a dose you missed.
 - **When it changes back:** each dose has its own period. The period of the next dose opens 2 hours before its time, so the
   syringe goes back to grey and a tap made a little early still counts for the right dose.
@@ -431,7 +431,7 @@ delete the tag, fix the problem and tag again.
 - No glucose data is written to disk, on purpose: the only things stored are the encrypted login and the preferences
   (including alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out of
   scope, because LibreView already keeps the user's history.
-- The long-acting insulin reminder stores its schedule and one timestamp, the last "taken" tap, next to the other
+- The insulin reminder stores its schedule and one timestamp, the last "taken" tap, next to the other
   preferences. Without that timestamp a restart would forget the tap and prompt a second dose. It must stay at that:
   no amounts, no list of past doses. The rules live in `Insulin.cs` / `Insulin.swift` (`InsulinSchedule`,
   `InsulinReminderEvaluator`), pure logic with no UI or clock, covered by `InsulinTests`. A dose period starts 2 hours before
