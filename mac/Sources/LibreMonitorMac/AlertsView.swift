@@ -242,6 +242,7 @@ struct AlertsView: View {
         insulin.firstDoseMinutes = Self.minutes(of: firstDose)
         if dosesPerDay == 2 { insulin.secondDoseMinutes = Self.minutes(of: secondDose) }
         insulin.repeatMinutes = insulinRepeatMinutes
+        if !insulin.enabled { insulin.lastTakenAt = nil } // off means nothing about it stays saved
 
         if insulin.enabled, let problem = insulin.validate() {
             error = problem

@@ -202,7 +202,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != true || dialog.Result is not { } result || dialog.InsulinResult is not { } insulin) return;
 
         _settings.Alerts = result;
-        _settings.Insulin = insulin;
+        _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastTakenAt = null }; // off means nothing stays saved
         _settings.Save();
         _alerts.Reset(); // new thresholds start a fresh episode
         _insulinReminder.Reset();
@@ -240,7 +240,8 @@ public partial class MainWindow : Window
         if (InsulinButton.Visibility != visibility)
         {
             InsulinButton.Visibility = visibility;
-            ApplyLayoutScale(); // the compact layout leaves room for the icon
+            ApplyGraphMode(); // the minimum width and the layout both leave room for the icon
+            Width = Math.Max(Width, MinWidth);
         }
 
         if (!insulin.Enabled) return;
@@ -283,6 +284,15 @@ public partial class MainWindow : Window
     }
 
     private void InsulinMenu_Click(object sender, RoutedEventArgs e) => ToggleInsulin();
+
+    /// <summary>Turns the reminder off. The last "taken" time is forgotten too, so nothing about it stays saved.</summary>
+    private void InsulinOff_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.Insulin = _settings.Insulin with { Enabled = false, LastTakenAt = null };
+        _settings.Save();
+        _insulinReminder.Reset();
+        EvaluateInsulin();
+    }
 
     /// <summary>Marks the current dose as taken, or removes the mark. Both ask first: a wrong "taken" would hide a missed dose.</summary>
     private void ToggleInsulin()
@@ -542,7 +552,8 @@ public partial class MainWindow : Window
         Graph.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         HeaderRow.Height = show ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         GraphRow.Height = show ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        MinWidth = show ? 224 : 190;  // below this the unit and age text become unreadably small
+        // Below this the unit and age text become unreadably small. The syringe needs room too, or the number shrinks.
+        MinWidth = (show ? 224 : 190) + (_settings.Insulin.Enabled ? 40 : 0);
         MinHeight = show ? 148 : 100;
 
         ApplyLayoutScale();
@@ -773,7 +784,8 @@ public partial class MainWindow : Window
             item.IsChecked = index < 0 ? _simulation is null : _simulation == Simulation.Scenarios[index];
         }
 
-        InsulinItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
+        InsulinItem.Visibility = InsulinOffItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
+        InsulinSetupItem.Visibility = _settings.Insulin.Enabled ? Visibility.Collapsed : Visibility.Visible;
         InsulinItem.Header = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local).State == DoseState.Taken
             ? "Long-acting insulin: undo \"taken\""
             : "Long-acting insulin: mark as taken";

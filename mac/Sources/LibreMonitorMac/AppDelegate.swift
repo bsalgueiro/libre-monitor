@@ -47,6 +47,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private static let compactMinSize = NSSize(width: 190, height: 100) // below this the unit and status text are too small
     private static let graphDefaultSize = NSSize(width: 280, height: 172)
     private static let compactDefaultSize = NSSize(width: 260, height: 132)
+    /// The syringe takes room in the header, so the card must be wider while it is shown; otherwise the number shrinks.
+    private static let insulinExtraWidth: CGFloat = 40
+    private var insulinShown = false
+
+    private func minimumSize(graph: Bool, insulin: Bool) -> NSSize {
+        var size = graph ? Self.graphMinSize : Self.compactMinSize
+        if insulin { size.width += Self.insulinExtraWidth }
+        return size
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         Notifier.shared.start()
@@ -58,7 +67,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             toggleWidget: { [weak self] in self?.toggleWidget() },
             quit: { NSApp.terminate(nil) })
         graphShown = model.settings.showGraph
-        panel.minSize = graphShown ? Self.graphMinSize : Self.compactMinSize
+        insulinShown = model.settings.insulin.enabled
+        panel.minSize = minimumSize(graph: graphShown, insulin: insulinShown)
         if !graphShown, !UserDefaults.standard.bool(forKey: "widgetSize.compact.initialised") {
             // First run with the graph hidden: the remembered frame is the graph-sized one, so start from a compact size.
             applyGraphMode(show: false, force: true)
@@ -193,7 +203,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         graphShown = show
-        panel.minSize = show ? Self.graphMinSize : Self.compactMinSize
+        panel.minSize = minimumSize(graph: show, insulin: insulinShown)
 
         let key = show ? Self.graphSizeKey : Self.compactSizeKey
         let fallback = show ? Self.graphDefaultSize : Self.compactDefaultSize
@@ -209,6 +219,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func applySettings(_ settings: WidgetSettings) {
         applyGraphMode(show: settings.showGraph)
+        if settings.insulin.enabled != insulinShown {
+            insulinShown = settings.insulin.enabled
+            panel.minSize = minimumSize(graph: graphShown, insulin: insulinShown)
+            if panel.frame.width < panel.minSize.width { // turned on while narrow: grow to the new minimum
+                var frame = panel.frame
+                frame.size.width = panel.minSize.width
+                panel.setFrame(frame, display: true, animate: true)
+            }
+        }
         panel.level = settings.alwaysOnTop ? .floating : .normal
         statusItem.isVisible = settings.showStatusIcon
 

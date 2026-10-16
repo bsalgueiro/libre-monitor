@@ -347,6 +347,13 @@ struct WidgetView: View {
             Button(status.state == .taken ? "Long-acting insulin: undo “taken”" : "Long-acting insulin: mark as taken") {
                 actions.toggleInsulin()
             }
+            // Turning it off also forgets the last "taken" time, so nothing about it stays saved.
+            Button("Turn off the insulin reminder") {
+                model.settings.insulin.enabled = false
+                model.settings.insulin.lastTakenAt = nil
+            }
+        } else {
+            Button("Set up the insulin reminder…") { actions.showAlerts() }
         }
 
         let snoozed = model.snoozedUntil.flatMap { $0 > model.now ? $0 : nil }

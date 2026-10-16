@@ -214,6 +214,8 @@ It is **off until you turn it on**.
   hours after the dose time, so a missed dose does not wake you at night, but the syringe stays amber. The same sound
   setting and **Snooze alerts** apply as for glucose alerts.
 - **What is saved:** the reminder's settings and the time you last tapped "taken". Nothing else: no amounts, no history.
+- **Turn it off:** right-click the widget and choose **Turn off the insulin reminder** (or untick it in **Alerts...**). The
+  syringe disappears and the saved "taken" time is deleted. Your times are kept for if you turn it on again.
 
 **This is a memory aid, not a medical tool.** It cannot know about a dose you did not tap in the app, it does not record
 how much you took, and it gives no dosing advice. It only works while the app is running. Follow your care team's
