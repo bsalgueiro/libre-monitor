@@ -360,7 +360,7 @@ binary for `--simulate` and fails if it finds it.
 ### Building the release app
 
 ```bash
-./scripts/make-app.sh               # universal (Apple Silicon + Intel), ad-hoc signed; ignores --dev
+./scripts/make-app.sh               # universal (Apple Silicon + Intel), ad-hoc signed, no developer mode
 VERSION=1.2.3 ./scripts/make-app.sh # stamp a version (default 0.1.0)
 ```
 
