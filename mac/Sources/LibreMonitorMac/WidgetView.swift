@@ -59,9 +59,8 @@ struct WidgetView: View {
     private static let sideBySideDesign = CGSize(width: 250, height: 62)
     private static let stackedDesign = CGSize(width: 175, height: 78)
     private static let compactPadding = CGSize(width: 20, height: 14) // total, both sides
-    private static let insulinStrip: CGFloat = 24 // room on the right for the syringe when the graph is hidden
-
-    private var compactStrip: CGFloat { model.settings.insulin.enabled ? Self.insulinStrip : 0 }
+    /// The graph draws its "now" dot this far past its plot, so the plot itself can end exactly at the card padding.
+    private static let graphDotOverhang: CGFloat = 5
 
     var body: some View {
         let theme = WidgetTheme.forScheme(colorScheme)
@@ -93,14 +92,6 @@ struct WidgetView: View {
             closeButton(theme)
                 .opacity(hovering || overCloseButton ? 1 : 0)
                 .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
-        }
-        .overlay(alignment: .trailing) {
-            // With the graph shown the syringe sits in the header, beside the unit and age. With the graph hidden the
-            // header fills the card, so it gets a strip of its own on the right (see `compactStrip`).
-            if !model.settings.showGraph, let status = model.insulinStatus {
-                insulinButton(status, theme: theme)
-                    .padding(.trailing, 6)
-            }
         }
         .contextMenu { menuContent }
     }
@@ -175,8 +166,8 @@ struct WidgetView: View {
             Spacer(minLength: 16 * spacingScale)
 
             if insulinInHeader, let dose = model.insulinStatus {
-                insulinButton(dose, theme: theme, scale: min(max(valueScale, 0.8), 1.7))
-                    .padding(.trailing, 3 * infoScale) // a clear gap before the unit and age
+                insulinButton(dose, theme: theme, scale: min(max(valueScale, 0.7), 1.7))
+                    .padding(.horizontal, -2 * infoScale) // the drawn syringe is smaller than its click area
             }
 
             VStack(alignment: .trailing, spacing: 0) {
@@ -206,6 +197,7 @@ struct WidgetView: View {
                 readings: model.readings, hours: model.settings.hours, unit: model.settings.unit,
                 now: model.now, theme: theme)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.trailing, -Self.graphDotOverhang) // the plot ends at the padding, matching the left side
         }
         .padding(.horizontal, 16) // the same on both sides, so the graph and the header line up evenly in the card
         .padding(.top, 10)
@@ -223,25 +215,26 @@ struct WidgetView: View {
                 stackedHeader(fit: plan.fit, theme: theme, tint: tint, status: status)
             } else {
                 header(valueScale: plan.fit, infoScale: plan.fit, spacingScale: plan.fit, arrowGap: 6 * plan.fit,
-                       theme: theme, tint: tint, status: status)
+                       insulinInHeader: true, theme: theme, tint: tint, status: status)
             }
         }
-        .padding(.leading, Self.compactPadding.width / 2)
-        .padding(.trailing, Self.compactPadding.width / 2 + compactStrip)
+        .padding(.horizontal, Self.compactPadding.width / 2)
         .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
     }
 
     /// Which arrangement lets the number be larger at this size, and the scale to use for it.
     private func compactPlan(for size: CGSize) -> (stacked: Bool, fit: CGFloat) {
         let available = CGSize(
-            width: size.width - Self.compactPadding.width - compactStrip, height: size.height - Self.compactPadding.height)
+            width: size.width - Self.compactPadding.width, height: size.height - Self.compactPadding.height)
 
         func fit(_ design: CGSize) -> CGFloat {
             min(max(min(available.width / design.width, available.height / design.height), 0.3), 8)
         }
 
-        let sideBySide = fit(Self.sideBySideDesign)
-        let stacked = fit(Self.stackedDesign)
+        // The syringe sits in the number's row, so it adds to the width of both arrangements.
+        let withInsulin = model.settings.insulin.enabled
+        let sideBySide = fit(CGSize(width: Self.sideBySideDesign.width + (withInsulin ? 34 : 0), height: Self.sideBySideDesign.height))
+        let stacked = fit(CGSize(width: Self.stackedDesign.width + (withInsulin ? 10 : 0), height: Self.stackedDesign.height))
         return stacked > sideBySide ? (true, stacked) : (false, sideBySide)
     }
 
@@ -259,6 +252,11 @@ struct WidgetView: View {
                 Text(model.current?.trend.arrow ?? "")
                     .font(.system(size: 30 * fit))
                     .foregroundColor(tint)
+
+                if let dose = model.insulinStatus {
+                    insulinButton(dose, theme: theme, scale: min(max(fit, 0.6), 2))
+                        .padding(.horizontal, -4 * fit)
+                }
             }
 
             infoLine(fit: fit, theme: theme, status: status)

@@ -112,7 +112,8 @@
                            MouseLeftButtonDown="Close_MouseLeftButtonDown" ContextMenuOpening="Close_ContextMenuOpening"/>
             </Grid>
 
-            <local:GlucoseGraph x:Name="Graph" Grid.Row="1" Margin="0,2,0,0"/>
+            <!-- The graph draws its "now" dot 5px past its plot, so the plot ends exactly at the card padding like the left side. -->
+            <local:GlucoseGraph x:Name="Graph" Grid.Row="1" Margin="0,2,-5,0"/>
 
             <!-- Insulin check: grey = not due yet, amber ! = due, green tick = taken. Hidden unless the reminder is on. -->
             <Grid x:Name="InsulinButton" Grid.RowSpan="2" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Center"

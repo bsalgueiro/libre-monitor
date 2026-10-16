@@ -240,8 +240,7 @@ public partial class MainWindow : Window
         if (InsulinButton.Visibility != visibility)
         {
             InsulinButton.Visibility = visibility;
-            ApplyGraphMode(); // the minimum width and the layout both leave room for the icon
-            Width = Math.Max(Width, MinWidth);
+            ApplyLayoutScale(); // the layout leaves room for the icon
         }
 
         if (!insulin.Enabled) return;
@@ -552,8 +551,7 @@ public partial class MainWindow : Window
         Graph.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
         HeaderRow.Height = show ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
         GraphRow.Height = show ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
-        // Below this the unit and age text become unreadably small. The syringe needs room too, or the number shrinks.
-        MinWidth = (show ? 224 : 190) + (_settings.Insulin.Enabled ? (show ? 16 : 24) : 0);
+        MinWidth = show ? 224 : 190;  // below this the unit and age text become unreadably small
         MinHeight = show ? 148 : 100;
 
         ApplyLayoutScale();
@@ -673,7 +671,7 @@ public partial class MainWindow : Window
             Grid.SetRow(InsulinButton, 0);
             Grid.SetRowSpan(InsulinButton, 1);
             InsulinButton.VerticalAlignment = VerticalAlignment.Center;
-            InsulinButton.Width = InsulinButton.Height = 28 * Math.Clamp(scale, 0.8, 1.7);
+            InsulinButton.Width = InsulinButton.Height = 28 * Math.Clamp(scale, 0.7, 1.7);
             InsulinButton.Margin = new Thickness(0, 0, InfoStack.DesiredSize.Width + 4 * small, 0);
             return;
         }
