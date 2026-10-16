@@ -40,7 +40,7 @@ Two self-contained platform folders, `windows/` and `mac/`, plus shared `docs/` 
 dotnet test                                   # Windows only for the App; Core tests run anywhere with .NET 10
 dotnet run --project windows/src/LibreMonitor.App -- --dev
 cd mac && swift test
-cd mac && ./scripts/make-app.sh --debug [--dev] [--simulate N]
+cd mac && ./scripts/make-app.sh --debug && open build/LibreMonitor.app --args --dev   # flags go to the app, not the script
 ```
 
 Releases: push tag `vX.Y.Z`; `.github/workflows/release.yml` builds, tests, checksums and uploads. Do not tag or push without asking.

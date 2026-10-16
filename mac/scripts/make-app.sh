@@ -1,8 +1,8 @@
 #!/bin/bash
 # Builds LibreMonitor.app from the Swift package, ad-hoc signs it and zips it. Run on a Mac.
 #
-#   ./scripts/make-app.sh            release build, universal (arm64 + x86_64); ignores --dev / --simulate
-#   ./scripts/make-app.sh --debug    debug build for this Mac only; accepts --dev and --simulate N
+#   ./scripts/make-app.sh            release build, universal (arm64 + x86_64), no developer mode
+#   ./scripts/make-app.sh --debug    debug build for this Mac only; start it with `--args --dev` or `--args --simulate N`
 #
 # Output: build/LibreMonitor.app, build/LibreMonitor-mac.zip, build/SHA256SUMS.txt
 # Set VERSION=1.2.3 to stamp a version (default 0.1.0).

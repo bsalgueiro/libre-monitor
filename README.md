@@ -212,21 +212,40 @@ Your own data and your LibreLink app are not affected either way. **Menu > About
 
 # For developers
 
-Building, running from source, testing and the technical background.
+Building, running from source, testing and the technical background. The repository has one folder per platform, and the
+two apps are deliberate twins: the Mac logic is a hand-written Swift port of the C# logic, with the same file names and
+the same tests.
 
-## Projects
+```
+libre-monitor/
+  windows/            .NET 10 solution: src/ (Core, App, Cli), tests/, LibreMonitor.slnx
+  mac/                Swift package: Sources/ (LibreMonitorKit, LibreMonitorMac), Tests/, scripts/
+  docs/               the project website (GitHub Pages)
+  .github/workflows/  windows.yml and mac.yml (CI), release.yml (publishes both)
+```
+
+**Developer contents:** [Windows](#windows) · [macOS](#macos) · [Releases](#publishing-a-release) ·
+[Technical notes](#technical-notes)
+
+**When you change shared behaviour** (alert rules, error classification, polling, unit conversion), change both
+platforms and both test suites. `LibreMonitor.Core` and `LibreMonitorKit` should keep giving the same answers.
+
+## Windows
+
+The Windows app is a WPF widget on .NET 10. Everything lives in `windows/`. Building the widget needs Windows. The
+`Core` library and its tests also build on a Mac or Linux with the .NET 10 SDK.
 
 | Project | Purpose |
 |---|---|
-| `LibreMonitor.Core` | LibreLinkUp client (login with regional redirect, patients, graph), polling monitor, unit conversion |
-| `LibreMonitor.App` | WPF widget |
+| `LibreMonitor.Core` | LibreLinkUp client (login with regional redirect, patients, graph), polling monitor, alert rules, unit conversion |
+| `LibreMonitor.App` | The WPF widget: window, graph, tray icon, alerts window, DPAPI login store |
 | `LibreMonitor.Cli` | Console check of the connection |
 | `LibreMonitor.Core.Tests` | xUnit tests using fake HTTP responses (no network) |
 
-## Run from source
+### Run from source
 
 Requires Windows and the .NET 10 SDK. Set up the follower account first (steps 1 and 2 under
-[Getting started](#getting-started)), then:
+[Getting started](#getting-started)), then, from the repository root:
 
 ```powershell
 dotnet run --project windows/src/LibreMonitor.App
@@ -238,30 +257,18 @@ To only check the connection from a console (credentials from `LIBRE_EMAIL` / `L
 dotnet run --project windows/src/LibreMonitor.Cli
 ```
 
-## Tests
+### Tests
 
 ```powershell
-dotnet test
+dotnet test windows/tests/LibreMonitor.Core.Tests
 ```
 
-Tests use fake HTTP responses and never contact the network.
+Tests use fake HTTP responses and never contact the network. The same command runs in CI (`windows.yml`) on every change under
+`windows/`, together with a build of the whole solution including the WPF app.
 
-## Building the Mac app
+### Developer mode
 
-The Mac app is a Swift package in `mac/` (a Mac with Xcode or the Swift toolchain is needed):
-
-```bash
-cd mac
-swift test                          # unit tests, no network
-./scripts/make-app.sh --debug       # build/LibreMonitor.app for this Mac; accepts --dev and --simulate N
-./scripts/make-app.sh               # universal release build, ad-hoc signed; ignores --dev
-```
-
-The script writes `build/LibreMonitor-mac.zip` and `build/SHA256SUMS.txt`.
-
-## Developer mode
-
-Running from source with `--dev` adds a **Developer: simulate reading** entry to the widget menu. It fakes a reading for
+Running a Debug build with `--dev` adds a **Developer: simulate reading** entry to the widget menu. It fakes a reading for
 each colour state (low, in range, high, old, none) so the display can be checked without waiting for real glucose to
 change. The widget and the tray tooltip say SIMULATED while it is active.
 
@@ -270,14 +277,12 @@ dotnet run --project windows/src/LibreMonitor.App -- --dev
 dotnet run --project windows/src/LibreMonitor.App -- --simulate 2   # start with scenario 2 showing
 ```
 
-This only exists in Debug builds. A Release or published executable ignores `--dev` and `--simulate`, so it can never
-show a simulated value.
+`dotnet run` and `dotnet build` without `-c Release` make Debug builds, which are the ones that accept these flags. A
+Release or published executable ignores `--dev` and `--simulate`, so it can never show a simulated value.
 
-## Building an executable
+### Building an executable
 
-Both builds below are Release builds, so developer mode cannot appear in them, even if started with `--dev`.
-`dotnet run` and `dotnet build` without `-c Release` make Debug builds, which are the ones that accept `--dev`.
-The `publish` folder is ignored by git.
+Both builds below are Release builds. The `publish` folder is ignored by git.
 
 **For yourself (small).** Needs the .NET 10 Desktop Runtime on the machine that runs it, which most PCs do not have.
 
@@ -301,6 +306,68 @@ it does not receive .NET security updates unless it is rebuilt and handed out ag
 
 Whoever receives the executable will see the [SmartScreen warning](#first-open-warnings), because it is unsigned.
 
+## macOS
+
+The Mac app is a Swift package in `mac/`, written with AppKit and SwiftUI for macOS 13 or newer. It needs a Mac with the
+Swift toolchain. The Command Line Tools are enough to build and run the app, but running the tests needs the full Xcode
+app, because XCTest ships with Xcode.
+
+| Target | Purpose |
+|---|---|
+| `LibreMonitorKit` | Pure logic with no UI: LibreLinkUp client, polling monitor, alert rules, models, unit conversion. The port of `LibreMonitor.Core` |
+| `LibreMonitorMac` | The app: floating panel, graph, menu bar item, alerts window, Keychain login store, notifications |
+| `LibreMonitorKitTests` | XCTest tests using fake HTTP responses (no network). Ports of the C# tests |
+
+### Build and run from source
+
+Set up the follower account first (steps 1 and 2 under [Getting started](#getting-started)). The app needs a real `.app`
+bundle for notifications and its icon, so use the script rather than `swift run`:
+
+```bash
+cd mac
+./scripts/make-app.sh --debug       # build/LibreMonitor.app for this Mac only
+open build/LibreMonitor.app
+```
+
+The app has no Dock icon: look for the widget and the menu bar item. The build is ad-hoc signed, so macOS shows the
+[first-open warning](#first-open-warnings) for a build you made yourself too.
+
+### Tests
+
+```bash
+cd mac
+swift test        # unit tests, no network; needs Xcode, not just the Command Line Tools
+```
+
+CI (`mac.yml`) runs the build, the tests and both app builds on every change under `mac/`.
+
+### Developer mode
+
+A Debug app accepts `--dev` and `--simulate N` when it is launched, and adds the same **Developer: simulate reading** menu
+entry as on Windows. Build a debug app, then start it with the flag:
+
+```bash
+./scripts/make-app.sh --debug
+open build/LibreMonitor.app --args --dev
+open build/LibreMonitor.app --args --simulate 2     # start with scenario 2 showing
+```
+
+(If it is already running, quit it first, or `open` will not start a second copy.)
+
+On the Mac this code sits inside `#if DEBUG`, so a Release build does not contain it at all. CI searches the release
+binary for `--simulate` and fails if it finds it.
+
+### Building the release app
+
+```bash
+./scripts/make-app.sh               # universal (Apple Silicon + Intel), ad-hoc signed; ignores --dev
+VERSION=1.2.3 ./scripts/make-app.sh # stamp a version (default 0.1.0)
+```
+
+The script writes `build/LibreMonitor.app`, `build/LibreMonitor-mac.zip` and `build/SHA256SUMS.txt`. The app is not
+notarised (that needs a paid Apple Developer account), so users see the first-open warning. The ad-hoc signature is what
+lets it run on Apple Silicon at all.
+
 ## Publishing a release
 
 Users download the executable from the repository's Releases page. A release is made by pushing a version tag:
@@ -320,28 +387,45 @@ never leaves a release with just one app:
   developer mode, and produces `LibreMonitor-mac.zip`.
 - A last job writes `SHA256SUMS.txt` from those two files and publishes the release.
 
-`THIRD-PARTY-NOTICES.md` is attached to the release too.
+`THIRD-PARTY-NOTICES.md` is attached to the release too. If a release build fails the tag stays on GitHub with no release:
+delete the tag, fix the problem and tag again.
 
 ## Technical notes
 
-- The LibreLinkUp API is unofficial and can change. The app version sent in headers lives in `LibreLinkUpOptions`.
+**Both platforms**
+
+- The LibreLinkUp API is unofficial and can change. The app version sent in headers lives in `LibreLinkUpOptions` (C#) and
+  its Swift counterpart; it is the value to update when Abbott raises the minimum client version.
 - Requests must carry a User-Agent or the service answers HTTP 403. The client sends an honest one (`LibreMonitor/0.1`).
-- The follower login is encrypted with Windows DPAPI (current user scope) in `%LOCALAPPDATA%\LibreMonitor`, next to the
-  widget's settings file.
-- Alert rules live in `LibreMonitor.Core/Alerts.cs` (`AlertEvaluator`) with no UI or clock of its own, so every rule is
-  covered by unit tests in `AlertTests.cs`. Thresholds are stored in mg/dL in `settings.json` whatever unit is displayed.
-  In developer mode, simulated readings go through the same alert path, so alerts can be tried without real glucose
-  changing (the notification says SIMULATED).
-- No glucose data is written to disk, on purpose: the only files are the encrypted login and `settings.json`
-  (preferences and alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out
-  of scope, because LibreView already keeps the user's history.
+- Alert rules live in `Alerts.cs` / `Alerts.swift` (`AlertEvaluator`) with no UI or clock of their own, so every rule is
+  covered by unit tests in `AlertTests`. Thresholds are stored in mg/dL whatever unit is displayed. In developer mode,
+  simulated readings go through the same alert path, so alerts can be tried without real glucose changing (the
+  notification says SIMULATED).
+- No glucose data is written to disk, on purpose: the only things stored are the encrypted login and the preferences
+  (including alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out of
+  scope, because LibreView already keeps the user's history.
 - Failures are classified so the user can be told the right thing. A response that does not look right (HTTP 403, 404 or 410,
   a non-zero API status such as "client version too old", a page where JSON was expected, a missing field, an unrecognised
   timestamp) is a `ServiceChangedException`, never a wrong-password error. Server errors and rate limits stay ordinary,
   retryable failures. `GlucoseMonitor` raises `ServiceChanged` once per episode after
-  `ServiceChangedThreshold` (3) such answers in a row, and a good answer ends the episode. When Abbott raises the
-  minimum client version, `LibreLinkUpOptions.AppVersion` is the value to update.
+  `ServiceChangedThreshold` (3) such answers in a row, and a good answer ends the episode.
 - The client never uploads or changes data. Apart from the login request, it only reads.
+
+**Windows**
+
+- The follower login is encrypted with Windows DPAPI (current user scope) in `%LOCALAPPDATA%\LibreMonitor`, next to the
+  widget's `settings.json`.
+- Alert notifications are tray balloons, so they need the tray icon. Without it, alerts still play the sound and colour
+  the border.
+
+**macOS**
+
+- The follower login is stored in the Keychain (`KeychainStore.swift`, service `io.github.bsalgueiro.LibreMonitor`).
+  Preferences are stored in the app's user defaults.
+- Alerts use macOS notifications, which need a real app bundle: `Notifier.isAvailable` is false when running the bare
+  executable, and every entry point checks it first.
+- The package uses Swift 5 language mode on purpose, to keep the code close to the C# version rather than fighting
+  Swift 6 concurrency checking.
 
 ## License
 
