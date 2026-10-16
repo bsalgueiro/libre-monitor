@@ -30,6 +30,39 @@
 
         <CheckBox x:Name="SoundBox" Content="Play a sound"/>
 
+        <Separator Margin="0,16,0,12"/>
+
+        <TextBlock Text="Long-acting insulin" FontSize="16" FontWeight="SemiBold"/>
+        <TextBlock x:Name="InsulinIntroText" Margin="0,4,0,10" TextWrapping="Wrap"
+                   Text="A reminder at your usual time, and a syringe icon on the widget to tap once the dose is taken, so you can check later whether you already did. Off until you turn it on."/>
+
+        <CheckBox x:Name="InsulinBox" Content="Remind me to take my long-acting insulin" FontWeight="SemiBold" Checked="Insulin_Changed" Unchecked="Insulin_Changed"/>
+        <StackPanel x:Name="InsulinPanel" Margin="22,8,0,0">
+            <ComboBox x:Name="DosesBox" Width="190" HorizontalAlignment="Left" SelectionChanged="Doses_SelectionChanged">
+                <ComboBoxItem Content="Once a day" Tag="1"/>
+                <ComboBoxItem Content="Twice a day" Tag="2"/>
+            </ComboBox>
+            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock x:Name="FirstLabel" Text="Time" VerticalAlignment="Center" Width="70"/>
+                <TextBox x:Name="FirstTime" Width="64" Padding="5" VerticalContentAlignment="Center"/>
+                <TextBlock x:Name="TimeHint" Text="24-hour, like 08:00" Margin="8,0,0,0" VerticalAlignment="Center" FontSize="12"/>
+            </StackPanel>
+            <StackPanel x:Name="SecondRow" Orientation="Horizontal" Margin="0,8,0,0">
+                <TextBlock x:Name="SecondLabel" Text="Second time" VerticalAlignment="Center" Width="70"/>
+                <TextBox x:Name="SecondTime" Width="64" Padding="5" VerticalContentAlignment="Center"/>
+            </StackPanel>
+            <TextBlock x:Name="InsulinRepeatLabel" Text="If not marked as taken, remind me" Margin="0,12,0,0"/>
+            <ComboBox x:Name="InsulinRepeatBox" Width="190" Margin="0,6,0,0" HorizontalAlignment="Left">
+                <ComboBoxItem Content="Never (remind once)" Tag="0"/>
+                <ComboBoxItem Content="Every 15 minutes" Tag="15"/>
+                <ComboBoxItem Content="Every 30 minutes" Tag="30"/>
+                <ComboBoxItem Content="Every hour" Tag="60"/>
+            </ComboBox>
+        </StackPanel>
+
+        <TextBlock x:Name="InsulinDisclaimerText" Margin="0,12,0,0" TextWrapping="Wrap" FontSize="12"
+                   Text="This is a memory aid only. It cannot know about a dose you did not tap, it does not record amounts, and it gives no dosing advice. Reminders stop 6 hours after the dose time. Follow your care team's instructions."/>
+
         <TextBlock x:Name="DisclaimerText" Margin="0,16,0,0" TextWrapping="Wrap" FontSize="12"
                    Text="Alerts only work while this app is running, your PC is on and awake, and your phone is uploading. Readings can arrive minutes late, and Windows may hide notifications (for example in Focus mode). Do not rely on this for safety: keep your sensor's own alarms on."/>
 

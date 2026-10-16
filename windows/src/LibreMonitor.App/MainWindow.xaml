@@ -57,6 +57,7 @@
                     <MenuItem x:Name="ThemeDark" Header="Dark" Click="Theme_Click" Tag="Dark"/>
                 </MenuItem>
                 <MenuItem Header="Alerts..." Click="Alerts_Click"/>
+                <MenuItem x:Name="InsulinItem" Header="Long-acting insulin: mark as taken" Click="InsulinMenu_Click" Visibility="Collapsed"/>
                 <MenuItem x:Name="SnoozeMenu" Header="Snooze alerts">
                     <MenuItem Header="For 30 minutes" Click="Snooze_Click" Tag="30"/>
                     <MenuItem Header="For 1 hour" Click="Snooze_Click" Tag="60"/>
@@ -110,6 +111,28 @@
             </Grid>
 
             <local:GlucoseGraph x:Name="Graph" Grid.Row="1" Margin="0,2,0,0"/>
+
+            <!-- Long-acting insulin check: grey = not due yet, amber ! = due, green tick = taken. Hidden unless the reminder is on. -->
+            <Grid x:Name="InsulinButton" Grid.RowSpan="2" Width="24" Height="24" HorizontalAlignment="Right" VerticalAlignment="Top"
+                  Margin="0,0,16,0" Background="Transparent" Cursor="Hand" Visibility="Collapsed"
+                  MouseLeftButtonDown="Insulin_MouseLeftButtonDown">
+                <Viewbox Margin="1,3,3,1">
+                    <Canvas Width="24" Height="24">
+                        <Path x:Name="SyringePath" StrokeThickness="1.7" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                              Data="M9,6 L15,6 L15,18 L9,18 Z M7,6 L17,6 M12,6 L12,2 M9,2 L15,2 M12,18 L12,23 M15,10 L13,10 M15,13 L13,13 M15,16 L13,16"
+                              RenderTransformOrigin="0.5,0.5">
+                            <Path.RenderTransform>
+                                <RotateTransform Angle="45" CenterX="12" CenterY="12"/>
+                            </Path.RenderTransform>
+                        </Path>
+                    </Canvas>
+                </Viewbox>
+                <Border x:Name="InsulinBadge" Width="12" Height="12" CornerRadius="6" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                        Visibility="Collapsed">
+                    <TextBlock x:Name="InsulinBadgeText" FontSize="9" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                </Border>
+            </Grid>
         </Grid>
     </Border>
 

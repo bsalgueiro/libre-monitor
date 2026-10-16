@@ -24,6 +24,7 @@ struct WidgetActions {
     var moveToCorner: (Corner) -> Void
     var hideToMenuBar: () -> Void
     var showAlerts: () -> Void
+    var toggleInsulin: () -> Void
     var snoozeAlerts: (Int) -> Void
     var resumeAlerts: () -> Void
     var checkForUpdates: () -> Void
@@ -58,6 +59,9 @@ struct WidgetView: View {
     private static let sideBySideDesign = CGSize(width: 250, height: 62)
     private static let stackedDesign = CGSize(width: 175, height: 78)
     private static let compactPadding = CGSize(width: 20, height: 14) // total, both sides
+    private static let insulinStrip: CGFloat = 24 // room on the right for the syringe when the graph is hidden
+
+    private var compactStrip: CGFloat { model.settings.insulin.enabled ? Self.insulinStrip : 0 }
 
     var body: some View {
         let theme = WidgetTheme.forScheme(colorScheme)
@@ -90,7 +94,62 @@ struct WidgetView: View {
                 .opacity(hovering || overCloseButton ? 1 : 0)
                 .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
         }
+        .overlay(alignment: .topTrailing) {
+            if let status = model.insulinStatus {
+                insulinButton(status, theme: theme)
+                    .padding(.top, 2)
+                    .padding(.trailing, 8)
+            }
+        }
         .contextMenu { menuContent }
+    }
+
+    /// The long-acting insulin check: grey = not due yet, amber ! = due, green tick = taken. Only shown while the
+    /// reminder is on. Clicking asks to mark the dose as taken (or to undo that).
+    private func insulinButton(_ status: DoseStatus, theme: WidgetTheme) -> some View {
+        let color: Color
+        let mark: String?
+        let help: String
+        switch status.state {
+        case .taken:
+            color = theme.inRange
+            mark = "✓"
+            help = "Long-acting insulin: marked as taken at \(dayAndTime(status.takenAt ?? status.slot)). Click to undo."
+        case .due:
+            color = theme.high
+            mark = "!"
+            help = "Long-acting insulin: due since \(dayAndTime(status.slot)), not marked as taken. Click to mark it."
+        case .upcoming:
+            color = theme.muted
+            mark = nil
+            help = "Long-acting insulin: next dose at \(dayAndTime(status.slot)). Click to mark it as taken early."
+        }
+
+        return Button { actions.toggleInsulin() } label: {
+            ZStack(alignment: .bottomTrailing) {
+                SyringeShape()
+                    .stroke(color, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
+                    .frame(width: 17, height: 17)
+                    .rotationEffect(.degrees(45))
+                    .frame(width: 22, height: 22)
+
+                if let mark {
+                    Circle().fill(color)
+                        .frame(width: 11, height: 11)
+                        .overlay(Text(mark).font(.system(size: 8, weight: .heavy)).foregroundColor(.white))
+                }
+            }
+            .frame(width: 24, height: 24)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+
+    private func dayAndTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = Calendar.current.isDateInToday(date) ? "HH:mm" : "EEE HH:mm"
+        return formatter.string(from: date)
     }
 
     /// Value, arrow and unit/status, shared by both layouts so they can never drift apart.
@@ -161,14 +220,15 @@ struct WidgetView: View {
                        theme: theme, tint: tint, status: status)
             }
         }
-        .padding(.horizontal, Self.compactPadding.width / 2)
+        .padding(.leading, Self.compactPadding.width / 2)
+        .padding(.trailing, Self.compactPadding.width / 2 + compactStrip)
         .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
     }
 
     /// Which arrangement lets the number be larger at this size, and the scale to use for it.
     private func compactPlan(for size: CGSize) -> (stacked: Bool, fit: CGFloat) {
         let available = CGSize(
-            width: size.width - Self.compactPadding.width, height: size.height - Self.compactPadding.height)
+            width: size.width - Self.compactPadding.width - compactStrip, height: size.height - Self.compactPadding.height)
 
         func fit(_ design: CGSize) -> CGFloat {
             min(max(min(available.width / design.width, available.height / design.height), 0.3), 8)
@@ -276,6 +336,12 @@ struct WidgetView: View {
 
         Button("Alerts…") { actions.showAlerts() }
 
+        if let status = model.insulinStatus {
+            Button(status.state == .taken ? "Long-acting insulin: undo “taken”" : "Long-acting insulin: mark as taken") {
+                actions.toggleInsulin()
+            }
+        }
+
         let snoozed = model.snoozedUntil.flatMap { $0 > model.now ? $0 : nil }
         Menu(snoozed.map { "Snooze alerts (until \(Self.clock.string(from: $0)))" } ?? "Snooze alerts") {
             Button("For 30 minutes") { actions.snoozeAlerts(30) }
@@ -355,5 +421,27 @@ struct WidgetView: View {
         }
 
         return (model.realUpdate == nil ? "connecting" : "no reading", theme.muted)
+    }
+}
+
+/// A syringe drawn in a 24 x 24 box, upright: plunger at the top, needle at the bottom. The view rotates it.
+struct SyringeShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height) / 24
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: rect.minX + x * s, y: rect.minY + y * s) }
+        func line(_ path: inout Path, _ a: CGPoint, _ b: CGPoint) { path.move(to: a); path.addLine(to: b) }
+
+        var path = Path()
+        path.move(to: p(9, 6))
+        path.addLine(to: p(15, 6))
+        path.addLine(to: p(15, 18))
+        path.addLine(to: p(9, 18))
+        path.closeSubpath()
+        line(&path, p(7, 6), p(17, 6))    // flange
+        line(&path, p(12, 6), p(12, 2))   // plunger
+        line(&path, p(9, 2), p(15, 2))    // thumb rest
+        line(&path, p(12, 18), p(12, 23)) // needle
+        for y in [10, 13, 16] as [CGFloat] { line(&path, p(15, y), p(13, y)) } // markings
+        return path
     }
 }
