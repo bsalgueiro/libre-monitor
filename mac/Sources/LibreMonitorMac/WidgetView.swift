@@ -94,11 +94,12 @@ struct WidgetView: View {
                 .opacity(hovering || overCloseButton ? 1 : 0)
                 .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
         }
-        .overlay(alignment: .topTrailing) {
-            if let status = model.insulinStatus {
+        .overlay(alignment: .trailing) {
+            // With the graph shown the syringe sits in the header, beside the unit and age. With the graph hidden the
+            // header fills the card, so it gets a strip of its own on the right (see `compactStrip`).
+            if !model.settings.showGraph, let status = model.insulinStatus {
                 insulinButton(status, theme: theme)
-                    .padding(.top, 2)
-                    .padding(.trailing, 8)
+                    .padding(.trailing, 6)
             }
         }
         .contextMenu { menuContent }
@@ -106,7 +107,7 @@ struct WidgetView: View {
 
     /// The long-acting insulin check: grey = not due yet, amber ! = due, green tick = taken. Only shown while the
     /// reminder is on. Clicking asks to mark the dose as taken (or to undo that).
-    private func insulinButton(_ status: DoseStatus, theme: WidgetTheme) -> some View {
+    private func insulinButton(_ status: DoseStatus, theme: WidgetTheme, scale: CGFloat = 1) -> some View {
         let color: Color
         let mark: String?
         let help: String
@@ -129,17 +130,17 @@ struct WidgetView: View {
             ZStack(alignment: .bottomTrailing) {
                 SyringeShape()
                     .stroke(color, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
-                    .frame(width: 17, height: 17)
+                    .frame(width: 19 * scale, height: 19 * scale)
                     .rotationEffect(.degrees(45))
-                    .frame(width: 22, height: 22)
+                    .frame(width: 25 * scale, height: 25 * scale)
 
                 if let mark {
                     Circle().fill(color)
-                        .frame(width: 11, height: 11)
-                        .overlay(Text(mark).font(.system(size: 8, weight: .heavy)).foregroundColor(.white))
+                        .frame(width: 12 * scale, height: 12 * scale)
+                        .overlay(Text(mark).font(.system(size: 8.5 * scale, weight: .heavy)).foregroundColor(.white))
                 }
             }
-            .frame(width: 24, height: 24)
+            .frame(width: 28 * scale, height: 28 * scale)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -155,7 +156,7 @@ struct WidgetView: View {
     /// Value, arrow and unit/status, shared by both layouts so they can never drift apart.
     /// `valueScale` and `infoScale` size the text; `spacingScale` keeps the gaps in proportion.
     private func header(
-        valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat, arrowGap: CGFloat = 0,
+        valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat, arrowGap: CGFloat = 0, insulinInHeader: Bool = false,
         theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View
     {
         HStack(alignment: .center, spacing: 8 * spacingScale) {
@@ -172,6 +173,11 @@ struct WidgetView: View {
                 .padding(.leading, arrowGap) // grows with the text, so a large number keeps a proportional gap to its arrow
 
             Spacer(minLength: 16 * spacingScale)
+
+            if insulinInHeader, let dose = model.insulinStatus {
+                insulinButton(dose, theme: theme, scale: infoScale)
+                    .padding(.trailing, 4 * infoScale) // a clear gap before the unit and age
+            }
 
             VStack(alignment: .trailing, spacing: 0) {
                 Text(model.settings.unit.label)
@@ -193,7 +199,8 @@ struct WidgetView: View {
         let small = min(max(scale, 1), 1.7)
 
         return VStack(alignment: .leading, spacing: 2) {
-            header(valueScale: scale, infoScale: small, spacingScale: 1, theme: theme, tint: tint, status: status)
+            header(valueScale: scale, infoScale: small, spacingScale: 1, insulinInHeader: true,
+                   theme: theme, tint: tint, status: status)
 
             GlucoseGraphView(
                 readings: model.readings, hours: model.settings.hours, unit: model.settings.unit,

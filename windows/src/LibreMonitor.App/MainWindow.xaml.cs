@@ -653,10 +653,17 @@ public partial class MainWindow : Window
             var small = Math.Clamp(scale, 1, 1.7);
 
             ContentGrid.Margin = new Thickness(16, 10, 14, 6);
-            InsulinButton.Margin = new Thickness(0, 0, 16, 0); // sits beside the close button, above the unit and age
             ArrangeHeader(HeaderArrangement.SideBySide);
             SetHeaderFonts(scale, small);
             InfoStack.Margin = new Thickness(0, 0, 18, 0); // room for the close button
+
+            // The syringe sits in the header row, centred vertically, just left of the unit and age text.
+            InfoStack.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            Grid.SetRow(InsulinButton, 0);
+            Grid.SetRowSpan(InsulinButton, 1);
+            InsulinButton.VerticalAlignment = VerticalAlignment.Center;
+            InsulinButton.Width = InsulinButton.Height = 28 * small;
+            InsulinButton.Margin = new Thickness(0, 0, 18 + InfoStack.DesiredSize.Width + 6 * small, 0);
             return;
         }
 
@@ -665,6 +672,10 @@ public partial class MainWindow : Window
         // With the insulin icon shown, a strip on the right keeps it clear of the number.
         var iconStrip = _settings.Insulin.Enabled ? 22 : 0;
         ContentGrid.Margin = new Thickness(10, 6, 10 + iconStrip, 6);
+        Grid.SetRow(InsulinButton, 0);
+        Grid.SetRowSpan(InsulinButton, 2);
+        InsulinButton.VerticalAlignment = VerticalAlignment.Center;
+        InsulinButton.Width = InsulinButton.Height = 28;
         InsulinButton.Margin = new Thickness(0, 0, -iconStrip, 0);
         InfoStack.Margin = new Thickness(0);
 
