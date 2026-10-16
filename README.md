@@ -310,12 +310,15 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The workflow in `.github/workflows/release.yml` then creates the release with generated notes, and two jobs attach
-their files with the version taken from the tag (a last job writes `SHA256SUMS.txt` from the uploaded files):
+The workflow in `.github/workflows/release.yml` tests and builds both apps first, with the version taken from the tag.
+Only if both succeed does a last job create the release with generated notes and attach the files, so a failed build
+never leaves a release with just one app:
 
-- Windows: runs the tests, publishes the self-contained single-file build above, and uploads `LibreMonitor-win-x64.exe`
+- Windows: runs the tests, publishes the self-contained single-file build above as `LibreMonitor-win-x64.exe`
   (a local build of the same command is named `LibreMonitor.App.exe`; the workflow renames it).
-- Mac: runs the Swift tests and `mac/scripts/make-app.sh` (universal, ad-hoc signed) and uploads `LibreMonitor-mac.zip`.
+- Mac: runs the Swift tests and `mac/scripts/make-app.sh` (universal, ad-hoc signed), checks that the release binary has no
+  developer mode, and produces `LibreMonitor-mac.zip`.
+- A last job writes `SHA256SUMS.txt` from those two files and publishes the release.
 
 `THIRD-PARTY-NOTICES.md` is attached to the release too.
 

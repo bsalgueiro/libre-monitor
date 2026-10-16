@@ -2,6 +2,9 @@ name: Release
 
 # Pushing a tag such as v0.1.0 builds the widget for Windows and macOS and publishes it as a GitHub release,
 # so people can download LibreMonitor-win-x64.exe or LibreMonitor-mac.zip and run it with nothing else installed.
+#
+# The release is created only at the end, after both platforms have tested and built successfully. If either
+# fails, no release is published, so there is never a release with only one of the two apps.
 on:
   push:
     tags:
@@ -11,19 +14,7 @@ permissions:
   contents: write # needed to create the release and attach files
 
 jobs:
-  create:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-        run: gh release create "$TAG" THIRD-PARTY-NOTICES.md --title "$TAG" --generate-notes
-
   windows:
-    needs: create
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,15 +38,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Rename-Item publish/LibreMonitor.App.exe LibreMonitor-win-x64.exe
 
-      - name: Upload to the release
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-        run: gh release upload $env:TAG publish/LibreMonitor-win-x64.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win
+          path: publish/LibreMonitor-win-x64.exe
+          if-no-files-found: error
 
   mac:
-    needs: create
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,24 +71,31 @@ jobs:
             echo "Release binary contains developer-mode code"; exit 1
           fi
 
-      - name: Upload to the release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
-        run: gh release upload "$TAG" mac/build/LibreMonitor-mac.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: mac/build/LibreMonitor-mac.zip
+          if-no-files-found: error
 
-  checksums:
-    needs: [windows, mac]
+  publish:
+    needs: [windows, mac] # runs only if both succeeded
     runs-on: ubuntu-latest
     steps:
-      - name: Write SHA256SUMS.txt from the uploaded files
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create the release with checksums
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ github.ref_name }}
-          GH_REPO: ${{ github.repository }}
         run: |
-          mkdir dl && cd dl
-          gh release download "$TAG" --pattern 'LibreMonitor-*'
+          cd dist
           sha256sum LibreMonitor-* > SHA256SUMS.txt
           cat SHA256SUMS.txt
-          gh release upload "$TAG" SHA256SUMS.txt
+          cd ..
+          gh release create "$TAG" dist/LibreMonitor-win-x64.exe dist/LibreMonitor-mac.zip dist/SHA256SUMS.txt \
+            THIRD-PARTY-NOTICES.md --title "$TAG" --generate-notes
