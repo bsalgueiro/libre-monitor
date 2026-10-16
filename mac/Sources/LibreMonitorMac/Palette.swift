@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-// Colours and thresholds, matching src/LibreMonitor.App/Palette.cs.
+// Colours and thresholds, matching windows/src/LibreMonitor.App/Palette.cs.
 // Range colours are darker in the light theme so they keep their contrast on a light background.
 // The thresholds only colour the display; they are not alarms.
 

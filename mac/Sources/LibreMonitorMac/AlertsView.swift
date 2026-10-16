@@ -3,7 +3,7 @@ import LibreMonitorKit
 import SwiftUI
 
 /// Edits the alert thresholds in the unit the widget displays. Values are converted to mg/dL for storage.
-/// Port of src/LibreMonitor.App/AlertsWindow.xaml(.cs).
+/// Port of windows/src/LibreMonitor.App/AlertsWindow.xaml(.cs).
 struct AlertsView: View {
     let unit: GlucoseUnit
     let original: AlertSettings

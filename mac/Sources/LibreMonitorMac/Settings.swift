@@ -1,7 +1,7 @@
 import Foundation
 import LibreMonitorKit
 
-// Port of src/LibreMonitor.App/WidgetSettings.cs. Nothing here is sensitive, and no glucose data is stored:
+// Port of windows/src/LibreMonitor.App/WidgetSettings.cs. Nothing here is sensitive, and no glucose data is stored:
 // only preferences (and the alert limits).
 
 enum ThemeChoice: String, Codable, CaseIterable {

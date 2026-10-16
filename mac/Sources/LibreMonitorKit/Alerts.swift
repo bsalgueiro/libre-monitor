@@ -1,6 +1,6 @@
 import Foundation
 
-// Port of src/LibreMonitor.Core/Alerts.cs
+// Port of windows/src/LibreMonitor.Core/Alerts.cs
 
 public enum AlertKind: Sendable, Equatable {
     case low

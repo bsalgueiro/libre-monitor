@@ -2,7 +2,7 @@ import Foundation
 import LibreMonitorKit
 import XCTest
 
-// Port of tests/LibreMonitor.Core.Tests/SimulationTests.cs and DevOptionsTests.cs.
+// Port of windows/tests/LibreMonitor.Core.Tests/SimulationTests.cs and DevOptionsTests.cs.
 // Developer mode only exists in Debug builds, so these tests do too.
 
 #if DEBUG

@@ -229,13 +229,13 @@ Requires Windows and the .NET 10 SDK. Set up the follower account first (steps 1
 [Getting started](#getting-started)), then:
 
 ```powershell
-dotnet run --project src/LibreMonitor.App
+dotnet run --project windows/src/LibreMonitor.App
 ```
 
 To only check the connection from a console (credentials from `LIBRE_EMAIL` / `LIBRE_PASSWORD`, or prompted):
 
 ```powershell
-dotnet run --project src/LibreMonitor.Cli
+dotnet run --project windows/src/LibreMonitor.Cli
 ```
 
 ## Tests
@@ -266,8 +266,8 @@ each colour state (low, in range, high, old, none) so the display can be checked
 change. The widget and the tray tooltip say SIMULATED while it is active.
 
 ```powershell
-dotnet run --project src/LibreMonitor.App -- --dev
-dotnet run --project src/LibreMonitor.App -- --simulate 2   # start with scenario 2 showing
+dotnet run --project windows/src/LibreMonitor.App -- --dev
+dotnet run --project windows/src/LibreMonitor.App -- --simulate 2   # start with scenario 2 showing
 ```
 
 This only exists in Debug builds. A Release or published executable ignores `--dev` and `--simulate`, so it can never
@@ -282,7 +282,7 @@ The `publish` folder is ignored by git.
 **For yourself (small).** Needs the .NET 10 Desktop Runtime on the machine that runs it, which most PCs do not have.
 
 ```powershell
-dotnet publish src/LibreMonitor.App -c Release -o publish
+dotnet publish windows/src/LibreMonitor.App -c Release -o publish
 ```
 
 This produces `publish\LibreMonitor.App.exe` and a few supporting files, about 0.3 MB in total.
@@ -290,7 +290,7 @@ This produces `publish\LibreMonitor.App.exe` and a few supporting files, about 0
 **For sharing with other people (self-contained).** Carries its own copy of .NET, so nothing needs to be installed.
 
 ```powershell
-dotnet publish src/LibreMonitor.App -c Release -r win-x64 --self-contained true `
+dotnet publish windows/src/LibreMonitor.App -c Release -r win-x64 --self-contained true `
   -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
   -o publish
 ```

@@ -1,7 +1,7 @@
 import LibreMonitorKit
 import SwiftUI
 
-// Port of src/LibreMonitor.App/GlucoseGraph.cs: smooth line coloured by range, shaded in-range band,
+// Port of windows/src/LibreMonitor.App/GlucoseGraph.cs: smooth line coloured by range, shaded in-range band,
 // a 100 reference line, and a dot on a dashed "now" line. Hovering shows the nearest reading's value and time.
 
 struct GlucoseGraphView: View {

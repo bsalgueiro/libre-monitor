@@ -4,9 +4,9 @@ name: Windows
 on:
   push:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'LibreMonitor.slnx', '.github/workflows/windows.yml']
+    paths: ['windows/**', '.github/workflows/windows.yml']
   pull_request:
-    paths: ['src/**', 'tests/**', 'LibreMonitor.slnx', '.github/workflows/windows.yml']
+    paths: ['windows/**', '.github/workflows/windows.yml']
 
 jobs:
   test:
@@ -19,7 +19,7 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Build (Debug, includes the WPF app)
-        run: dotnet build LibreMonitor.slnx
+        run: dotnet build windows/LibreMonitor.slnx
 
       - name: Test
-        run: dotnet test tests/LibreMonitor.Core.Tests --no-build
+        run: dotnet test windows/tests/LibreMonitor.Core.Tests --no-build

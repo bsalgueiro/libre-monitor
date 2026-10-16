@@ -2,7 +2,7 @@ import Foundation
 import LibreMonitorKit
 import XCTest
 
-// Port of tests/LibreMonitor.Core.Tests/ServiceChangeTests.cs
+// Port of windows/tests/LibreMonitor.Core.Tests/ServiceChangeTests.cs
 //
 // What happens when LibreLinkUp changes, blocks the client, or just has a bad moment. The rule: a response that does
 // not look right is "the service changed" (so the user can be told to look for an update), never a wrong password;

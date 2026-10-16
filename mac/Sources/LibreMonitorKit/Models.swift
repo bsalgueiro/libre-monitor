@@ -1,6 +1,6 @@
 import Foundation
 
-// Port of src/LibreMonitor.Core/Models.cs
+// Port of windows/src/LibreMonitor.Core/Models.cs
 
 /// Trend arrow as reported by LibreView (1 = falling fast ... 5 = rising fast).
 public enum Trend: Int, Sendable, Equatable {

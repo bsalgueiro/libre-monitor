@@ -1,6 +1,6 @@
 import Foundation
 
-// Port of src/LibreMonitor.Core/GlucoseMonitor.cs
+// Port of windows/src/LibreMonitor.Core/GlucoseMonitor.cs
 
 public struct MonitorUpdate: Sendable {
     public let patient: Patient

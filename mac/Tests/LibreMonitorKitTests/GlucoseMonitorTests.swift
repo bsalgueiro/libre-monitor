@@ -2,7 +2,7 @@ import Foundation
 import LibreMonitorKit
 import XCTest
 
-// Port of tests/LibreMonitor.Core.Tests/GlucoseMonitorTests.cs
+// Port of windows/tests/LibreMonitor.Core.Tests/GlucoseMonitorTests.cs
 
 final class GlucoseMonitorTests: XCTestCase {
     private static let loginOk = #"{"status":0,"data":{"user":{"id":"u"},"authTicket":{"token":"t"}}}"#

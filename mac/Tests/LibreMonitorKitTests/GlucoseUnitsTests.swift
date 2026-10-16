@@ -2,7 +2,7 @@ import Foundation
 import LibreMonitorKit
 import XCTest
 
-// Port of tests/LibreMonitor.Core.Tests/GlucoseUnitsTests.cs
+// Port of windows/tests/LibreMonitor.Core.Tests/GlucoseUnitsTests.cs
 
 final class GlucoseUnitsTests: XCTestCase {
     private let invariant = Locale(identifier: "en_US_POSIX")

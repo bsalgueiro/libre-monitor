@@ -1,6 +1,6 @@
 import Foundation
 
-// Port of src/LibreMonitor.Core/Simulation.cs and DevOptions.cs
+// Port of windows/src/LibreMonitor.Core/Simulation.cs and DevOptions.cs
 //
 // Developer mode lives entirely inside `#if DEBUG`: a Release build does not contain this code at all, so a
 // simulated reading can never appear in a build that users receive.

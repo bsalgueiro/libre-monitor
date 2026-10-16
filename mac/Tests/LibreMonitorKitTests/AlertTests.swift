@@ -2,7 +2,7 @@ import Foundation
 import LibreMonitorKit
 import XCTest
 
-// Port of tests/LibreMonitor.Core.Tests/AlertTests.cs (37 cases)
+// Port of windows/tests/LibreMonitor.Core.Tests/AlertTests.cs (37 cases)
 
 final class AlertTests: XCTestCase {
     private let t0 = utc(2026, 10, 14, 12, 0, 0)

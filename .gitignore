@@ -8,3 +8,4 @@ TestResults/
 *.db
 *.sqlite
 .env
+.DS_Store

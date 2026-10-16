@@ -1,6 +1,6 @@
 import Foundation
 
-// Port of src/LibreMonitor.Core/Exceptions.cs
+// Port of windows/src/LibreMonitor.Core/Exceptions.cs
 
 public enum LibreLinkUpError: Error, Equatable, LocalizedError {
     /// Wrong email or password.

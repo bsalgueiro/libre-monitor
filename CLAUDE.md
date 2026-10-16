@@ -6,7 +6,9 @@ Site: https://bsalgueiro.github.io/libre-monitor/ (source: `docs/index.html`, se
 
 ## Layout
 
-- `src/LibreMonitor.Core` (client, monitor, alerts, models) / `.App` (WPF) / `.Cli`; tests in `tests/LibreMonitor.Core.Tests`.
+Two self-contained platform folders, `windows/` and `mac/`, plus shared `docs/` (website) and repo-level files.
+
+- `windows/src/LibreMonitor.Core` (client, monitor, alerts, models) / `.App` (WPF) / `.Cli`; tests in `windows/tests/LibreMonitor.Core.Tests`.
 - `mac/Sources/LibreMonitorKit` (Swift port of Core) / `LibreMonitorMac` (AppKit/SwiftUI UI); tests in `mac/Tests`.
 - Core and Kit are deliberate twins. File names match (Alerts, GlucoseMonitor, LibreLinkUpClient, Models, DevMode/DevOptions).
 
@@ -36,7 +38,7 @@ Site: https://bsalgueiro.github.io/libre-monitor/ (source: `docs/index.html`, se
 
 ```
 dotnet test                                   # Windows only for the App; Core tests run anywhere with .NET 10
-dotnet run --project src/LibreMonitor.App -- --dev
+dotnet run --project windows/src/LibreMonitor.App -- --dev
 cd mac && swift test
 cd mac && ./scripts/make-app.sh --debug [--dev] [--simulate N]
 ```
@@ -52,4 +54,4 @@ Avoid hype and em dashes.
 ## Known gaps worth knowing
 
 - Windows exe has not been tested on a clean machine (README says so). Keep that statement accurate.
-- No `.claude` config or CI for the Windows build outside the release workflow (only `mac.yml` runs on PRs).
+- Windows and Mac each have their own CI workflow (`windows.yml`, `mac.yml`); `release.yml` publishes both only if both pass.

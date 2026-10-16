@@ -1,7 +1,7 @@
 import CryptoKit
 import Foundation
 
-// Port of src/LibreMonitor.Core/LibreLinkUpClient.cs
+// Port of windows/src/LibreMonitor.Core/LibreLinkUpClient.cs
 
 /// Read-only client for the unofficial LibreLinkUp follower API.
 /// It only logs in and reads; nothing here writes data to the account.

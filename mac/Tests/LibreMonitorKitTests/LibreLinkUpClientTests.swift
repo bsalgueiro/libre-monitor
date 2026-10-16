@@ -3,7 +3,7 @@ import Foundation
 import LibreMonitorKit
 import XCTest
 
-// Port of tests/LibreMonitor.Core.Tests/LibreLinkUpClientTests.cs
+// Port of windows/tests/LibreMonitor.Core.Tests/LibreLinkUpClientTests.cs
 
 final class LibreLinkUpClientTests: XCTestCase {
     private let loginOk = #"{"status":0,"data":{"user":{"id":"user-123"},"authTicket":{"token":"tok-abc"}}}"#
