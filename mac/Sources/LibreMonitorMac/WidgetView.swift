@@ -56,7 +56,7 @@ struct WidgetView: View {
     // With the graph hidden, the header is scaled to fill the card. These describe the two arrangements at scale 1:
     // the widest case is a 4-character value ("10.0") beside the longest status text ("sign-in needed").
     //   side by side: value and arrow on the left, unit and status on the right (suits a wide, short card)
-    //   stacked:      value and arrow, with unit and status on one line underneath (lets the number grow on a small card)
+    //   stacked:      value and arrow, with unit and status on one line underneath (lets the value grow on a small card)
     private static let sideBySideDesign = CGSize(width: 250, height: 62)
     private static let stackedDesign = CGSize(width: 175, height: 78)
     private static let compactPadding = CGSize(width: 20, height: 14) // total, both sides
@@ -193,7 +193,7 @@ struct WidgetView: View {
             Text(model.current?.trend.arrow ?? "")
                 .font(.system(size: 30 * valueScale))
                 .foregroundColor(tint)
-                .padding(.leading, arrowGap) // grows with the text, so a large number keeps a proportional gap to its arrow
+                .padding(.leading, arrowGap) // grows with the text, so a large value keeps a proportional gap to its arrow
 
             Spacer(minLength: 16 * spacingScale)
 
@@ -210,7 +210,7 @@ struct WidgetView: View {
                     .font(.system(size: 11 * infoScale))
                     .foregroundColor(status.color)
                     .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false) // never break a word; the number shrinks instead
+                    .fixedSize(horizontal: true, vertical: false) // never break a word; the value shrinks instead
             }
             .layoutPriority(1)
         }
@@ -237,7 +237,7 @@ struct WidgetView: View {
     }
 
     /// The graph is hidden: the header alone fills the card. Both arrangements are tried and the one that lets the
-    /// number grow larger is used, so a small card is not left mostly empty beside a small number.
+    /// value grow larger is used, so a small card is not left mostly empty beside a small value.
     private func compactLayout(_ size: CGSize, theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View {
         let plan = compactPlan(for: size)
 
@@ -254,7 +254,7 @@ struct WidgetView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity) // centred in the card
     }
 
-    /// Which arrangement lets the number be larger at this size, and the scale to use for it.
+    /// Which arrangement lets the value be larger at this size, and the scale to use for it.
     private func compactPlan(for size: CGSize) -> (stacked: Bool, fit: CGFloat) {
         let available = CGSize(
             width: size.width - Self.compactPadding.width, height: size.height - Self.compactPadding.height)
@@ -263,7 +263,7 @@ struct WidgetView: View {
             min(max(min(available.width / design.width, available.height / design.height), 0.3), 8)
         }
 
-        // The syringe sits in the number's row, so it adds to the width of both arrangements.
+        // The syringe sits in the value's row, so it adds to the width of both arrangements.
         let withInsulin = model.settings.insulin.enabled
         let sideBySide = fit(CGSize(width: Self.sideBySideDesign.width + (withInsulin ? 34 : 0), height: Self.sideBySideDesign.height))
         let stacked = fit(CGSize(width: Self.stackedDesign.width + (withInsulin ? 10 : 0), height: Self.stackedDesign.height))
@@ -453,7 +453,7 @@ struct WidgetView: View {
             case .signInNeeded: return ("sign-in needed", theme.low)
             case .serviceChanged: return ("service changed", theme.low)
             case .reconnecting:
-                // The number on screen is getting old while we cannot reach the service: say how old.
+                // The value on screen is getting old while we cannot reach the service: say how old.
                 if let age = model.age, age >= 120 { return ("not updating · \(formatAge(age))", theme.high) }
                 return ("reconnecting", theme.high)
             }

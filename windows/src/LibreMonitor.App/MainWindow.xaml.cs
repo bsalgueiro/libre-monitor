@@ -475,7 +475,7 @@ public partial class MainWindow : Window
 
         if (_problem is not null)
         {
-            // The number on screen is getting old while the service cannot be reached: say how old.
+            // The value on screen is getting old while the service cannot be reached: say how old.
             AgeText.Text = _problem == "reconnecting" && age is { TotalMinutes: >= 2 } old
                 ? $"not updating · {FormatAge(old)}"
                 : _problem;
@@ -581,10 +581,10 @@ public partial class MainWindow : Window
 
     private enum HeaderArrangement
     {
-        /// <summary>Number and arrow on the left, unit and age on the right. Used with the graph, and on a wide, short card.</summary>
+        /// <summary>Value and arrow on the left, unit and age on the right. Used with the graph, and on a wide, short card.</summary>
         SideBySide,
 
-        /// <summary>Number and arrow, with the unit and age on one line underneath. Lets the number grow on a small card.</summary>
+        /// <summary>Value and arrow, with the unit and age on one line underneath. Lets the value grow on a small card.</summary>
         Stacked,
     }
 
@@ -618,14 +618,14 @@ public partial class MainWindow : Window
         AgeText.FontSize = 11 * infoScale;
 
         // The gaps scale with the text as well. Fixed pixel gaps look right at the default size but make a large
-        // number crowd its arrow, and the unit run into the age text.
+        // value crowd its arrow, and the unit run into the age text.
         ArrowText.Margin = new Thickness((_settings.ShowGraph ? 8 : 12) * valueScale, 0, 0, 0);
 
         var stacked = InfoStack.Orientation == Orientation.Horizontal;
         UnitText.Margin = stacked ? new Thickness(0, 0, 7 * infoScale, 0) : new Thickness(0);
         if (!_settings.ShowGraph)
         {
-            // Space between the number and the line under it (the right-hand margin is only used with the graph).
+            // Space between the value and the line under it (the right-hand margin is only used with the graph).
             InfoStack.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
         }
     }
@@ -651,8 +651,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// With the graph shown the text scales with the card as a whole. With the graph hidden the header fills the card:
-    /// both arrangements are measured and the one that lets the number grow larger is used, so a small card is not
-    /// left mostly empty beside a small number.
+    /// both arrangements are measured and the one that lets the value grow larger is used, so a small card is not
+    /// left mostly empty beside a small value.
     /// </summary>
     private void ApplyLayoutScale()
     {
@@ -677,8 +677,8 @@ public partial class MainWindow : Window
         }
 
         // The close-button margin is dropped here: it does not scale with the text, so keeping it would make
-        // the number and the info block collide in narrow cards. The card padding is also tighter, to give the number room.
-        // With the insulin icon shown, a strip on the right keeps it clear of the number.
+        // the value and the info block collide in narrow cards. The card padding is also tighter, to give the value room.
+        // With the insulin icon shown, a strip on the right keeps it clear of the value.
         var iconStrip = _settings.Insulin.Enabled ? 22 : 0;
         ContentGrid.Margin = new Thickness(10, 6, 10 + iconStrip, 6);
         Grid.SetRow(InsulinButton, 0);

@@ -182,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lastScrollChange = Date()
     }
 
-    /// Switches between the graph layout and the compact (number only) layout, keeping the widget's top-left corner.
+    /// Switches between the graph layout and the compact (value only) layout, keeping the widget's top-left corner.
     private func applyGraphMode(show: Bool, force: Bool = false) {
         guard force || show != graphShown else { return }
 

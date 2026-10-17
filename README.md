@@ -48,11 +48,11 @@ Everything you need to install and use the widget. No programming knowledge requ
 
 ## What it does
 
-<img src="docs/images/widget-compact.png" alt="The compact view: only the number, arrow, unit and time of the last reading" width="260" align="right">
+<img src="docs/images/widget-compact.png" alt="The compact view: only the value, arrow, unit and time of the last reading" width="260" align="right">
 
 - Borderless, always-on-top corner widget: current value, trend arrow and a smooth graph with the 70-180 mg/dL band and a 100 reference line.
 - Hover the graph for the value and time of any reading.
-- The graph can be hidden. The number, arrow, unit and last-update time then scale up to fill the widget, whatever size you
+- The graph can be hidden. The value, arrow, unit and last-update time then scale up to fill the widget, whatever size you
   make it. Each mode remembers its own size, so turning the graph back on restores the earlier layout.
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
@@ -70,9 +70,9 @@ The colours for low, in range and high are for display only. They are not alarms
 <br clear="all">
 
 <div align="center">
-<img src="docs/images/alert-low.png" alt="A low reading: red number and a red border around the widget" width="250">
+<img src="docs/images/alert-low.png" alt="A low reading: red value and a red border around the widget" width="250">
 &nbsp;
-<img src="docs/images/alert-high.png" alt="A high reading: amber number and an amber border around the widget" width="250">
+<img src="docs/images/alert-high.png" alt="A high reading: amber value and an amber border around the widget" width="250">
 <br>
 <sub>The border turns red or amber while a reading is outside your alert limits (these are simulated readings).</sub>
 </div>
@@ -156,7 +156,7 @@ flag the single-file build.
 | Move it | Drag it |
 | Resize it | Drag any edge or corner |
 | Change the time range | Mouse wheel over the widget, or the menu |
-| Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the number) |
+| Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the value) |
 | See a reading's value and time | Hover the graph |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
@@ -223,7 +223,7 @@ instructions.
 
 ## Troubleshooting
 
-The widget shows what is wrong in the small status text next to the number:
+The widget shows what is wrong in the small status text next to the value:
 
 | It says | What it means | What to do |
 |---|---|---|

@@ -90,7 +90,7 @@
                 <RowDefinition x:Name="GraphRow" Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Two rows so the unit and age can sit under the number when the graph is hidden and the card is small. -->
+            <!-- Two rows so the unit and age can sit under the value when the graph is hidden and the card is small. -->
             <Grid x:Name="HeaderGrid" Grid.Row="0" VerticalAlignment="Center">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
