@@ -226,7 +226,7 @@ public partial class MainWindow : Window
         var raised = _sensorExpiry.Evaluate(CurrentSensor, now, _alerts.SnoozedUntil(now));
         if (raised is not null)
         {
-            _tray.Notify("Sensor ending soon", $"The sensor is due to end about {Stamp(raised.EndsAt)}.");
+            _tray.Notify("Sensor reminder", $"The sensor is due to end about {Stamp(raised.EndsAt)}.");
         }
     }
 

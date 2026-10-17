@@ -299,7 +299,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let raised = sensorEvaluator.evaluate(model.sensor, now: now, snoozedUntil: snoozed) else { return }
 
         Notifier.shared.post(
-            title: "Sensor ending soon",
+            title: "Sensor reminder",
             body: "The sensor is due to end about \(formatDateTime(raised.endsAt)).",
             sound: false)
     }
