@@ -163,6 +163,9 @@ flag the single-file build.
 | Light, dark or follow Windows | Menu > Appearance |
 | Set up low and high alerts | Menu > Alerts... |
 | Pause alerts for a while | Menu > Snooze alerts |
+| Set up the insulin reminder | Menu > Set up the insulin reminder... (or Menu > Alerts...) |
+| Mark an insulin dose as administered | Click the syringe and confirm (or Menu > Insulin: mark as administered) |
+| Turn the insulin reminder off | Menu > Turn off the insulin reminder |
 | Snap to a screen corner | Menu > Move to corner |
 | Hide it to the tray | Click the ✕, or Menu > Hide to tray |
 | Bring it back | Click the tray icon |
@@ -199,15 +202,18 @@ Focus assist or Do not disturb). Keep your sensor's own alarms on.
 ## Insulin reminder
 
 If you administer insulin once or twice a day, the app can remind you and help you check whether you already administered
-it, so you do not administer it twice by mistake. Open **Menu > Alerts...**, scroll to **Insulin** and turn it on.
-It is **off until you turn it on**.
+it, so you do not administer it twice by mistake. Open **Menu > Set up the insulin reminder...** (or **Menu > Alerts...** and
+scroll to **Insulin**) and turn it on. It is **off until you turn it on**.
 
 - **Set it up:** choose once or twice a day, the time of each dose (24-hour clock on Windows, your Mac's clock format on a
   Mac), and how often to be reminded again if you have not marked the dose.
 - **The syringe:** a small syringe appears on the widget. **Grey** means the next dose is not due yet. **Amber with "!"**
   means the dose time has passed and you have not marked it. **Green with a tick** means you marked it as administered.
-- **Mark a dose:** click the syringe (or **Menu > Insulin**) and confirm. To undo a tap made by mistake, click
-  it again and choose to remove the mark. Marking asks first, because a mistaken tap would hide a dose you missed.
+- **Mark a dose:** click the syringe (or **Menu > Insulin: mark as administered**) and confirm. To undo a tap made by
+  mistake, click it again and choose to remove the mark. Marking asks first, because a mistaken tap would hide a dose you
+  missed.
+- **Check the status:** hover the syringe to see when the insulin was administered (or that it is due) and when the next
+  dose is, in your computer's date and time format.
 - **When it changes back:** each dose has its own period. The period of the next dose opens 2 hours before its time, so the
   syringe goes back to grey and a tap made a little early still counts for the right dose.
 - **Reminders:** a notification at the dose time, repeated at the interval you chose until you mark the dose. They stop 6
