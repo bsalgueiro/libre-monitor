@@ -183,7 +183,8 @@ struct WidgetView: View {
         valueScale: CGFloat, infoScale: CGFloat, spacingScale: CGFloat, arrowGap: CGFloat = 0, insulinInHeader: Bool = false,
         theme: WidgetTheme, tint: Color, status: (text: String, color: Color)) -> some View
     {
-        HStack(alignment: .center, spacing: 8 * spacingScale) {
+        // No automatic spacing: every gap is stated, so a small card can spend its width on the value, not on gaps.
+        HStack(alignment: .center, spacing: 0) {
             Text(valueText)
                 .font(.system(size: 46 * valueScale, weight: .semibold))
                 .foregroundColor(tint)
@@ -194,17 +195,17 @@ struct WidgetView: View {
             Text(model.current?.trend.arrow ?? "")
                 .font(.system(size: 30 * valueScale))
                 .foregroundColor(tint)
-                .padding(.leading, arrowGap) // grows with the text, so a large value keeps a proportional gap to its arrow
+                .padding(.leading, 8 * spacingScale + arrowGap) // grows with the text, so a large value keeps a proportional gap to its arrow
 
-            Spacer(minLength: 16 * spacingScale)
+            Spacer(minLength: 8 * spacingScale)
 
             // The syringe sits beside the two lines of text, centred on them, so it reads as one block with the unit
             // and age. The text has a fixed width, as wide as the longest normal age ("59 min ago"): otherwise
             // "just now" becoming "1 min ago" changes the width of this block and everything beside it moves.
             let dose = insulinInHeader ? model.insulinStatus : nil
-            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.9
+            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.85
 
-            HStack(alignment: .center, spacing: 8 * infoScale) {
+            HStack(alignment: .center, spacing: 6 * infoScale) {
                 if let dose {
                     insulinButton(dose, theme: theme, scale: iconScale)
                 }
