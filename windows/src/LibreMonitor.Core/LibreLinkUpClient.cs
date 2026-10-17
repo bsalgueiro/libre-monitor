@@ -123,6 +123,25 @@ public sealed partial class LibreLinkUpClient
         return patients;
     }
 
+    /// <summary>
+    /// The raw connections answer, for the command-line probe that shows what the service reports about the sensor.
+    /// The caller disposes it. Read-only, like every other call here.
+    /// </summary>
+    public async Task<JsonDocument> GetConnectionsDocumentAsync(CancellationToken ct = default)
+    {
+        var doc = await GetAsync("/llu/connections", ct).ConfigureAwait(false);
+        ThrowIfUnexpectedStatus(doc.RootElement);
+        return doc;
+    }
+
+    /// <summary>The raw graph answer, for the same probe. The caller disposes it.</summary>
+    public async Task<JsonDocument> GetGraphDocumentAsync(string patientId, CancellationToken ct = default)
+    {
+        var doc = await GetAsync($"/llu/connections/{Uri.EscapeDataString(patientId)}/graph", ct).ConfigureAwait(false);
+        ThrowIfUnexpectedStatus(doc.RootElement);
+        return doc;
+    }
+
     public async Task<GlucoseSnapshot> GetGraphAsync(string patientId, CancellationToken ct = default)
     {
         using var doc = await GetAsync($"/llu/connections/{Uri.EscapeDataString(patientId)}/graph", ct).ConfigureAwait(false);
