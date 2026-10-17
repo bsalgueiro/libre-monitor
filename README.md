@@ -57,6 +57,8 @@ Everything you need to install and use the widget. No programming knowledge requ
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
+- Shows when your sensor is due to end: hover the unit and age text, or open the menu. It is an estimate (14 days after the
+  sensor was started), and you get one notification when about a day is left.
 - An optional [insulin reminder](#insulin-reminder): a reminder at your usual time, and a small syringe on the widget that you tap once the dose is administered, so you can check later whether you already did.
 - Your follower login is stored encrypted for your Windows user only, or in your Mac's Keychain. It is never shown or sent
   anywhere except to LibreView.
@@ -158,6 +160,7 @@ flag the single-file build.
 | Change the time range | Mouse wheel over the widget, or the menu |
 | Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the value) |
 | See a reading's value and time | Hover the graph |
+| See when the sensor ends | Hover the unit and age text, or open the menu |
 | Refresh now | Double-click the value. The widget updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
@@ -445,6 +448,12 @@ delete the tag, fix the problem and tag again.
 - No glucose data is written to disk, on purpose: the only things stored are the encrypted login and the preferences
   (including alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out of
   scope, because LibreView already keeps the user's history.
+- The sensor end date is estimated: LibreLinkUp reports when the sensor was activated (`activeSensors[].sensor.a`) but no end
+  date, so `SensorSchedule` adds 14 days (a Libre 3 Plus lasts 15, so it would end a day later than shown). Only the
+  activation time is read, never the serial number or device ids, and it is not stored. The notice comes once per sensor, when
+  24 hours or less remain; a restart may repeat it once. A missing or odd field means nothing is shown, never a service
+  change. `LibreMonitor.Cli --sensor` prints the shape of these fields, with text replaced by its length and no glucose
+  values, to check what a given sensor reports.
 - The insulin reminder stores its schedule and one timestamp, the last "administered" tap, next to the other
   preferences. Without that timestamp a restart would forget the tap and prompt a second dose. It must stay at that:
   no amounts, no list of past doses. The rules live in `Insulin.cs` / `Insulin.swift` (`InsulinSchedule`,
