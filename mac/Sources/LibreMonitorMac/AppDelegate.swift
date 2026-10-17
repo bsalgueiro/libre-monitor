@@ -82,6 +82,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.refreshStatusItem()
                 self?.evaluateAlerts()
                 self?.evaluateInsulin()
+                self?.evaluateSensor() // the chosen sensor duration may have changed
             }
         }
 
@@ -296,7 +297,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func evaluateSensor() {
         let now = Date()
         let snoozed = model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
-        guard let raised = sensorEvaluator.evaluate(model.sensor, now: now, snoozedUntil: snoozed) else { return }
+        guard let raised = sensorEvaluator.evaluate(
+            model.sensor, now: now, snoozedUntil: snoozed, durationDays: model.settings.sensorDurationDays)
+        else { return }
 
         Notifier.shared.post(
             title: "Sensor reminder",

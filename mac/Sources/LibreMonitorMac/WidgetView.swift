@@ -103,7 +103,7 @@ struct WidgetView: View {
             if overInsulin, let dose = model.insulinStatus {
                 hoverMessage(insulinMessage(dose), border: insulinColor(dose.state, theme: theme), theme: theme)
             } else if overSensorText, let sensor = model.sensor {
-                hoverMessage(sensorDetail(sensor, now: model.now), border: theme.muted, theme: theme)
+                hoverMessage(sensorDetail(sensor, now: model.now, durationDays: model.settings.sensorDurationDays), border: theme.muted, theme: theme)
             }
         }
         .animation(.easeInOut(duration: 0.12), value: overInsulin || overSensorText)
@@ -362,10 +362,8 @@ struct WidgetView: View {
 
     @ViewBuilder
     private var menuContent: some View {
-        if let sensor = model.sensor {
-            Button(sensorSummary(sensor, now: model.now)) {}.disabled(true)
-            Divider()
-        }
+        // Graph
+        Toggle("Show graph", isOn: $model.settings.showGraph)
 
         Menu("Time range") {
             Picker("Time range", selection: $model.settings.hours) {
@@ -377,8 +375,6 @@ struct WidgetView: View {
             .labelsHidden()
         }
         .disabled(!model.settings.showGraph) // the range only affects the graph
-
-        Toggle("Show graph", isOn: $model.settings.showGraph)
 
         Menu("Units") {
             Picker("Units", selection: $model.settings.unit) {
@@ -400,6 +396,7 @@ struct WidgetView: View {
 
         Divider()
 
+        // Alerts
         Button("Alerts…") { actions.showAlerts() }
 
         if let status = model.insulinStatus {
@@ -426,6 +423,20 @@ struct WidgetView: View {
 
         Divider()
 
+        // Sensor (only while the service names a sensor)
+        if let sensor = model.sensor {
+            Button(sensorSummary(sensor, now: model.now, durationDays: model.settings.sensorDurationDays)) {}.disabled(true)
+            Menu("Sensor duration") {
+                Picker("Sensor duration", selection: $model.settings.sensorDurationDays) {
+                    ForEach(SensorSchedule.durationChoices, id: \.self) { Text("\($0) days").tag($0) }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
+            Divider()
+        }
+
+        // Position and window
         Menu("Move to corner") {
             ForEach(Corner.allCases, id: \.self) { corner in
                 Button(corner.title) { actions.moveToCorner(corner) }

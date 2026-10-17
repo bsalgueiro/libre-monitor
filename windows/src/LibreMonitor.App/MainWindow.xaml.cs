@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _client = new LibreLinkUpClient(_http);
+        BuildSensorDurationMenu();
 
         _tray = new TrayController(() => IsVisible, ToggleWidget, Close) { Visible = _settings.ShowTrayIcon };
 
@@ -223,21 +224,46 @@ public partial class MainWindow : Window
     private void EvaluateSensor()
     {
         var now = DateTimeOffset.UtcNow;
-        var raised = _sensorExpiry.Evaluate(CurrentSensor, now, _alerts.SnoozedUntil(now));
+        var raised = _sensorExpiry.Evaluate(CurrentSensor, now, _alerts.SnoozedUntil(now), SensorDuration);
         if (raised is not null)
         {
             _tray.Notify("Sensor reminder", $"The sensor is due to end about {Stamp(raised.EndsAt)}.");
         }
     }
 
+    /// <summary>The duration the user chose for their sensor, always one of the choices.</summary>
+    private int SensorDuration => SensorSchedule.NormalizeDurationDays(_settings.SensorDurationDays);
+
+    private readonly List<MenuItem> _sensorDurationItems = [];
+
+    /// <summary>One menu entry per choice, so a new duration only needs adding to <see cref="SensorSchedule.DurationChoices"/>.</summary>
+    private void BuildSensorDurationMenu()
+    {
+        foreach (var days in SensorSchedule.DurationChoices)
+        {
+            var item = new MenuItem { Header = $"{days} days", Tag = days };
+            item.Click += SensorDuration_Click;
+            SensorDurationMenu.Items.Add(item);
+            _sensorDurationItems.Add(item);
+        }
+    }
+
+    private void SensorDuration_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.SensorDurationDays = (int)((MenuItem)sender).Tag;
+        _settings.Save();
+        RenderSensor();
+        EvaluateSensor();
+    }
+
     private static string Plural(int count, string unit) => count == 1 ? $"1 {unit}" : $"{count} {unit}s";
 
     /// <summary>One line for the menu: "Sensor ends in about 6 days (Fri 23 Oct)".</summary>
-    private static string SensorSummary(SensorInfo sensor, DateTimeOffset now)
+    private static string SensorSummary(SensorInfo sensor, DateTimeOffset now, int durationDays)
     {
-        var ends = SensorSchedule.EndsAt(sensor).ToLocalTime();
+        var ends = SensorSchedule.EndsAt(sensor, durationDays).ToLocalTime();
         var date = ends.ToString("ddd d MMM", CultureInfo.CurrentCulture);
-        var left = SensorSchedule.Remaining(sensor, now);
+        var left = SensorSchedule.Remaining(sensor, now, durationDays);
 
         if (left <= TimeSpan.Zero) return $"Sensor due to have ended ({date})";
         if (left < TimeSpan.FromDays(1)) return $"Sensor ends in about {Plural(Math.Max(1, (int)Math.Round(left.TotalHours)), "hour")}";
@@ -245,16 +271,16 @@ public partial class MainWindow : Window
     }
 
     /// <summary>The hover message on the unit and age text, in the system date and time format.</summary>
-    private static string SensorDetail(SensorInfo sensor, DateTimeOffset now)
+    private static string SensorDetail(SensorInfo sensor, DateTimeOffset now, int durationDays)
     {
-        var ends = Stamp(SensorSchedule.EndsAt(sensor));
-        var left = SensorSchedule.Remaining(sensor, now);
+        var ends = Stamp(SensorSchedule.EndsAt(sensor, durationDays));
+        var left = SensorSchedule.Remaining(sensor, now, durationDays);
         var line = left <= TimeSpan.Zero ? $"Due to have ended about {ends}." : $"Ends about {ends}.";
         return $"Sensor started {Stamp(sensor.ActivatedAt)}.\n{line}";
     }
 
     private void RenderSensor() =>
-        InfoStack.ToolTip = CurrentSensor is { } sensor ? SensorDetail(sensor, DateTimeOffset.UtcNow) : null;
+        InfoStack.ToolTip = CurrentSensor is { } sensor ? SensorDetail(sensor, DateTimeOffset.UtcNow, SensorDuration) : null;
 
     // ---- insulin ---------------------------------------------------------------
 
@@ -897,8 +923,10 @@ public partial class MainWindow : Window
         }
 
         var sensor = CurrentSensor;
-        SensorItem.Visibility = SensorSeparator.Visibility = sensor is null ? Visibility.Collapsed : Visibility.Visible;
-        if (sensor is not null) SensorItem.Header = SensorSummary(sensor, DateTimeOffset.UtcNow);
+        SensorItem.Visibility = SensorDurationMenu.Visibility = SensorSeparator.Visibility =
+            sensor is null ? Visibility.Collapsed : Visibility.Visible;
+        if (sensor is not null) SensorItem.Header = SensorSummary(sensor, DateTimeOffset.UtcNow, SensorDuration);
+        foreach (var item in _sensorDurationItems) item.IsChecked = (int)item.Tag == SensorDuration;
 
         InsulinItem.Visibility = InsulinOffItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
         InsulinSetupItem.Visibility = _settings.Insulin.Enabled ? Visibility.Collapsed : Visibility.Visible;

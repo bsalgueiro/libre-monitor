@@ -21,6 +21,44 @@ final class SensorTests: XCTestCase {
         XCTAssertTrue(SensorSchedule.remaining(sensor, now: after(15)) < 0)
     }
 
+    // ---- duration ----
+
+    func testEndsAtUsesTheChosenDuration() {
+        XCTAssertEqual(SensorSchedule.endsAt(sensor, durationDays: 15), after(15))
+        XCTAssertEqual(SensorSchedule.endsAt(sensor, durationDays: 14), after(14))
+    }
+
+    func testAnUnknownDurationFallsBackToFourteenDays() {
+        for days in [0, 13, 16, -5] {
+            XCTAssertEqual(SensorSchedule.normalizeDurationDays(days), SensorSchedule.defaultDurationDays)
+            XCTAssertEqual(SensorSchedule.endsAt(sensor, durationDays: days), after(14))
+        }
+    }
+
+    func testTheChoicesIncludeTheDefaultAndOnlyHoldSensibleValues() {
+        XCTAssertTrue(SensorSchedule.durationChoices.contains(SensorSchedule.defaultDurationDays))
+        for days in SensorSchedule.durationChoices {
+            XCTAssertTrue(days >= 10 && days <= 20)
+        }
+    }
+
+    func testALongerDurationMovesTheNoticeLater() {
+        let e = SensorExpiryEvaluator()
+
+        XCTAssertNil(e.evaluate(sensor, now: after(13), durationDays: 15))
+        XCTAssertNotNil(e.evaluate(sensor, now: after(14), durationDays: 15))
+    }
+
+    func testChangingTheDurationAllowsANewNotice() {
+        let e = SensorExpiryEvaluator()
+        XCTAssertNotNil(e.evaluate(sensor, now: after(13), durationDays: 14))
+        XCTAssertNil(e.evaluate(sensor, now: after(13, hours: 1), durationDays: 14))
+
+        // Switched to 15 days: that notice came a day early, so another is due when 15 days are nearly up.
+        XCTAssertNil(e.evaluate(sensor, now: after(13, hours: 2), durationDays: 15))
+        XCTAssertNotNil(e.evaluate(sensor, now: after(14), durationDays: 15))
+    }
+
     // ---- notification ----
 
     func testNoNoticeWhileMoreThanADayRemains() {

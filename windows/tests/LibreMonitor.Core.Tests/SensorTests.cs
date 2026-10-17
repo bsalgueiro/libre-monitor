@@ -20,6 +20,55 @@ public class SensorTests
         Assert.True(SensorSchedule.Remaining(Sensor, Activated.AddDays(15)) < TimeSpan.Zero);
     }
 
+    // ---- duration ----
+
+    [Fact]
+    public void EndsAt_UsesTheChosenDuration()
+    {
+        Assert.Equal(Activated.AddDays(15), SensorSchedule.EndsAt(Sensor, 15));
+        Assert.Equal(Activated.AddDays(14), SensorSchedule.EndsAt(Sensor, 14));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(13)]
+    [InlineData(16)]
+    [InlineData(-5)]
+    public void AnUnknownDuration_FallsBackToFourteenDays(int days)
+    {
+        Assert.Equal(SensorSchedule.DefaultDurationDays, SensorSchedule.NormalizeDurationDays(days));
+        Assert.Equal(Activated.AddDays(14), SensorSchedule.EndsAt(Sensor, days));
+    }
+
+    [Fact]
+    public void TheChoices_IncludeTheDefault_AndOnlyHoldSensibleValues()
+    {
+        Assert.Contains(SensorSchedule.DefaultDurationDays, SensorSchedule.DurationChoices);
+        foreach (var days in SensorSchedule.DurationChoices) Assert.InRange(days, 10, 20);
+    }
+
+    [Fact]
+    public void ALongerDuration_MovesTheNoticeLater()
+    {
+        var e = new SensorExpiryEvaluator();
+
+        // With 15 days the sensor still has a day and an hour left at day 13 and a bit, so there is no notice yet.
+        Assert.Null(e.Evaluate(Sensor, Activated.AddDays(13), durationDays: 15));
+        Assert.NotNull(e.Evaluate(Sensor, Activated.AddDays(14), durationDays: 15));
+    }
+
+    [Fact]
+    public void ChangingTheDuration_AllowsANewNotice()
+    {
+        var e = new SensorExpiryEvaluator();
+        Assert.NotNull(e.Evaluate(Sensor, Activated.AddDays(13), durationDays: 14));
+        Assert.Null(e.Evaluate(Sensor, Activated.AddDays(13).AddHours(1), durationDays: 14));
+
+        // Switched to 15 days: that notice came a day early, so another is due when 15 days are nearly up.
+        Assert.Null(e.Evaluate(Sensor, Activated.AddDays(13).AddHours(2), durationDays: 15));
+        Assert.NotNull(e.Evaluate(Sensor, Activated.AddDays(14), durationDays: 15));
+    }
+
     // ---- notification ----
 
     [Fact]
