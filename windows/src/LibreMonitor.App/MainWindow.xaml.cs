@@ -675,7 +675,12 @@ public partial class MainWindow : Window
     {
         ArrangeHeader(arrangement);
         SetHeaderFonts(1, 1);
+        return CurrentHeaderSize(arrangement);
+    }
 
+    /// <summary>Size the header wants right now, at whatever font sizes are applied.</summary>
+    private Size CurrentHeaderSize(HeaderArrangement arrangement)
+    {
         var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
         ValueStack.Measure(unbounded);
         InfoBlock.Measure(unbounded);
@@ -713,8 +718,8 @@ public partial class MainWindow : Window
         ContentGrid.Margin = new Thickness(10, 6, 10, 6);
         InfoBlock.Margin = new Thickness(0);
 
-        var availableWidth = ActualWidth - 24 - 20; // shadow margin, then the card's own padding
-        var availableHeight = ActualHeight - 24 - 12;
+        var availableWidth = ActualWidth - 24 - 2 - 20; // shadow margin, the card's border, then its own padding
+        var availableHeight = ActualHeight - 24 - 2 - 12;
 
         double Fit(Size natural) =>
             natural.Width <= 0 || natural.Height <= 0
@@ -728,6 +733,16 @@ public partial class MainWindow : Window
         ArrangeHeader(useStacked ? HeaderArrangement.Stacked : HeaderArrangement.SideBySide);
         var fit = useStacked ? stacked : sideBySide;
         SetHeaderFonts(fit, fit);
+
+        // Not everything scales in step with the text (the syringe has size limits, the gaps are rounded), so check the
+        // result and shrink a little if it still does not fit. Otherwise the last item in the row is cut off.
+        var actual = CurrentHeaderSize(useStacked ? HeaderArrangement.Stacked : HeaderArrangement.SideBySide);
+        var over = Math.Max(actual.Width / availableWidth, actual.Height / availableHeight);
+        if (over > 1)
+        {
+            fit = Math.Max(fit / over, 0.3);
+            SetHeaderFonts(fit, fit);
+        }
     }
 
     private void Resize_DragDelta(object sender, DragDeltaEventArgs e)
