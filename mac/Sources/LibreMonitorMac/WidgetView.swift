@@ -153,10 +153,10 @@ struct WidgetView: View {
         return Button { actions.toggleInsulin() } label: {
             ZStack(alignment: .bottomTrailing) {
                 SyringeShape()
-                    .stroke(color, style: StrokeStyle(lineWidth: 1.7, lineCap: .round, lineJoin: .round))
-                    .frame(width: 19 * scale, height: 19 * scale)
+                    .stroke(color, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                    .frame(width: 26 * scale, height: 26 * scale)
                     .rotationEffect(.degrees(45))
-                    .frame(width: 25 * scale, height: 25 * scale)
+                    .frame(width: 28 * scale, height: 28 * scale)
 
                 if let mark {
                     // Never smaller than a legible mark, however small the syringe is drawn.
