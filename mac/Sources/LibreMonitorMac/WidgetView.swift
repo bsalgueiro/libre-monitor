@@ -201,10 +201,10 @@ struct WidgetView: View {
 
             // The syringe shares the unit's line, so it takes no extra width from the value.
             let dose = insulinInHeader ? model.insulinStatus : nil
-            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.78
+            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.95
 
             VStack(alignment: .trailing, spacing: 0) {
-                HStack(spacing: 2 * infoScale) {
+                HStack(alignment: .center, spacing: 7 * infoScale) {
                     if let dose {
                         insulinButton(dose, theme: theme, scale: iconScale)
                     }
@@ -220,18 +220,18 @@ struct WidgetView: View {
             }
             // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes
             // the width of this block and everything beside it moves or resizes.
-            .frame(minWidth: Self.statusColumnWidth(scale: infoScale, iconWidth: dose == nil ? 0 : 28 * iconScale), alignment: .trailing)
+            .frame(minWidth: Self.statusColumnWidth(scale: infoScale, iconWidth: dose == nil ? 0 : 28 * iconScale, gap: 7 * infoScale), alignment: .trailing)
             .layoutPriority(1)
         }
     }
 
     /// Width of the widest everyday age text ("59 min ago") at the given text scale.
-    private static func statusColumnWidth(scale: CGFloat, iconWidth: CGFloat) -> CGFloat {
+    private static func statusColumnWidth(scale: CGFloat, iconWidth: CGFloat, gap: CGFloat) -> CGFloat {
         let font = NSFont.systemFont(ofSize: 11 * scale)
         func width(_ text: String) -> CGFloat { ceil((text as NSString).size(withAttributes: [.font: font]).width) }
 
         // Either the age line, or the syringe plus the longest unit ("mmol/L") on the unit line.
-        let unitLine = iconWidth == 0 ? 0 : iconWidth + 2 * scale + width("mmol/L")
+        let unitLine = iconWidth == 0 ? 0 : iconWidth + gap + width("mmol/L")
         return max(width("59 min ago"), unitLine)
     }
 

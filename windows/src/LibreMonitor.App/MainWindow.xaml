@@ -107,7 +107,7 @@
                     <StackPanel x:Name="UnitRow" Orientation="Horizontal" HorizontalAlignment="Right">
                 <!-- Insulin check: grey = not due yet, amber ! = due, green tick = administered. Hidden unless the reminder is on. -->
                 <Grid x:Name="InsulinButton" Width="28" Height="28" VerticalAlignment="Center"
-                      Margin="0,0,2,0" Background="Transparent" Cursor="Hand" Visibility="Collapsed"
+                      Margin="0,0,7,0" Background="Transparent" Cursor="Hand" Visibility="Collapsed"
                       MouseLeftButtonDown="Insulin_MouseLeftButtonDown"
                       ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="12000">
                     <Viewbox Margin="2,4,4,2">

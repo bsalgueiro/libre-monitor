@@ -635,7 +635,7 @@ public partial class MainWindow : Window
         // width of this block, and everything beside it moves or resizes.
         // The syringe shares the unit's line, so it is sized with the text and counted in that line's width.
         var showIcon = InsulinButton.Visibility == Visibility.Visible;
-        var iconSize = 22 * Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4);
+        var iconSize = 27 * Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4);
         InsulinButton.Width = InsulinButton.Height = iconSize;
 
         var age = TextWidth("59 min ago", AgeText.FontSize);
