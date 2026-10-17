@@ -42,9 +42,11 @@
         </Border.Effect>
         <Border.ContextMenu>
             <ContextMenu x:Name="Menu" Opened="Menu_Opened">
-                <MenuItem x:Name="Range3" Header="Last 3 hours" Click="Range_Click" Tag="3"/>
-                <MenuItem x:Name="Range6" Header="Last 6 hours" Click="Range_Click" Tag="6"/>
-                <MenuItem x:Name="Range12" Header="Last 12 hours" Click="Range_Click" Tag="12"/>
+                <MenuItem x:Name="RangeMenu" Header="Time range">
+                    <MenuItem x:Name="Range3" Header="Last 3 hours" Click="Range_Click" Tag="3"/>
+                    <MenuItem x:Name="Range6" Header="Last 6 hours" Click="Range_Click" Tag="6"/>
+                    <MenuItem x:Name="Range12" Header="Last 12 hours" Click="Range_Click" Tag="12"/>
+                </MenuItem>
                 <MenuItem x:Name="GraphItem" Header="Show graph" IsCheckable="True" Click="Graph_Click"/>
                 <Separator/>
                 <MenuItem Header="Units">
