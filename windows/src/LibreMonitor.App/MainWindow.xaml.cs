@@ -226,9 +226,12 @@ public partial class MainWindow : Window
         RenderInsulin();
     }
 
-    /// <summary>Date and time as dd/mm/yy hh:mm am/pm, the same on every PC, for the syringe's tooltip.</summary>
-    private static string Stamp(DateTimeOffset moment) =>
-        moment.ToLocalTime().ToString("dd/MM/yy hh:mm tt", CultureInfo.InvariantCulture);
+    /// <summary>Date and time in the format of the user's Windows region settings, for the syringe's tooltip.</summary>
+    private static string Stamp(DateTimeOffset moment)
+    {
+        var local = moment.ToLocalTime();
+        return $"{local.ToString("d", CultureInfo.CurrentCulture)} {local.ToString("t", CultureInfo.CurrentCulture)}";
+    }
 
     private static string DayAndTime(DateTimeOffset moment)
     {

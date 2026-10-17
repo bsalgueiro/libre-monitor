@@ -131,11 +131,11 @@ struct WidgetView: View {
         }
     }
 
-    /// Date and time as dd/mm/yy hh:mm am/pm, the same on every Mac, for the syringe's hover message.
+    /// Date and time in the format of the Mac's region settings, for the syringe's hover message.
     private func stamp(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "dd/MM/yy hh:mm a"
+        formatter.dateStyle = .short
+        formatter.timeStyle = .short
         return formatter.string(from: date)
     }
 
