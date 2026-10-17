@@ -1,3 +1,4 @@
+import AppKit
 import LibreMonitorKit
 import SwiftUI
 
@@ -212,8 +213,17 @@ struct WidgetView: View {
                     .lineLimit(1)
                     .fixedSize(horizontal: true, vertical: false) // never break a word; the value shrinks instead
             }
+            // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes
+            // the width of this block and everything beside it moves or resizes.
+            .frame(minWidth: Self.statusColumnWidth(scale: infoScale), alignment: .trailing)
             .layoutPriority(1)
         }
+    }
+
+    /// Width of the widest everyday age text ("59 min ago") at the given text scale.
+    private static func statusColumnWidth(scale: CGFloat) -> CGFloat {
+        let font = NSFont.systemFont(ofSize: 11 * scale)
+        return ceil(("59 min ago" as NSString).size(withAttributes: [.font: font]).width)
     }
 
     /// The normal layout: header on top, graph below. Text scales with the card.

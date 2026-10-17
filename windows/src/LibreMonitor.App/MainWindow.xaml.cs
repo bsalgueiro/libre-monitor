@@ -628,6 +628,18 @@ public partial class MainWindow : Window
             // Space between the value and the line under it (the right-hand margin is only used with the graph).
             InfoStack.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
         }
+
+        // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes the
+        // width of this block, and everything beside it moves or resizes.
+        var age = TextWidth("59 min ago", AgeText.FontSize);
+        InfoStack.MinWidth = stacked ? TextWidth("mmol/L", UnitText.FontSize) + UnitText.Margin.Right + age : age;
+    }
+
+    private double TextWidth(string text, double fontSize)
+    {
+        var typeface = new Typeface(AgeText.FontFamily, AgeText.FontStyle, AgeText.FontWeight, AgeText.FontStretch);
+        return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, fontSize,
+            Brushes.Black, VisualTreeHelper.GetDpi(this).PixelsPerDip).WidthIncludingTrailingWhitespace;
     }
 
     /// <summary>Natural size of the header, at base font sizes, in the given arrangement.</summary>
