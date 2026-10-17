@@ -26,6 +26,7 @@ public sealed class GlucoseMonitor : IAsyncDisposable
     private Patient? _patient;
     private int _changedStreak;
     private bool _changedReported;
+    private TaskCompletionSource _wake = NewWake();
 
     public GlucoseMonitor(
         LibreLinkUpClient client,
@@ -68,14 +69,27 @@ public sealed class GlucoseMonitor : IAsyncDisposable
 
     public ValueTask DisposeAsync() => new(StopAsync());
 
+    /// <summary>
+    /// Polls again right away instead of waiting for the next tick. Does nothing while a poll is already running (its
+    /// answer is about to arrive) or once the monitor has stopped.
+    /// </summary>
+    public void RefreshNow() => _wake.TrySetResult();
+
+    private static TaskCompletionSource NewWake() => new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     private async Task RunAsync(CancellationToken ct)
     {
-        using var timer = new PeriodicTimer(_interval);
-        do
+        while (!ct.IsCancellationRequested)
         {
+            // A refresh asked for during the poll below is not needed: the poll in progress is already fetching.
+            var wake = _wake = NewWake();
+
             if (!await PollOnceAsync(ct).ConfigureAwait(false)) return;
+
+            using var sleep = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            await Task.WhenAny(Task.Delay(_interval, sleep.Token), wake.Task).ConfigureAwait(false);
+            await sleep.CancelAsync().ConfigureAwait(false); // stop the unfinished delay when a refresh woke us early
         }
-        while (await timer.WaitForNextTickAsync(ct).ConfigureAwait(false));
     }
 
     /// <returns>false when a fatal error means polling should stop.</returns>

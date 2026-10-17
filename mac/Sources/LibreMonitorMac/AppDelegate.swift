@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let alertsController = AlertsWindowController()
     private let alertEvaluator = AlertEvaluator()
     private let insulinEvaluator = InsulinReminderEvaluator()
+    private var lastManualRefresh = Date.distantPast
     private var lastAlertSettings = AlertSettings()
     private var lastInsulinSettings = InsulinSettings()
     private var tickTimer: Timer?
@@ -123,6 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
             showAlerts: { [weak self] in self?.showAlerts() },
             toggleInsulin: { [weak self] in self?.toggleInsulin() },
+            refreshNow: { [weak self] in self?.refreshNow() },
             snoozeAlerts: { [weak self] minutes in self?.snoozeAlerts(minutes: minutes) },
             resumeAlerts: { [weak self] in self?.resumeAlerts() },
             checkForUpdates: { NSWorkspace.shared.open(AppInfo.releasesUrl) },
@@ -269,6 +271,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // The Mac was asleep, so the data is stale: poll again right away.
             Task { @MainActor in self?.monitor?.refreshNow() }
         }
+    }
+
+    /// Double-clicking the value fetches a new reading now, instead of waiting for the next minute.
+    private func refreshNow() {
+        let now = Date()
+        // A fake reading has nothing to refresh, and the unofficial service should not be hammered by repeated clicks.
+        guard let monitor, !model.isSimulated, now.timeIntervalSince(lastManualRefresh) >= 10 else { return }
+
+        lastManualRefresh = now
+        model.refreshingUntil = now.addingTimeInterval(15)
+        monitor.refreshNow()
     }
 
     private func tick() {

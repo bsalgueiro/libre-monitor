@@ -23,6 +23,8 @@ final class AppModel: ObservableObject {
     @Published var alertZone: AlertKind?
     /// While set (and in the future), alert notifications are paused. Shown in the menu.
     @Published var snoozedUntil: Date?
+    /// Set for a few seconds after a manual refresh, so the status text can say "updating…".
+    @Published var refreshingUntil: Date?
     /// Refreshed on a timer so the age text and the graph's "now" edge keep moving between polls.
     @Published private(set) var now = Date()
     @Published var settings: WidgetSettings {
@@ -94,11 +96,13 @@ final class AppModel: ObservableObject {
 
     func apply(_ update: MonitorUpdate) {
         realUpdate = update
+        refreshingUntil = nil
         problem = nil
         serviceChanged = false // a good answer ends the episode
     }
 
     func fail(fatal: Bool) {
+        refreshingUntil = nil
         // Once the service is known to have changed, keep saying so rather than going back to "reconnecting".
         problem = serviceChanged ? .serviceChanged : (fatal ? .signInNeeded : .reconnecting)
     }

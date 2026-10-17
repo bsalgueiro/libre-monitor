@@ -42,6 +42,35 @@ final class GlucoseMonitorTests: XCTestCase {
         XCTAssertEqual(logins.value, 1)
     }
 
+    func testRefreshNowPollsAgainWithoutWaitingForTheInterval() async {
+        StubURLProtocol.install { request in
+            let path = request.url!.path
+            if path.hasSuffix("/auth/login") { return (200, Self.loginOk) }
+            if path.hasSuffix("/connections") { return (200, Self.patients) }
+            return (200, Self.graph)
+        }
+
+        // An hour between polls: the second update can only come from refreshNow.
+        let client = LibreLinkUpClient(session: StubURLProtocol.makeSession())
+        let monitor = GlucoseMonitor(client: client, credentials: { (email: "a@b.c", password: "pw") }, interval: 3600)
+        let count = Counter()
+        let first = expectation(description: "first update")
+        let second = expectation(description: "second update")
+        monitor.onUpdate = { _ in
+            count.increment()
+            if count.value == 1 { first.fulfill() } else if count.value == 2 { second.fulfill() }
+        }
+
+        monitor.start()
+        await fulfillment(of: [first], timeout: 5)
+        try? await Task.sleep(nanoseconds: 100_000_000) // let the loop reach its sleep
+        monitor.refreshNow()
+        await fulfillment(of: [second], timeout: 5)
+        await monitor.stop()
+
+        XCTAssertEqual(count.value, 2)
+    }
+
     func testExpiredSessionLogsInAgainAndKeepsPolling() async {
         let logins = Counter()
         let graphCalls = Counter()

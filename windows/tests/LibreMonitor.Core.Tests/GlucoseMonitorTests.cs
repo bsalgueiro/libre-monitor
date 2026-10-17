@@ -47,6 +47,47 @@ public class GlucoseMonitorTests
     }
 
     [Fact]
+    public async Task RefreshNow_PollsAgainWithoutWaitingForTheInterval()
+    {
+        var handler = new RouteHandler(r => r.RequestUri!.AbsolutePath switch
+        {
+            var p when p.EndsWith("/auth/login") => (HttpStatusCode.OK, LoginOk),
+            var p when p.EndsWith("/connections") => (HttpStatusCode.OK, Patients),
+            _ => (HttpStatusCode.OK, Graph),
+        });
+        // An hour between polls: the second update can only come from RefreshNow.
+        await using var monitor = new GlucoseMonitor(
+            new LibreLinkUpClient(new HttpClient(handler)), () => ("a@b.c", "pw"), TimeSpan.FromHours(1));
+        var count = 0;
+        var first = new TaskCompletionSource();
+        var second = new TaskCompletionSource();
+        monitor.Updated += _ =>
+        {
+            if (Interlocked.Increment(ref count) == 1) first.TrySetResult();
+            else second.TrySetResult();
+        };
+
+        monitor.Start();
+        await first.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Delay(100); // let the loop reach its wait
+        monitor.RefreshNow();
+        await second.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(2, count);
+    }
+
+    [Fact]
+    public async Task RefreshNow_BeforeStart_DoesNothing()
+    {
+        var handler = new RouteHandler(_ => (HttpStatusCode.OK, LoginOk));
+        await using var monitor = Create(handler);
+
+        monitor.RefreshNow(); // never started: must not throw or poll
+
+        Assert.Equal(0, handler.Logins);
+    }
+
+    [Fact]
     public async Task ExpiredSession_LogsInAgain_AndKeepsPolling()
     {
         var graphCalls = 0;

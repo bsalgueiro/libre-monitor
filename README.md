@@ -158,6 +158,7 @@ flag the single-file build.
 | Change the time range | Mouse wheel over the widget, or the menu |
 | Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the value) |
 | See a reading's value and time | Hover the graph |
+| Refresh now | Double-click the value (the widget updates by itself every minute) |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
 | Light, dark or follow Windows | Menu > Appearance |

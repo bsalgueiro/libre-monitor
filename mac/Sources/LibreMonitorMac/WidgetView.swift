@@ -26,6 +26,7 @@ struct WidgetActions {
     var hideToMenuBar: () -> Void
     var showAlerts: () -> Void
     var toggleInsulin: () -> Void
+    var refreshNow: () -> Void
     var snoozeAlerts: (Int) -> Void
     var resumeAlerts: () -> Void
     var checkForUpdates: () -> Void
@@ -191,6 +192,7 @@ struct WidgetView: View {
                 .opacity(model.isStale ? 0.5 : 1)
                 .lineLimit(1)
                 .minimumScaleFactor(0.5)
+                .onTapGesture(count: 2) { actions.refreshNow() }
 
             Text(model.current?.trend.arrow ?? "")
                 .font(.system(size: 30 * valueScale))
@@ -297,6 +299,7 @@ struct WidgetView: View {
                     .opacity(model.isStale ? 0.5 : 1)
                     .lineLimit(1)
                     .minimumScaleFactor(0.5)
+                    .onTapGesture(count: 2) { actions.refreshNow() }
 
                 Text(model.current?.trend.arrow ?? "")
                     .font(.system(size: 30 * fit))
@@ -463,6 +466,10 @@ struct WidgetView: View {
         if model.isSimulated {
             // Make it impossible to mistake a fake value for a real one.
             return ("SIMULATED", theme.high)
+        }
+
+        if let until = model.refreshingUntil, until > model.now {
+            return ("updating…", theme.muted)
         }
 
         if let problem = model.problem {

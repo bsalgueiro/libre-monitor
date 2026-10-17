@@ -43,6 +43,8 @@ public partial class MainWindow : Window
     private SimulationScenario? _simulation;    // developer branch: fake readings for checking colours
     private readonly List<(MenuItem Item, int Index)> _simulationItems = [];
     private string? _problem;
+    private DateTimeOffset _lastManualRefresh = DateTimeOffset.MinValue;
+    private DateTimeOffset _updatingUntil = DateTimeOffset.MinValue; // shows "updating…" after a manual refresh
     private bool _problemIsFatal;
     private bool _serviceChanged;
 
@@ -140,6 +142,7 @@ public partial class MainWindow : Window
 
     private void OnUpdated(MonitorUpdate update)
     {
+        _updatingUntil = DateTimeOffset.MinValue;
         _last = update;
         _problem = null;
         _serviceChanged = false; // a good answer ends the episode
@@ -276,6 +279,28 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Double-clicking the value fetches a new reading now, instead of waiting for the next minute.</summary>
+    private void Value_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ClickCount != 2) return; // a single press falls through to the window, which drags it
+        e.Handled = true;
+        RefreshNow();
+    }
+
+    private void RefreshNow()
+    {
+        var now = DateTimeOffset.UtcNow;
+        // A fake reading has nothing to refresh, and the unofficial service should not be hammered by repeated clicks.
+        if (_monitor is null || _simulation is not null || now - _lastManualRefresh < ManualRefreshGap) return;
+
+        _lastManualRefresh = now;
+        _updatingUntil = now.AddSeconds(15);
+        _monitor.RefreshNow();
+        RenderAge();
+    }
+
+    private static readonly TimeSpan ManualRefreshGap = TimeSpan.FromSeconds(10);
+
     // Like the close button, this acts on the press: DragMove would swallow the button-up.
     private void Insulin_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
@@ -408,6 +433,7 @@ public partial class MainWindow : Window
 
     private void OnFailed(Exception ex, bool fatal)
     {
+        _updatingUntil = DateTimeOffset.MinValue;
         // Once the service is known to have changed, keep saying so rather than going back to "reconnecting".
         _problem = _serviceChanged ? "service changed" : fatal ? "sign-in needed" : "reconnecting";
         _problemIsFatal = fatal || _serviceChanged;
@@ -470,6 +496,13 @@ public partial class MainWindow : Window
             // Make it impossible to mistake a fake value for a real one.
             AgeText.Text = "SIMULATED";
             AgeText.Foreground = Palette.Brush(Palette.High);
+            return;
+        }
+
+        if (DateTimeOffset.UtcNow < _updatingUntil)
+        {
+            AgeText.Text = "updating…";
+            AgeText.Foreground = Palette.Brush(Palette.Muted);
             return;
         }
 
