@@ -49,7 +49,6 @@
                     <MenuItem x:Name="Range6" Header="Last 6 hours" Click="Range_Click" Tag="6"/>
                     <MenuItem x:Name="Range12" Header="Last 12 hours" Click="Range_Click" Tag="12"/>
                 </MenuItem>
-                <Separator/>
                 <MenuItem Header="Units">
                     <MenuItem x:Name="UnitMg" Header="mg/dL" Click="Unit_Click" Tag="MgPerDl"/>
                     <MenuItem x:Name="UnitMmol" Header="mmol/L" Click="Unit_Click" Tag="MmolPerL"/>

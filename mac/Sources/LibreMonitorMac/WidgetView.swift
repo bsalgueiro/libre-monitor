@@ -376,8 +376,6 @@ struct WidgetView: View {
         }
         .disabled(!model.settings.showGraph) // the range only affects the graph
 
-        Divider()
-
         Menu("Units") {
             Picker("Units", selection: $model.settings.unit) {
                 ForEach(GlucoseUnit.allCases, id: \.self) { Text($0.label).tag($0) }
