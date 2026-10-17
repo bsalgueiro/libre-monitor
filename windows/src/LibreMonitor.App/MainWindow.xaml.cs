@@ -173,13 +173,10 @@ public partial class MainWindow : Window
     {
         var unit = _settings.Unit;
         var low = alert.Kind == AlertKind.Low;
-        // The title always says what this is about ("Low glucose alert", then "Low glucose reminder" on repeats);
-        // the body carries the reading, and "Still low" on a repeat.
-        var title = (_simulation is not null ? "SIMULATED · " : string.Empty)
-            + $"{(low ? "Low" : "High")} glucose {(alert.IsReminder ? "reminder" : "alert")}";
-        var reading = $"{GlucoseUnits.Format(alert.Reading.MgPerDl, unit, CultureInfo.CurrentCulture)} {unit.Label()} "
+        // One message, however many times it repeats: the title says what it is, the body carries the reading.
+        var title = (_simulation is not null ? "SIMULATED · " : string.Empty) + $"{(low ? "Low" : "High")} glucose alert";
+        var text = $"{GlucoseUnits.Format(alert.Reading.MgPerDl, unit, CultureInfo.CurrentCulture)} {unit.Label()} "
             + $"{alert.Reading.Trend.ToArrow()} · {FormatAge(now - alert.Reading.TimestampUtc)}";
-        var text = alert.IsReminder ? $"Still {(low ? "low" : "high")}: {reading}" : reading;
 
         // The notification needs the tray icon. Without it the sound and the widget border still work.
         _tray.Notify(title, text);
@@ -223,10 +220,7 @@ public partial class MainWindow : Window
         var raised = _insulinReminder.Evaluate(_settings.Insulin, now, TimeZoneInfo.Local, _alerts.SnoozedUntil(now));
         if (raised is not null)
         {
-            var body = raised.IsReminder
-                ? $"Still not marked as administered. Due at {raised.Slot:HH:mm}."
-                : $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.";
-            _tray.Notify("Insulin reminder", body);
+            _tray.Notify("Insulin reminder", $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
             if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
         }
 
