@@ -97,7 +97,8 @@
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <StackPanel x:Name="ValueStack" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                <StackPanel x:Name="ValueStack" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center"
+                            Background="Transparent" MouseLeftButtonDown="Value_MouseLeftButtonDown">
                     <TextBlock x:Name="ValueText" Text="--" FontSize="46" FontWeight="SemiBold" Foreground="{DynamicResource TextBrush}"/>
                     <TextBlock x:Name="ArrowText" FontSize="30" Margin="8,0,0,0" VerticalAlignment="Center"/>
                 </StackPanel>

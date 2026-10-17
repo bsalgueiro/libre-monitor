@@ -123,6 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
             showAlerts: { [weak self] in self?.showAlerts() },
             toggleInsulin: { [weak self] in self?.toggleInsulin() },
+            refreshNow: { [weak self] in self?.refreshNow() },
             snoozeAlerts: { [weak self] minutes in self?.snoozeAlerts(minutes: minutes) },
             resumeAlerts: { [weak self] in self?.resumeAlerts() },
             checkForUpdates: { NSWorkspace.shared.open(AppInfo.releasesUrl) },
@@ -269,6 +270,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // The Mac was asleep, so the data is stale: poll again right away.
             Task { @MainActor in self?.monitor?.refreshNow() }
         }
+    }
+
+    /// Double-clicking the value fetches a new reading now, instead of waiting for the next minute.
+    private func refreshNow() {
+        // A fake reading has nothing to refresh. The monitor itself refuses refreshes that come too soon or too often
+        // (see GlucoseMonitor.refreshNow), so repeated clicks cannot hammer the unofficial service; they are ignored.
+        guard let monitor, !model.isSimulated, monitor.refreshNow() else { return }
+
+        model.refreshingUntil = Date().addingTimeInterval(15)
     }
 
     private func tick() {

@@ -28,6 +28,9 @@ Two self-contained platform folders, `windows/` and `mac/`, plus shared `docs/` 
 
 - **Cross-platform parity:** a behaviour change in Core (alert rules, error classification, polling, units) must be mirrored in
   LibreMonitorKit with matching tests, and vice versa. If you can only run one toolchain, say so and list what is unmirrored.
+- **Polling guard:** `GlucoseMonitor.RefreshNow` / `refreshNow` is the only way to poll outside the timer, and it is rate-limited
+  there (at least 15 s between any two polls, none while one is running, at most 6 manual refreshes per 10 minutes). Keep the
+  limits in the monitor, identical in Core and Kit, and route any new trigger (button, hotkey, wake) through it.
 - **Alert rules** live only in `Alerts.cs` / `Alerts.swift` with no UI or clock. Thresholds are stored in mg/dL regardless of display unit.
 - **Failure classification:** unexpected responses (403/404/410, non-zero API status, HTML instead of JSON, missing field, bad timestamp)
   are `ServiceChanged`, never "wrong password". Server errors and rate limits stay retryable. Raised after 3 in a row.

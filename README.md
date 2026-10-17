@@ -158,6 +158,7 @@ flag the single-file build.
 | Change the time range | Mouse wheel over the widget, or the menu |
 | Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the value) |
 | See a reading's value and time | Hover the graph |
+| Refresh now | Double-click the value. The widget updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
 | Light, dark or follow Windows | Menu > Appearance |
@@ -236,6 +237,10 @@ The widget shows what is wrong in the small status text next to the value:
 | **reconnecting** (amber) | A temporary problem: no internet, or LibreView is busy. | Nothing. It tries again every minute. |
 | **sign-in needed** (red) | The follower email or password is no longer accepted. | Menu > Sign out and quit, start it again and sign in. |
 | **service changed** (red) | LibreLinkUp is no longer answering the way this app expects, three checks in a row. Abbott may have changed or blocked the unofficial service. | Menu > **Check for updates...**. On Windows a notification tells you once, and clicking it opens the same page. |
+
+**Value looks old?** The widget updates by itself every minute. To fetch a new reading right away, double-click the value.
+The status text says "updating…" until it arrives. To be kind to the service, only a few manual refreshes are allowed every
+ten minutes, so extra double-clicks are ignored.
 
 This app relies on a service that Abbott does not publish for third parties, so it can stop working without warning. If you
 are already on the newest version, the app needs a fix from its developer, so please report it on the project's page.
