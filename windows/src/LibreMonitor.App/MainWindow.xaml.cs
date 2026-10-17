@@ -43,7 +43,6 @@ public partial class MainWindow : Window
     private SimulationScenario? _simulation;    // developer branch: fake readings for checking colours
     private readonly List<(MenuItem Item, int Index)> _simulationItems = [];
     private string? _problem;
-    private DateTimeOffset _lastManualRefresh = DateTimeOffset.MinValue;
     private DateTimeOffset _updatingUntil = DateTimeOffset.MinValue; // shows "updating…" after a manual refresh
     private bool _problemIsFatal;
     private bool _serviceChanged;
@@ -289,17 +288,13 @@ public partial class MainWindow : Window
 
     private void RefreshNow()
     {
-        var now = DateTimeOffset.UtcNow;
-        // A fake reading has nothing to refresh, and the unofficial service should not be hammered by repeated clicks.
-        if (_monitor is null || _simulation is not null || now - _lastManualRefresh < ManualRefreshGap) return;
+        // A fake reading has nothing to refresh. The monitor itself refuses refreshes that come too soon or too often
+        // (see GlucoseMonitor.RefreshNow), so repeated clicks cannot hammer the unofficial service; they are ignored.
+        if (_monitor is null || _simulation is not null || !_monitor.RefreshNow()) return;
 
-        _lastManualRefresh = now;
-        _updatingUntil = now.AddSeconds(15);
-        _monitor.RefreshNow();
+        _updatingUntil = DateTimeOffset.UtcNow.AddSeconds(15);
         RenderAge();
     }
-
-    private static readonly TimeSpan ManualRefreshGap = TimeSpan.FromSeconds(10);
 
     // Like the close button, this acts on the press: DragMove would swallow the button-up.
     private void Insulin_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)

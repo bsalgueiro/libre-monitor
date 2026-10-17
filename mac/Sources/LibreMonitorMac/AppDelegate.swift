@@ -33,7 +33,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let alertsController = AlertsWindowController()
     private let alertEvaluator = AlertEvaluator()
     private let insulinEvaluator = InsulinReminderEvaluator()
-    private var lastManualRefresh = Date.distantPast
     private var lastAlertSettings = AlertSettings()
     private var lastInsulinSettings = InsulinSettings()
     private var tickTimer: Timer?
@@ -275,13 +274,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// Double-clicking the value fetches a new reading now, instead of waiting for the next minute.
     private func refreshNow() {
-        let now = Date()
-        // A fake reading has nothing to refresh, and the unofficial service should not be hammered by repeated clicks.
-        guard let monitor, !model.isSimulated, now.timeIntervalSince(lastManualRefresh) >= 10 else { return }
+        // A fake reading has nothing to refresh. The monitor itself refuses refreshes that come too soon or too often
+        // (see GlucoseMonitor.refreshNow), so repeated clicks cannot hammer the unofficial service; they are ignored.
+        guard let monitor, !model.isSimulated, monitor.refreshNow() else { return }
 
-        lastManualRefresh = now
-        model.refreshingUntil = now.addingTimeInterval(15)
-        monitor.refreshNow()
+        model.refreshingUntil = Date().addingTimeInterval(15)
     }
 
     private func tick() {

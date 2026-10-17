@@ -30,6 +30,20 @@ public final class GlucoseMonitor: @unchecked Sendable {
     /// be a hiccup; a few in a row (about three minutes at the default interval) is a real change.
     public static let serviceChangedThreshold = 3
 
+    /// Guard rails for `refreshNow()`, so that clicking cannot hammer a service that is not ours: at least this long
+    /// between any two polls (automatic or manual)...
+    public static let minPollGap: TimeInterval = 15
+
+    /// ...and at most this many manual refreshes within `manualRefreshWindow`.
+    public static let maxManualRefreshes = 6
+    public static let manualRefreshWindow: TimeInterval = 600
+
+    private let clock: @Sendable () -> Date
+    private let guardLock = NSLock()
+    private var lastPollStarted = Date.distantPast
+    private var polling = false
+    private var manualRefreshes: [Date] = []
+
     private var task: Task<Void, Never>?
     private var patient: Patient?
     private var changedStreak = 0
@@ -49,11 +63,13 @@ public final class GlucoseMonitor: @unchecked Sendable {
     public init(
         client: LibreLinkUpClient,
         credentials: @escaping Credentials,
-        interval: TimeInterval = GlucoseMonitor.defaultInterval)
+        interval: TimeInterval = GlucoseMonitor.defaultInterval,
+        clock: @escaping @Sendable () -> Date = { Date() })
     {
         self.client = client
         self.credentials = credentials
         self.interval = interval
+        self.clock = clock
     }
 
     public func start() {
@@ -68,16 +84,54 @@ public final class GlucoseMonitor: @unchecked Sendable {
         await running?.value
     }
 
-    /// Polls again right away, for example after the Mac wakes from sleep.
-    public func refreshNow() {
-        guard task != nil else { return }
+    /// Polls again right away instead of waiting for the next tick (for example after the Mac wakes from sleep, or
+    /// when the user double-clicks the value), within the guard rails: nothing happens while the monitor is not
+    /// running, while a poll is already in progress (its answer is about to arrive), within `minPollGap` of the last
+    /// poll, or after `maxManualRefreshes` refreshes in the last `manualRefreshWindow`. Safe to call as often as you like.
+    ///
+    /// - Returns: true if a new poll was started, false if the request was ignored.
+    @discardableResult
+    public func refreshNow() -> Bool {
+        guardLock.lock()
+        defer { guardLock.unlock() }
+
+        guard task != nil, !polling else { return false }
+
+        let current = clock()
+        guard current.timeIntervalSince(lastPollStarted) >= Self.minPollGap else { return false }
+
+        manualRefreshes.removeAll { current.timeIntervalSince($0) >= Self.manualRefreshWindow }
+        guard manualRefreshes.count < Self.maxManualRefreshes else { return false }
+
+        // Recorded here as well as when the poll begins, so a second click before the new task has started is refused.
+        manualRefreshes.append(current)
+        lastPollStarted = current
+
+        // Cancelling wakes the loop from its sleep; the new task polls straight away.
         task?.cancel()
         task = Task { [weak self] in await self?.run() }
+        return true
+    }
+
+    private func beginPoll() {
+        guardLock.lock()
+        polling = true
+        lastPollStarted = clock()
+        guardLock.unlock()
+    }
+
+    private func endPoll() {
+        guardLock.lock()
+        polling = false
+        guardLock.unlock()
     }
 
     private func run() async {
         while !Task.isCancelled {
-            guard await pollOnce() else { return }
+            beginPoll()
+            let keepGoing = await pollOnce()
+            endPoll()
+            guard keepGoing else { return }
 
             do {
                 try await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))

@@ -21,6 +21,23 @@ public sealed class GlucoseMonitor : IAsyncDisposable
     /// </summary>
     public const int ServiceChangedThreshold = 3;
 
+    /// <summary>
+    /// Guard rails for <see cref="RefreshNow"/>, so that clicking cannot hammer a service that is not ours: at least
+    /// this long between any two polls (automatic or manual)...
+    /// </summary>
+    public static readonly TimeSpan MinPollGap = TimeSpan.FromSeconds(15);
+
+    /// <summary>...and at most this many manual refreshes within <see cref="ManualRefreshWindow"/>.</summary>
+    public const int MaxManualRefreshes = 6;
+
+    public static readonly TimeSpan ManualRefreshWindow = TimeSpan.FromMinutes(10);
+
+    private readonly TimeProvider _time;
+    private readonly object _guard = new();
+    private readonly Queue<DateTimeOffset> _manualRefreshes = new();
+    private DateTimeOffset _lastPollStarted = DateTimeOffset.MinValue;
+    private bool _polling;
+
     private CancellationTokenSource? _cts;
     private Task? _loop;
     private Patient? _patient;
@@ -31,11 +48,13 @@ public sealed class GlucoseMonitor : IAsyncDisposable
     public GlucoseMonitor(
         LibreLinkUpClient client,
         Func<(string Email, string Password)> credentials,
-        TimeSpan? interval = null)
+        TimeSpan? interval = null,
+        TimeProvider? timeProvider = null)
     {
         _client = client;
         _credentials = credentials;
         _interval = interval ?? DefaultInterval;
+        _time = timeProvider ?? TimeProvider.System;
     }
 
     public event Action<MonitorUpdate>? Updated;
@@ -70,10 +89,34 @@ public sealed class GlucoseMonitor : IAsyncDisposable
     public ValueTask DisposeAsync() => new(StopAsync());
 
     /// <summary>
-    /// Polls again right away instead of waiting for the next tick. Does nothing while a poll is already running (its
-    /// answer is about to arrive) or once the monitor has stopped.
+    /// Polls again right away instead of waiting for the next tick, within the guard rails: nothing happens while the
+    /// monitor is not running, while a poll is already in progress (its answer is about to arrive), within
+    /// <see cref="MinPollGap"/> of the last poll, or after <see cref="MaxManualRefreshes"/> manual refreshes in the last
+    /// <see cref="ManualRefreshWindow"/>. Safe to call from any thread, as often as you like.
     /// </summary>
-    public void RefreshNow() => _wake.TrySetResult();
+    /// <returns>true if a new poll was started, false if the request was ignored.</returns>
+    public bool RefreshNow()
+    {
+        lock (_guard)
+        {
+            if (_loop is null || _polling) return false;
+
+            var now = _time.GetUtcNow();
+            if (now - _lastPollStarted < MinPollGap) return false;
+
+            while (_manualRefreshes.Count > 0 && now - _manualRefreshes.Peek() >= ManualRefreshWindow)
+            {
+                _manualRefreshes.Dequeue();
+            }
+
+            if (_manualRefreshes.Count >= MaxManualRefreshes) return false;
+
+            if (!_wake.TrySetResult()) return false; // a refresh is already on its way
+
+            _manualRefreshes.Enqueue(now); // only refreshes that really start a poll count towards the limit
+            return true;
+        }
+    }
 
     private static TaskCompletionSource NewWake() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -81,10 +124,26 @@ public sealed class GlucoseMonitor : IAsyncDisposable
     {
         while (!ct.IsCancellationRequested)
         {
-            // A refresh asked for during the poll below is not needed: the poll in progress is already fetching.
-            var wake = _wake = NewWake();
+            lock (_guard)
+            {
+                // A refresh asked for during the poll below is refused: the poll in progress is already fetching.
+                _wake = NewWake();
+                _polling = true;
+                _lastPollStarted = _time.GetUtcNow();
+            }
 
-            if (!await PollOnceAsync(ct).ConfigureAwait(false)) return;
+            var wake = _wake;
+            bool keepGoing;
+            try
+            {
+                keepGoing = await PollOnceAsync(ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                lock (_guard) _polling = false;
+            }
+
+            if (!keepGoing) return;
 
             using var sleep = CancellationTokenSource.CreateLinkedTokenSource(ct);
             await Task.WhenAny(Task.Delay(_interval, sleep.Token), wake.Task).ConfigureAwait(false);
