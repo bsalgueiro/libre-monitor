@@ -29,6 +29,9 @@ public sealed class WidgetSettings
     /// <summary>Thresholds are stored in mg/dL whatever unit is displayed. Both alerts start switched off.</summary>
     public AlertSettings Alerts { get; set; } = new();
 
+    /// <summary>How many days the user's sensor lasts (a choice from <see cref="SensorSchedule.LifeChoices"/>), used to estimate when it ends.</summary>
+    public int SensorLifeDays { get; set; } = SensorSchedule.DefaultLifeDays;
+
     /// <summary>
     /// The insulin reminder: its schedule and the time the dose was last marked as administered. That one
     /// timestamp is the only thing recorded about it (no amounts, no history). Off by default.

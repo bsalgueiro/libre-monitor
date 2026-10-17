@@ -20,6 +20,55 @@ public class SensorTests
         Assert.True(SensorSchedule.Remaining(Sensor, Activated.AddDays(15)) < TimeSpan.Zero);
     }
 
+    // ---- life span ----
+
+    [Fact]
+    public void EndsAt_UsesTheChosenLifeSpan()
+    {
+        Assert.Equal(Activated.AddDays(15), SensorSchedule.EndsAt(Sensor, 15));
+        Assert.Equal(Activated.AddDays(14), SensorSchedule.EndsAt(Sensor, 14));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(13)]
+    [InlineData(16)]
+    [InlineData(-5)]
+    public void AnUnknownLifeSpan_FallsBackToFourteenDays(int days)
+    {
+        Assert.Equal(SensorSchedule.DefaultLifeDays, SensorSchedule.NormalizeLifeDays(days));
+        Assert.Equal(Activated.AddDays(14), SensorSchedule.EndsAt(Sensor, days));
+    }
+
+    [Fact]
+    public void TheChoices_IncludeTheDefault_AndOnlyHoldSensibleValues()
+    {
+        Assert.Contains(SensorSchedule.DefaultLifeDays, SensorSchedule.LifeChoices);
+        foreach (var days in SensorSchedule.LifeChoices) Assert.InRange(days, 10, 20);
+    }
+
+    [Fact]
+    public void ALongerLifeSpan_MovesTheNoticeLater()
+    {
+        var e = new SensorExpiryEvaluator();
+
+        // With 15 days the sensor still has a day and an hour left at day 13 and a bit, so there is no notice yet.
+        Assert.Null(e.Evaluate(Sensor, Activated.AddDays(13), lifeDays: 15));
+        Assert.NotNull(e.Evaluate(Sensor, Activated.AddDays(14), lifeDays: 15));
+    }
+
+    [Fact]
+    public void ChangingTheLifeSpan_AllowsANewNotice()
+    {
+        var e = new SensorExpiryEvaluator();
+        Assert.NotNull(e.Evaluate(Sensor, Activated.AddDays(13), lifeDays: 14));
+        Assert.Null(e.Evaluate(Sensor, Activated.AddDays(13).AddHours(1), lifeDays: 14));
+
+        // Switched to 15 days: that notice came a day early, so another is due when 15 days are nearly up.
+        Assert.Null(e.Evaluate(Sensor, Activated.AddDays(13).AddHours(2), lifeDays: 15));
+        Assert.NotNull(e.Evaluate(Sensor, Activated.AddDays(14), lifeDays: 15));
+    }
+
     // ---- notification ----
 
     [Fact]

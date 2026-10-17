@@ -103,7 +103,7 @@ struct WidgetView: View {
             if overInsulin, let dose = model.insulinStatus {
                 hoverMessage(insulinMessage(dose), border: insulinColor(dose.state, theme: theme), theme: theme)
             } else if overSensorText, let sensor = model.sensor {
-                hoverMessage(sensorDetail(sensor, now: model.now), border: theme.muted, theme: theme)
+                hoverMessage(sensorDetail(sensor, now: model.now, lifeDays: model.settings.sensorLifeDays), border: theme.muted, theme: theme)
             }
         }
         .animation(.easeInOut(duration: 0.12), value: overInsulin || overSensorText)
@@ -363,7 +363,14 @@ struct WidgetView: View {
     @ViewBuilder
     private var menuContent: some View {
         if let sensor = model.sensor {
-            Button(sensorSummary(sensor, now: model.now)) {}.disabled(true)
+            Button(sensorSummary(sensor, now: model.now, lifeDays: model.settings.sensorLifeDays)) {}.disabled(true)
+            Menu("Sensor life") {
+                Picker("Sensor life", selection: $model.settings.sensorLifeDays) {
+                    ForEach(SensorSchedule.lifeChoices, id: \.self) { Text("\($0) days").tag($0) }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
+            }
             Divider()
         }
 

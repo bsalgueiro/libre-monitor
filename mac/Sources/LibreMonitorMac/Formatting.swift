@@ -12,11 +12,11 @@ func formatDateTime(_ date: Date) -> String {
 private func plural(_ count: Int, _ unit: String) -> String { count == 1 ? "1 \(unit)" : "\(count) \(unit)s" }
 
 /// One line for the menu: "Sensor ends in about 6 days (Fri 23 Oct)".
-func sensorSummary(_ sensor: SensorInfo, now: Date) -> String {
+func sensorSummary(_ sensor: SensorInfo, now: Date, lifeDays: Int) -> String {
     let formatter = DateFormatter()
     formatter.setLocalizedDateFormatFromTemplate("EEE d MMM")
-    let date = formatter.string(from: SensorSchedule.endsAt(sensor))
-    let left = SensorSchedule.remaining(sensor, now: now)
+    let date = formatter.string(from: SensorSchedule.endsAt(sensor, lifeDays: lifeDays))
+    let left = SensorSchedule.remaining(sensor, now: now, lifeDays: lifeDays)
 
     if left <= 0 { return "Sensor due to have ended (\(date))" }
     if left < 24 * 3600 { return "Sensor ends in about \(plural(max(1, Int((left / 3600).rounded())), "hour"))" }
@@ -24,9 +24,9 @@ func sensorSummary(_ sensor: SensorInfo, now: Date) -> String {
 }
 
 /// The hover message on the unit and age text, in the system date and time format.
-func sensorDetail(_ sensor: SensorInfo, now: Date) -> String {
-    let ends = formatDateTime(SensorSchedule.endsAt(sensor))
-    let line = SensorSchedule.remaining(sensor, now: now) <= 0 ? "Due to have ended about \(ends)." : "Ends about \(ends)."
+func sensorDetail(_ sensor: SensorInfo, now: Date, lifeDays: Int) -> String {
+    let ends = formatDateTime(SensorSchedule.endsAt(sensor, lifeDays: lifeDays))
+    let line = SensorSchedule.remaining(sensor, now: now, lifeDays: lifeDays) <= 0 ? "Due to have ended about \(ends)." : "Ends about \(ends)."
     return "Sensor started \(formatDateTime(sensor.activatedAt)).\n\(line)"
 }
 

@@ -43,6 +43,7 @@
         <Border.ContextMenu>
             <ContextMenu x:Name="Menu" Opened="Menu_Opened">
                 <MenuItem x:Name="SensorItem" IsEnabled="False" Visibility="Collapsed"/>
+                <MenuItem x:Name="SensorLifeMenu" Header="Sensor life" Visibility="Collapsed"/>
                 <Separator x:Name="SensorSeparator" Visibility="Collapsed"/>
                 <MenuItem x:Name="RangeMenu" Header="Time range">
                     <MenuItem x:Name="Range3" Header="Last 3 hours" Click="Range_Click" Tag="3"/>
