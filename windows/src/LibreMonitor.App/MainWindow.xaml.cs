@@ -592,22 +592,20 @@ public partial class MainWindow : Window
     {
         if (arrangement == HeaderArrangement.Stacked)
         {
-            Grid.SetRow(InfoStack, 1);
+            Grid.SetRow(InfoBlock, 1);
             ValueStack.HorizontalAlignment = HorizontalAlignment.Center;
-            InfoStack.HorizontalAlignment = HorizontalAlignment.Center;
+            InfoBlock.HorizontalAlignment = HorizontalAlignment.Center;
             InfoStack.Orientation = Orientation.Horizontal;
             UnitText.HorizontalAlignment = HorizontalAlignment.Left;
-            UnitRow.HorizontalAlignment = HorizontalAlignment.Left;
             AgeText.HorizontalAlignment = HorizontalAlignment.Left;
         }
         else
         {
-            Grid.SetRow(InfoStack, 0);
+            Grid.SetRow(InfoBlock, 0);
             ValueStack.HorizontalAlignment = HorizontalAlignment.Left;
-            InfoStack.HorizontalAlignment = HorizontalAlignment.Right;
+            InfoBlock.HorizontalAlignment = HorizontalAlignment.Right;
             InfoStack.Orientation = Orientation.Vertical;
             UnitText.HorizontalAlignment = HorizontalAlignment.Right;
-            UnitRow.HorizontalAlignment = HorizontalAlignment.Right;
             AgeText.HorizontalAlignment = HorizontalAlignment.Right;
         }
     }
@@ -628,19 +626,20 @@ public partial class MainWindow : Window
         if (!_settings.ShowGraph)
         {
             // Space between the value and the line under it (the right-hand margin is only used with the graph).
-            InfoStack.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
+            InfoBlock.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
         }
 
         // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes the
         // width of this block, and everything beside it moves or resizes.
-        // The syringe shares the unit's line, so it is sized with the text and counted in that line's width.
-        var showIcon = InsulinButton.Visibility == Visibility.Visible;
-        var iconSize = 27 * Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4);
-        InsulinButton.Width = InsulinButton.Height = iconSize;
+        // The syringe sits beside the unit and age lines, centred on them. It is sized with the text.
+        InsulinButton.Width = InsulinButton.Height = 26 * Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4);
+        InsulinButton.Margin = new Thickness(0, 0, 8 * infoScale, 0);
 
+        // A fixed width for the text, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago"
+        // changes the width of this block, and everything beside it moves or resizes.
         var age = TextWidth("59 min ago", AgeText.FontSize);
-        var unitLine = TextWidth("mmol/L", UnitText.FontSize) + (showIcon ? iconSize + InsulinButton.Margin.Right : 0);
-        InfoStack.MinWidth = stacked ? unitLine + UnitText.Margin.Right + age : Math.Max(age, unitLine);
+        var unit = TextWidth("mmol/L", UnitText.FontSize);
+        InfoStack.MinWidth = stacked ? unit + UnitText.Margin.Right + age : Math.Max(age, unit);
     }
 
     private double TextWidth(string text, double fontSize)
@@ -658,15 +657,15 @@ public partial class MainWindow : Window
 
         var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
         ValueStack.Measure(unbounded);
-        InfoStack.Measure(unbounded);
+        InfoBlock.Measure(unbounded);
 
         return arrangement == HeaderArrangement.Stacked
             ? new Size(
-                Math.Max(ValueStack.DesiredSize.Width, InfoStack.DesiredSize.Width),
-                ValueStack.DesiredSize.Height + InfoStack.DesiredSize.Height)
+                Math.Max(ValueStack.DesiredSize.Width, InfoBlock.DesiredSize.Width),
+                ValueStack.DesiredSize.Height + InfoBlock.DesiredSize.Height)
             : new Size(
-                ValueStack.DesiredSize.Width + InfoStack.DesiredSize.Width + 24,
-                Math.Max(ValueStack.DesiredSize.Height, InfoStack.DesiredSize.Height));
+                ValueStack.DesiredSize.Width + InfoBlock.DesiredSize.Width + 24,
+                Math.Max(ValueStack.DesiredSize.Height, InfoBlock.DesiredSize.Height));
     }
 
     /// <summary>
@@ -684,14 +683,14 @@ public partial class MainWindow : Window
             ContentGrid.Margin = new Thickness(16, 10, 16, 6); // the same on both sides, matching the graph
             ArrangeHeader(HeaderArrangement.SideBySide);
             SetHeaderFonts(scale, small);
-            InfoStack.Margin = new Thickness(0);
+            InfoBlock.Margin = new Thickness(0);
             return;
         }
 
         // The close-button margin is dropped here: it does not scale with the text, so keeping it would make
         // the value and the info block collide in narrow cards. The card padding is also tighter, to give the value room.
         ContentGrid.Margin = new Thickness(10, 6, 10, 6);
-        InfoStack.Margin = new Thickness(0);
+        InfoBlock.Margin = new Thickness(0);
 
         var availableWidth = ActualWidth - 24 - 20; // shadow margin, then the card's own padding
         var availableHeight = ActualHeight - 24 - 12;

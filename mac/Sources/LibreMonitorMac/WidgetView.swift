@@ -199,40 +199,38 @@ struct WidgetView: View {
 
             Spacer(minLength: 16 * spacingScale)
 
-            // The syringe shares the unit's line, so it takes no extra width from the value.
+            // The syringe sits beside the two lines of text, centred on them, so it reads as one block with the unit
+            // and age. The text has a fixed width, as wide as the longest normal age ("59 min ago"): otherwise
+            // "just now" becoming "1 min ago" changes the width of this block and everything beside it moves.
             let dose = insulinInHeader ? model.insulinStatus : nil
-            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.95
+            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.9
 
-            VStack(alignment: .trailing, spacing: 0) {
-                HStack(alignment: .center, spacing: 7 * infoScale) {
-                    if let dose {
-                        insulinButton(dose, theme: theme, scale: iconScale)
-                    }
+            HStack(alignment: .center, spacing: 8 * infoScale) {
+                if let dose {
+                    insulinButton(dose, theme: theme, scale: iconScale)
+                }
+
+                VStack(alignment: .trailing, spacing: 0) {
                     Text(model.settings.unit.label)
                         .font(.system(size: 11 * infoScale))
                         .foregroundColor(theme.muted)
+                    Text(status.text)
+                        .font(.system(size: 11 * infoScale))
+                        .foregroundColor(status.color)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false) // never break a word; the value shrinks instead
                 }
-                Text(status.text)
-                    .font(.system(size: 11 * infoScale))
-                    .foregroundColor(status.color)
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false) // never break a word; the value shrinks instead
+                .frame(minWidth: Self.statusTextWidth(scale: infoScale), alignment: .trailing)
             }
-            // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes
-            // the width of this block and everything beside it moves or resizes.
-            .frame(minWidth: Self.statusColumnWidth(scale: infoScale, iconWidth: dose == nil ? 0 : 28 * iconScale, gap: 7 * infoScale), alignment: .trailing)
             .layoutPriority(1)
         }
     }
 
-    /// Width of the widest everyday age text ("59 min ago") at the given text scale.
-    private static func statusColumnWidth(scale: CGFloat, iconWidth: CGFloat, gap: CGFloat) -> CGFloat {
+    /// Width of the widest everyday text in the unit and age lines ("59 min ago", "mmol/L") at the given scale.
+    private static func statusTextWidth(scale: CGFloat) -> CGFloat {
         let font = NSFont.systemFont(ofSize: 11 * scale)
         func width(_ text: String) -> CGFloat { ceil((text as NSString).size(withAttributes: [.font: font]).width) }
-
-        // Either the age line, or the syringe plus the longest unit ("mmol/L") on the unit line.
-        let unitLine = iconWidth == 0 ? 0 : iconWidth + gap + width("mmol/L")
-        return max(width("59 min ago"), unitLine)
+        return max(width("59 min ago"), width("mmol/L"))
     }
 
     /// The normal layout: header on top, graph below. Text scales with the card.
