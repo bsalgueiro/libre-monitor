@@ -79,6 +79,9 @@ final class AppModel: ObservableObject {
         return list
     }
 
+    /// The sensor the service named in the latest answer; nil when it did not name one, or while a simulation shows.
+    var sensor: SensorInfo? { displayUpdate?.snapshot.sensor }
+
     /// Where the current insulin dose stands; nil while the reminder is off.
     var insulinStatus: DoseStatus? {
         settings.insulin.enabled ? InsulinSchedule.status(settings.insulin, now: now, calendar: .current) : nil

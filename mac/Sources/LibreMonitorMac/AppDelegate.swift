@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let alertsController = AlertsWindowController()
     private let alertEvaluator = AlertEvaluator()
     private let insulinEvaluator = InsulinReminderEvaluator()
+    private let sensorEvaluator = SensorExpiryEvaluator()
     private var lastAlertSettings = AlertSettings()
     private var lastInsulinSettings = InsulinSettings()
     private var tickTimer: Timer?
@@ -236,6 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.model.apply(update)
                 self?.refreshStatusItem()
                 self?.evaluateAlerts()
+                self?.evaluateSensor()
             }
         }
         monitor.onFailure = { [weak self] _, fatal in
@@ -286,6 +288,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshStatusItem()
         evaluateAlerts()
         evaluateInsulin() // follows the clock, not the readings, so it runs whatever the glucose state is
+        evaluateSensor()
+    }
+
+    // MARK: - Sensor
+
+    private func evaluateSensor() {
+        let now = Date()
+        let snoozed = model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
+        guard let raised = sensorEvaluator.evaluate(model.sensor, now: now, snoozedUntil: snoozed) else { return }
+
+        Notifier.shared.post(
+            title: "Sensor reminder",
+            body: "The sensor is due to end about \(formatDateTime(raised.endsAt)).",
+            sound: false)
     }
 
     // MARK: - Alerts
@@ -306,7 +322,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func deliver(_ alert: AlertRaised, now: Date) {
         let unit = model.settings.unit
         let low = alert.kind == .low
-        var title = alert.isReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose")
+        // One message, however many times it repeats: the title says what it is, the body carries the reading.
+        var title = "\(low ? "Low" : "High") glucose alert"
         if model.isSimulated { title = "SIMULATED · " + title }
 
         let value = GlucoseUnits.format(alert.reading.mgPerDl, unit: unit)
@@ -329,8 +346,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         else { return }
 
         let sound = model.settings.alerts.sound
-        let title = raised.isReminder ? "Reminder: insulin" : "Insulin"
-        Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as administered yet.", sound: sound) { posted in
+        let body = "Due at \(clockText(raised.slot)). Not marked as administered yet."
+        Notifier.shared.post(title: "Insulin reminder", body: body, sound: sound) { posted in
             if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
         }
     }

@@ -123,6 +123,25 @@ public sealed partial class LibreLinkUpClient
         return patients;
     }
 
+    /// <summary>
+    /// The raw connections answer, for the command-line probe that shows what the service reports about the sensor.
+    /// The caller disposes it. Read-only, like every other call here.
+    /// </summary>
+    public async Task<JsonDocument> GetConnectionsDocumentAsync(CancellationToken ct = default)
+    {
+        var doc = await GetAsync("/llu/connections", ct).ConfigureAwait(false);
+        ThrowIfUnexpectedStatus(doc.RootElement);
+        return doc;
+    }
+
+    /// <summary>The raw graph answer, for the same probe. The caller disposes it.</summary>
+    public async Task<JsonDocument> GetGraphDocumentAsync(string patientId, CancellationToken ct = default)
+    {
+        var doc = await GetAsync($"/llu/connections/{Uri.EscapeDataString(patientId)}/graph", ct).ConfigureAwait(false);
+        ThrowIfUnexpectedStatus(doc.RootElement);
+        return doc;
+    }
+
     public async Task<GlucoseSnapshot> GetGraphAsync(string patientId, CancellationToken ct = default)
     {
         using var doc = await GetAsync($"/llu/connections/{Uri.EscapeDataString(patientId)}/graph", ct).ConfigureAwait(false);
@@ -150,7 +169,53 @@ public sealed partial class LibreLinkUpClient
             history.AddRange(graph.EnumerateArray().Select(ParseReading));
         }
 
-        return new GlucoseSnapshot(current, history);
+        return new GlucoseSnapshot(current, history, ParseSensor(data));
+    }
+
+    /// <summary>
+    /// The activation time of the sensor in use, or null when the service does not say. The answer is optional extra
+    /// information, so anything unexpected here means "unknown", never a service change. Only the activation time is
+    /// read: the serial number and device ids are never touched.
+    /// </summary>
+    private static SensorInfo? ParseSensor(JsonElement data)
+    {
+        DateTimeOffset? newest = null;
+
+        void Consider(JsonElement sensor)
+        {
+            if (sensor.ValueKind != JsonValueKind.Object) return;
+
+            // "s" says whether the sensor is the active one; only an explicit false rules it out.
+            if (sensor.TryGetProperty("s", out var active) && active.ValueKind == JsonValueKind.False) return;
+
+            if (!sensor.TryGetProperty("a", out var activated)
+                || activated.ValueKind != JsonValueKind.Number
+                || !activated.TryGetInt64(out var seconds)
+                || seconds is < 1_000_000_000 or > 4_000_000_000) // from 2001 to 2096: anything else is not a date
+            {
+                return;
+            }
+
+            var at = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            if (newest is null || at > newest) newest = at;
+        }
+
+        if (data.TryGetProperty("activeSensors", out var list) && list.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var entry in list.EnumerateArray())
+            {
+                if (entry.ValueKind == JsonValueKind.Object && entry.TryGetProperty("sensor", out var sensor)) Consider(sensor);
+            }
+        }
+
+        // The same information also appears on the connection, for answers that carry no list.
+        if (newest is null && data.TryGetProperty("connection", out var connection)
+            && connection.ValueKind == JsonValueKind.Object && connection.TryGetProperty("sensor", out var fallback))
+        {
+            Consider(fallback);
+        }
+
+        return newest is { } found ? new SensorInfo(found) : null;
     }
 
     /// <summary>

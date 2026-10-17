@@ -57,6 +57,8 @@ Everything you need to install and use the widget. No programming knowledge requ
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
+- Shows when your sensor is due to end: hover the unit and age text, or open the menu. It is an estimate (14 days after the
+  sensor was started), and you get one notification when about a day is left.
 - An optional [insulin reminder](#insulin-reminder): a reminder at your usual time, and a small syringe on the widget that you tap once the dose is administered, so you can check later whether you already did.
 - Your follower login is stored encrypted for your Windows user only, or in your Mac's Keychain. It is never shown or sent
   anywhere except to LibreView.
@@ -158,6 +160,7 @@ flag the single-file build.
 | Change the time range | Mouse wheel over the widget, or the menu |
 | Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the value) |
 | See a reading's value and time | Hover the graph |
+| See when the sensor ends | Hover the unit and age text, or open the menu |
 | Refresh now | Double-click the value. The widget updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
@@ -195,6 +198,9 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 - **Notifications need the tray icon** on Windows. If you turn it off, alerts still play the sound and colour the border.
   On a Mac they use macOS notifications: the first time, macOS asks for permission, and you can change it later in
   System Settings > Notifications > Libre Monitor.
+- **Make sure you will notice them.** A Mac banner disappears after a few seconds. In System Settings > Notifications >
+  Libre Monitor, set the style to **Alerts** so a notification stays until you dismiss it. On Windows, Focus assist and Do
+  not disturb can hide notifications, so check them too.
 
 **Do not rely on these alerts for safety.** They only work while this app is running, your PC is on and awake, and your
 phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in
@@ -442,6 +448,12 @@ delete the tag, fix the problem and tag again.
 - No glucose data is written to disk, on purpose: the only things stored are the encrypted login and the preferences
   (including alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out of
   scope, because LibreView already keeps the user's history.
+- The sensor end date is estimated: LibreLinkUp reports when the sensor was activated (`activeSensors[].sensor.a`) but no end
+  date, so `SensorSchedule` adds 14 days (a Libre 3 Plus lasts 15, so it would end a day later than shown). Only the
+  activation time is read, never the serial number or device ids, and it is not stored. The notice comes once per sensor, when
+  24 hours or less remain; a restart may repeat it once. A missing or odd field means nothing is shown, never a service
+  change. `LibreMonitor.Cli --sensor` prints the shape of these fields, with text replaced by its length and no glucose
+  values, to check what a given sensor reports.
 - The insulin reminder stores its schedule and one timestamp, the last "administered" tap, next to the other
   preferences. Without that timestamp a restart would forget the tap and prompt a second dose. It must stay at that:
   no amounts, no list of past doses. The rules live in `Insulin.cs` / `Insulin.swift` (`InsulinSchedule`,

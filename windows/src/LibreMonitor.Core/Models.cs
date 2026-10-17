@@ -55,8 +55,14 @@ public sealed record GlucoseReading(
 /// <summary>A person whose data the logged-in follower account can see.</summary>
 public sealed record Patient(string PatientId, string FirstName, string LastName);
 
-/// <summary>Latest reading plus the recent history returned by the graph endpoint.</summary>
-public sealed record GlucoseSnapshot(GlucoseReading? Current, IReadOnlyList<GlucoseReading> History);
+/// <summary>
+/// The sensor currently worn, as far as the service tells us. Only the activation time is kept: the serial number and
+/// device ids in the same answer identify the person's equipment and are deliberately not read.
+/// </summary>
+public sealed record SensorInfo(DateTimeOffset ActivatedAt);
+
+/// <summary>Latest reading plus the recent history returned by the graph endpoint, and the sensor when the service names one.</summary>
+public sealed record GlucoseSnapshot(GlucoseReading? Current, IReadOnlyList<GlucoseReading> History, SensorInfo? Sensor = null);
 
 public sealed class LibreLinkUpOptions
 {

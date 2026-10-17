@@ -89,14 +89,26 @@ public struct Patient: Equatable, Sendable {
     }
 }
 
-/// Latest reading plus the recent history returned by the graph endpoint.
+/// The sensor currently worn, as far as the service tells us. Only the activation time is kept: the serial number and
+/// device ids in the same answer identify the person's equipment and are deliberately not read.
+public struct SensorInfo: Equatable, Sendable {
+    public let activatedAt: Date
+
+    public init(activatedAt: Date) {
+        self.activatedAt = activatedAt
+    }
+}
+
+/// Latest reading plus the recent history returned by the graph endpoint, and the sensor when the service names one.
 public struct GlucoseSnapshot: Equatable, Sendable {
     public let current: GlucoseReading?
     public let history: [GlucoseReading]
+    public let sensor: SensorInfo?
 
-    public init(current: GlucoseReading?, history: [GlucoseReading]) {
+    public init(current: GlucoseReading?, history: [GlucoseReading], sensor: SensorInfo? = nil) {
         self.current = current
         self.history = history
+        self.sensor = sensor
     }
 }
 

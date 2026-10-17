@@ -145,6 +145,46 @@ final class LibreLinkUpClientTests: XCTestCase {
         XCTAssertEqual(snapshot.history[0].trend, .unknown)
     }
 
+    private func sensorFrom(_ dataJson: String) async throws -> SensorInfo? {
+        let client = makeClient([(200, loginOk), (200, #"{"status":0,"data":"# + dataJson + "}")])
+        try await client.login(email: "a@b.c", password: "pw")
+        return try await client.getGraph(patientId: "p1").sensor
+    }
+
+    func testGetGraphReadsTheSensorActivationTime() async throws {
+        let sensor = try await sensorFrom(#"{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"deviceId":"d","sn":"X","a":1791551084,"w":60,"pt":3,"s":true,"lj":false},"device":{}}]}"#)
+
+        XCTAssertEqual(try XCTUnwrap(sensor).activatedAt, Date(timeIntervalSince1970: 1791551084))
+    }
+
+    func testGetGraphUsesTheNewestActiveSensorAndIgnoresInactiveOnes() async throws {
+        let sensor = try await sensorFrom(#"{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"a":1791551084,"s":true}},{"sensor":{"a":1792000000,"s":true}},{"sensor":{"a":1793000000,"s":false}}]}"#)
+
+        XCTAssertEqual(try XCTUnwrap(sensor).activatedAt, Date(timeIntervalSince1970: 1792000000))
+    }
+
+    func testGetGraphFallsBackToTheConnectionsSensor() async throws {
+        let sensor = try await sensorFrom(#"{"connection":{"sensor":{"a":1791551084}},"graphData":[]}"#)
+
+        XCTAssertEqual(try XCTUnwrap(sensor).activatedAt, Date(timeIntervalSince1970: 1791551084))
+    }
+
+    func testGetGraphWithoutAUsableSensorReturnsNilSensorAndDoesNotFail() async throws {
+        let unusable = [
+            #"{"connection":{},"graphData":[]}"#,
+            #"{"connection":{},"graphData":[],"activeSensors":[]}"#,
+            #"{"connection":{},"graphData":[],"activeSensors":"oops"}"#,
+            #"{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"sn":"X"}}]}"#,
+            #"{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"a":"1791551084"}}]}"#,
+            #"{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"a":5}}]}"#,
+            #"{"connection":{},"graphData":[],"activeSensors":[{"sensor":null},7,{}]}"#,
+        ]
+        for json in unusable {
+            let sensor = try await sensorFrom(json)
+            XCTAssertNil(sensor, json)
+        }
+    }
+
     func testGetGraphWithNoMeasurementReturnsNilCurrent() async throws {
         let client = makeClient([(200, loginOk), (200, #"{"status":0,"data":{"connection":{},"graphData":[]}}"#)])
         try await client.login(email: "a@b.c", password: "pw")

@@ -45,6 +45,7 @@ struct WidgetView: View {
     @State private var hovering = false
     @State private var overCloseButton = false
     @State private var overInsulin = false
+    @State private var overSensorText = false
 
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
@@ -100,14 +101,12 @@ struct WidgetView: View {
             // The system tooltip does not appear reliably on a floating widget, so this one is drawn in the card, in
             // the same style as the graph's hover label.
             if overInsulin, let dose = model.insulinStatus {
-                insulinTooltip(dose, theme: theme)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 10)
-                    .allowsHitTesting(false)
-                    .transition(.opacity)
+                hoverMessage(insulinMessage(dose), border: insulinColor(dose.state, theme: theme), theme: theme)
+            } else if overSensorText, let sensor = model.sensor {
+                hoverMessage(sensorDetail(sensor, now: model.now), border: theme.muted, theme: theme)
             }
         }
-        .animation(.easeInOut(duration: 0.12), value: overInsulin)
+        .animation(.easeInOut(duration: 0.12), value: overInsulin || overSensorText)
         .contextMenu { menuContent }
     }
 
@@ -135,8 +134,8 @@ struct WidgetView: View {
     /// Date and time in the format of the Mac's region settings, for the syringe's hover message.
     private func stamp(_ date: Date) -> String { formatDateTime(date) }
 
-    private func insulinTooltip(_ status: DoseStatus, theme: WidgetTheme) -> some View {
-        Text(insulinMessage(status))
+    private func hoverMessage(_ text: String, border: Color, theme: WidgetTheme) -> some View {
+        Text(text)
             .font(.system(size: 11))
             .foregroundColor(theme.text)
             .multilineTextAlignment(.center)
@@ -146,7 +145,11 @@ struct WidgetView: View {
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(theme.pill)
-                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(insulinColor(status.state, theme: theme).opacity(0.67), lineWidth: 1)))
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(border.opacity(0.67), lineWidth: 1)))
+            .padding(.horizontal, 12)
+            .padding(.bottom, 10)
+            .allowsHitTesting(false)
+            .transition(.opacity)
     }
 
     /// The insulin check: grey = not due yet, amber ! = due, green tick = administered. Only shown while the
@@ -223,6 +226,8 @@ struct WidgetView: View {
                         .fixedSize(horizontal: true, vertical: false) // never break a word; the value shrinks instead
                 }
                 .frame(minWidth: Self.statusTextWidth(scale: infoScale), alignment: .trailing)
+                .contentShape(Rectangle())
+                .onHover { overSensorText = $0 }
             }
             .layoutPriority(1)
         }
@@ -357,6 +362,11 @@ struct WidgetView: View {
 
     @ViewBuilder
     private var menuContent: some View {
+        if let sensor = model.sensor {
+            Button(sensorSummary(sensor, now: model.now)) {}.disabled(true)
+            Divider()
+        }
+
         Menu("Time range") {
             Picker("Time range", selection: $model.settings.hours) {
                 Text("Last 3 hours").tag(3)

@@ -38,6 +38,7 @@ public partial class MainWindow : Window
     private (string Email, string Password) _credentials;
     private readonly AlertEvaluator _alerts = new();
     private readonly InsulinReminderEvaluator _insulinReminder = new();
+    private readonly SensorExpiryEvaluator _sensorExpiry = new();
     private MonitorUpdate? _last;
     private MonitorUpdate? _lastReal;           // newest real update, kept while a simulation is showing
     private SimulationScenario? _simulation;    // developer branch: fake readings for checking colours
@@ -86,6 +87,7 @@ public partial class MainWindow : Window
             if (_simulation is not null) ShowSimulation();
             else { RenderAge(); Graph.Refresh(); EvaluateAlerts(); }
             EvaluateInsulin(); // follows the clock, not the readings, so it runs whatever the glucose state is
+            EvaluateSensor();
         };
         _tick.Start();
 
@@ -156,6 +158,7 @@ public partial class MainWindow : Window
         RenderValue();
         RenderAge();
         EvaluateAlerts();
+        EvaluateSensor();
     }
 
     // ---- alerts ----------------------------------------------------------------------------
@@ -173,8 +176,8 @@ public partial class MainWindow : Window
     {
         var unit = _settings.Unit;
         var low = alert.Kind == AlertKind.Low;
-        var title = (_simulation is not null ? "SIMULATED · " : string.Empty)
-            + (alert.IsReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose"));
+        // One message, however many times it repeats: the title says what it is, the body carries the reading.
+        var title = (_simulation is not null ? "SIMULATED · " : string.Empty) + $"{(low ? "Low" : "High")} glucose alert";
         var text = $"{GlucoseUnits.Format(alert.Reading.MgPerDl, unit, CultureInfo.CurrentCulture)} {unit.Label()} "
             + $"{alert.Reading.Trend.ToArrow()} · {FormatAge(now - alert.Reading.TimestampUtc)}";
 
@@ -212,6 +215,47 @@ public partial class MainWindow : Window
         EvaluateInsulin();
     }
 
+    // ---- sensor ----------------------------------------------------------------
+
+    /// <summary>The sensor the service named in the latest answer, or null when it did not name one (or a simulation is showing).</summary>
+    private SensorInfo? CurrentSensor => _simulation is null ? _last?.Snapshot.Sensor : null;
+
+    private void EvaluateSensor()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var raised = _sensorExpiry.Evaluate(CurrentSensor, now, _alerts.SnoozedUntil(now));
+        if (raised is not null)
+        {
+            _tray.Notify("Sensor reminder", $"The sensor is due to end about {Stamp(raised.EndsAt)}.");
+        }
+    }
+
+    private static string Plural(int count, string unit) => count == 1 ? $"1 {unit}" : $"{count} {unit}s";
+
+    /// <summary>One line for the menu: "Sensor ends in about 6 days (Fri 23 Oct)".</summary>
+    private static string SensorSummary(SensorInfo sensor, DateTimeOffset now)
+    {
+        var ends = SensorSchedule.EndsAt(sensor).ToLocalTime();
+        var date = ends.ToString("ddd d MMM", CultureInfo.CurrentCulture);
+        var left = SensorSchedule.Remaining(sensor, now);
+
+        if (left <= TimeSpan.Zero) return $"Sensor due to have ended ({date})";
+        if (left < TimeSpan.FromDays(1)) return $"Sensor ends in about {Plural(Math.Max(1, (int)Math.Round(left.TotalHours)), "hour")}";
+        return $"Sensor ends in about {Plural((int)Math.Round(left.TotalDays), "day")} ({date})";
+    }
+
+    /// <summary>The hover message on the unit and age text, in the system date and time format.</summary>
+    private static string SensorDetail(SensorInfo sensor, DateTimeOffset now)
+    {
+        var ends = Stamp(SensorSchedule.EndsAt(sensor));
+        var left = SensorSchedule.Remaining(sensor, now);
+        var line = left <= TimeSpan.Zero ? $"Due to have ended about {ends}." : $"Ends about {ends}.";
+        return $"Sensor started {Stamp(sensor.ActivatedAt)}.\n{line}";
+    }
+
+    private void RenderSensor() =>
+        InfoStack.ToolTip = CurrentSensor is { } sensor ? SensorDetail(sensor, DateTimeOffset.UtcNow) : null;
+
     // ---- insulin ---------------------------------------------------------------
 
     private void EvaluateInsulin()
@@ -220,8 +264,7 @@ public partial class MainWindow : Window
         var raised = _insulinReminder.Evaluate(_settings.Insulin, now, TimeZoneInfo.Local, _alerts.SnoozedUntil(now));
         if (raised is not null)
         {
-            var title = raised.IsReminder ? "Reminder: insulin" : "Insulin";
-            _tray.Notify(title, $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
+            _tray.Notify("Insulin reminder", $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
             if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
         }
 
@@ -463,6 +506,7 @@ public partial class MainWindow : Window
     private void RenderAge()
     {
         RenderAgeCore();
+        RenderSensor();
         ApplyLayoutScale(); // the age text changes width ("just now" to "12 min ago"), which matters when the header fills the card
     }
 
@@ -851,6 +895,10 @@ public partial class MainWindow : Window
         {
             item.IsChecked = index < 0 ? _simulation is null : _simulation == Simulation.Scenarios[index];
         }
+
+        var sensor = CurrentSensor;
+        SensorItem.Visibility = SensorSeparator.Visibility = sensor is null ? Visibility.Collapsed : Visibility.Visible;
+        if (sensor is not null) SensorItem.Header = SensorSummary(sensor, DateTimeOffset.UtcNow);
 
         InsulinItem.Visibility = InsulinOffItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
         InsulinSetupItem.Visibility = _settings.Insulin.Enabled ? Visibility.Collapsed : Visibility.Visible;
