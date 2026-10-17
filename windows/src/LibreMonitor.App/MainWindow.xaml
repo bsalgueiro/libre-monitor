@@ -112,8 +112,7 @@
                         <Viewbox Margin="0,1,1,0">
                             <Canvas Width="24" Height="24">
                                 <Path x:Name="SyringePath" StrokeThickness="1.7" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                                      Data="M9,6 L15,6 L15,18 L9,18 Z M7,6 L17,6 M12,6 L12,2 M9,2 L15,2 M12,18 L12,23 M15,10 L13,10 M15,13 L13,13 M15,16 L13,16"
-                                      RenderTransformOrigin="0.5,0.5">
+                                      Data="M9,6 L15,6 L15,18 L9,18 Z M7,6 L17,6 M12,6 L12,2 M9,2 L15,2 M12,18 L12,23 M15,10 L13,10 M15,13 L13,13 M15,16 L13,16">
                                     <Path.RenderTransform>
                                         <RotateTransform Angle="45" CenterX="12" CenterY="12"/>
                                     </Path.RenderTransform>

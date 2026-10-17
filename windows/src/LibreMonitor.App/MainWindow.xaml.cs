@@ -653,14 +653,15 @@ public partial class MainWindow : Window
             ? Math.Clamp(valueScale, 0.6, 2)
             : Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4));
         InsulinButton.Margin = besideArrow
-            ? new Thickness(10 * valueScale, 0, 0, 0)
+            ? new Thickness(11.5 * valueScale, 0, 0, 0) // the same visible gap as between the value and the arrow
             : new Thickness(0, 0, 8 * infoScale, 0);
 
         // A fixed width for the text, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago"
         // changes the width of this block, and everything beside it moves or resizes.
         var age = TextWidth("59 min ago", AgeText.FontSize);
         var unit = TextWidth("mmol/L", UnitText.FontSize);
-        InfoStack.MinWidth = stacked ? unit + UnitText.Margin.Right + age : Math.Max(age, unit);
+        // Stacked, the line is centred under the row, so it needs no fixed width: one would push the text off centre.
+        InfoStack.MinWidth = stacked ? 0 : Math.Max(age, unit);
     }
 
     private double TextWidth(string text, double fontSize)
