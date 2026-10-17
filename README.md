@@ -48,29 +48,31 @@ Everything you need to install and use the widget. No programming knowledge requ
 
 ## What it does
 
-<img src="docs/images/widget-compact.png" alt="The compact view: only the number, arrow, unit and time of the last reading" width="260" align="right">
+<img src="docs/images/widget-compact.png" alt="The compact view: only the value, arrow, unit and time of the last reading" width="260" align="right">
 
 - Borderless, always-on-top corner widget: current value, trend arrow and a smooth graph with the 70-180 mg/dL band and a 100 reference line.
 - Hover the graph for the value and time of any reading.
-- The graph can be hidden. The number, arrow, unit and last-update time then scale up to fill the widget, whatever size you
+- The graph can be hidden. The value, arrow, unit and last-update time then scale up to fill the widget, whatever size you
   make it. Each mode remembers its own size, so turning the graph back on restores the earlier layout.
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
+- An optional [insulin reminder](#insulin-reminder): a reminder at your usual time, and a small syringe on the widget that you tap once the dose is administered, so you can check later whether you already did.
 - Your follower login is stored encrypted for your Windows user only, or in your Mac's Keychain. It is never shown or sent
   anywhere except to LibreView.
 - It only reads data. It never changes anything in your account.
 - It does **not** keep your glucose history. It shows what LibreView provides at the moment, and nothing about your
-  readings is saved on your PC. For history, reports and sharing, use LibreView.
+  readings is saved on your PC. For history, reports and sharing, use LibreView. If you use the insulin reminder, the only
+  extra thing saved is its schedule and the time you last tapped "administered" (no amounts, no history).
 
 The colours for low, in range and high are for display only. They are not alarms.
 
 <br clear="all">
 
 <div align="center">
-<img src="docs/images/alert-low.png" alt="A low reading: red number and a red border around the widget" width="250">
+<img src="docs/images/alert-low.png" alt="A low reading: red value and a red border around the widget" width="250">
 &nbsp;
-<img src="docs/images/alert-high.png" alt="A high reading: amber number and an amber border around the widget" width="250">
+<img src="docs/images/alert-high.png" alt="A high reading: amber value and an amber border around the widget" width="250">
 <br>
 <sub>The border turns red or amber while a reading is outside your alert limits (these are simulated readings).</sub>
 </div>
@@ -154,13 +156,16 @@ flag the single-file build.
 | Move it | Drag it |
 | Resize it | Drag any edge or corner |
 | Change the time range | Mouse wheel over the widget, or the menu |
-| Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the number) |
+| Hide or show the graph | Menu > Show graph (untick it for a compact widget with just the value) |
 | See a reading's value and time | Hover the graph |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
 | Light, dark or follow Windows | Menu > Appearance |
 | Set up low and high alerts | Menu > Alerts... |
 | Pause alerts for a while | Menu > Snooze alerts |
+| Set up the insulin reminder | Menu > Set up the insulin reminder... (or Menu > Alerts...) |
+| Mark an insulin dose as administered | Click the syringe and confirm (or Menu > Insulin: mark as administered) |
+| Turn the insulin reminder off | Menu > Turn off the insulin reminder |
 | Snap to a screen corner | Menu > Move to corner |
 | Hide it to the tray | Click the ✕, or Menu > Hide to tray |
 | Bring it back | Click the tray icon |
@@ -194,9 +199,37 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in
 Focus assist or Do not disturb). Keep your sensor's own alarms on.
 
+## Insulin reminder
+
+If you administer insulin once or twice a day, the app can remind you and help you check whether you already administered
+it, so you do not administer it twice by mistake. Open **Menu > Set up the insulin reminder...** (or **Menu > Alerts...** and
+scroll to **Insulin**) and turn it on. It is **off until you turn it on**.
+
+- **Set it up:** choose once or twice a day, the time of each dose (24-hour clock on Windows, your Mac's clock format on a
+  Mac), and how often to be reminded again if you have not marked the dose.
+- **The syringe:** a small syringe appears on the widget. **Grey** means the next dose is not due yet. **Amber with "!"**
+  means the dose time has passed and you have not marked it. **Green with a tick** means you marked it as administered.
+- **Mark a dose:** click the syringe (or **Menu > Insulin: mark as administered**) and confirm. To undo a tap made by
+  mistake, click it again and choose to remove the mark. Marking asks first, because a mistaken tap would hide a dose you
+  missed.
+- **Check the status:** hover the syringe to see when the insulin was administered (or that it is due) and when the next
+  dose is, in your computer's date and time format.
+- **When it changes back:** each dose has its own period. The period of the next dose opens 2 hours before its time, so the
+  syringe goes back to grey and a tap made a little early still counts for the right dose.
+- **Reminders:** a notification at the dose time, repeated at the interval you chose until you mark the dose. They stop 6
+  hours after the dose time, so a missed dose does not wake you at night, but the syringe stays amber. The same sound
+  setting and **Snooze alerts** apply as for glucose alerts.
+- **What is saved:** the reminder's settings and the time you last tapped "administered". Nothing else: no amounts, no history.
+- **Turn it off:** right-click the widget and choose **Turn off the insulin reminder** (or untick it in **Alerts...**). The
+  syringe disappears and the saved "administered" time is deleted. Your times are kept for if you turn it on again.
+
+**This is a memory aid, not a medical tool.** It cannot know about a dose you did not tap in the app, it does not record
+how much you administered, and it gives no dosing advice. It only works while the app is running. Follow your care team's
+instructions.
+
 ## Troubleshooting
 
-The widget shows what is wrong in the small status text next to the number:
+The widget shows what is wrong in the small status text next to the value:
 
 | It says | What it means | What to do |
 |---|---|---|
@@ -404,6 +437,11 @@ delete the tag, fix the problem and tag again.
 - No glucose data is written to disk, on purpose: the only things stored are the encrypted login and the preferences
   (including alert limits). Recording history, and anything built on it such as a CSV export, is deliberately out of
   scope, because LibreView already keeps the user's history.
+- The insulin reminder stores its schedule and one timestamp, the last "administered" tap, next to the other
+  preferences. Without that timestamp a restart would forget the tap and prompt a second dose. It must stay at that:
+  no amounts, no list of past doses. The rules live in `Insulin.cs` / `Insulin.swift` (`InsulinSchedule`,
+  `InsulinReminderEvaluator`), pure logic with no UI or clock, covered by `InsulinTests`. A dose period starts 2 hours before
+  its time, a tap counts for the period it falls in, and reminders stop 6 hours after the dose time.
 - Failures are classified so the user can be told the right thing. A response that does not look right (HTTP 403, 404 or 410,
   a non-zero API status such as "client version too old", a page where JSON was expected, a missing field, an unrecognised
   timestamp) is a `ServiceChangedException`, never a wrong-password error. Server errors and rate limits stay ordinary,

@@ -254,7 +254,7 @@
 <section id="features">
   <div class="wrap">
     <h2>What it does</h2>
-    <p class="sub">A glance at your number, trend and graph, without picking up your phone.</p>
+    <p class="sub">A glance at your glucose value, trend and graph, without picking up your phone.</p>
     <div class="split" style="margin-bottom:40px">
       <div class="grid" style="grid-template-columns:1fr 1fr">
         <div class="card"><h3>Always in view</h3><p>A borderless, always-on-top widget with the current value, trend arrow and a smooth graph with the 70–180 mg/dL band and a 100 reference line.</p></div>
@@ -269,6 +269,7 @@
     </div>
     <div class="grid">
       <div class="card"><h3>Optional alerts</h3><p>Low and high limits of your choice: a system notification, a sound and a coloured widget border, with reminders and snooze.</p></div>
+      <div class="card"><h3>Insulin reminder</h3><p>Optional reminder for your insulin, with a syringe on the widget to tap once the dose is administered, so you can check later whether you already did.</p></div>
       <div class="card"><h3>Read-only</h3><p>It never changes anything in your account and never talks to the sensor.</p></div>
       <div class="card"><h3>Your login stays yours</h3><p>Stored encrypted for your Windows user only, or in your Mac's Keychain. Never sent anywhere except to LibreView.</p></div>
       <div class="card"><h3>No history kept</h3><p>It shows what LibreView provides right now. Nothing about your readings is saved on your computer. For history and reports, use LibreView.</p></div>
@@ -284,7 +285,7 @@
     <p class="sub">Move it, resize it, change it to use it your way. Activate alerts to use Windows notifications.</p>
     <div class="mac-row">
       <img src="images/win-graph.png" alt="The Windows widget with the graph visible: 171 mg/dL, a steady arrow and a twelve-hour graph" width="190">
-      <img src="images/alert-low.png" alt="The Windows widget with a low reading: red number and a red border" width="250">
+      <img src="images/alert-low.png" alt="The Windows widget with a low reading: red value and a red border" width="250">
       <img src="images/win-menu.png" alt="The Windows right-click menu" width="190">
     </div>
   </div>
@@ -355,12 +356,15 @@
         <tr><td>Move it</td><td>Drag it</td></tr>
         <tr><td>Resize it</td><td>Drag any edge or corner</td></tr>
         <tr><td>Change the time range</td><td>Mouse wheel over the widget, or the menu</td></tr>
-        <tr><td>Hide or show the graph</td><td>Menu &gt; Show graph (untick it for a compact widget with just the number)</td></tr>
+        <tr><td>Hide or show the graph</td><td>Menu &gt; Show graph (untick it for a compact widget with just the value)</td></tr>
         <tr><td>See a reading's value and time</td><td>Hover the graph</td></tr>
         <tr><td>Switch mg/dL and mmol/L</td><td>Menu &gt; Units</td></tr>
         <tr><td>Light, dark or follow the system</td><td>Menu &gt; Appearance</td></tr>
         <tr><td>Set up low and high alerts</td><td>Menu &gt; Alerts…</td></tr>
         <tr><td>Pause alerts for a while</td><td>Menu &gt; Snooze alerts</td></tr>
+        <tr><td>Set up the insulin reminder</td><td>Menu &gt; Set up the insulin reminder… (or Menu &gt; Alerts…)</td></tr>
+        <tr><td>Mark an insulin dose as administered</td><td>Click the syringe and confirm (or Menu &gt; Insulin: mark as administered)</td></tr>
+        <tr><td>Turn the insulin reminder off</td><td>Menu &gt; Turn off the insulin reminder</td></tr>
         <tr><td>Snap to a screen corner</td><td>Menu &gt; Move to corner</td></tr>
         <tr><td>Hide it to the tray or menu bar</td><td>Click the ✕, or Menu &gt; Hide to tray</td></tr>
         <tr><td>Bring it back</td><td>Click the tray or menu bar icon</td></tr>
@@ -379,8 +383,8 @@
     <p class="sub">Open <i>Menu &gt; Alerts…</i> to turn on a low alert, a high alert, or both, and set your own limits in mg/dL or mmol/L. They are <b>off until you turn them on</b>. Use <i>Send test alert</i> to see what one looks like.</p>
     <div class="split">
       <div class="pair">
-        <figure><img src="images/alert-low.png" alt="A low reading: red number and a red border around the widget"><figcaption>Low</figcaption></figure>
-        <figure><img src="images/alert-high.png" alt="A high reading: amber number and an amber border around the widget"><figcaption>High</figcaption></figure>
+        <figure><img src="images/alert-low.png" alt="A low reading: red value and a red border around the widget"><figcaption>Low</figcaption></figure>
+        <figure><img src="images/alert-high.png" alt="A high reading: amber value and an amber border around the widget"><figcaption>High</figcaption></figure>
       </div>
       <ul class="alerts-list">
         <li><b>When it alerts</b>Once, when a reading goes below the low limit or above the high limit. The widget border turns red (low) or amber (high) while the reading stays out of range.</li>
@@ -391,6 +395,18 @@
       </ul>
     </div>
     <div class="warn"><b>Do not rely on these alerts for safety.</b> They only work while this app is running, your computer is on and awake, and your phone is uploading to LibreView. Readings can arrive minutes late, and your system can hide notifications (for example in Focus assist or Do not disturb). Keep your sensor's own alarms on.</div>
+    <h3 style="margin-top:40px">Insulin reminder</h3>
+    <p class="sub">If you administer insulin once or twice a day, the app can remind you and help you check whether you already administered it, so you do not administer it twice by mistake. Turn it on in <i>Menu &gt; Set up the insulin reminder…</i> (or <i>Menu &gt; Alerts…</i>). It is <b>off until you turn it on</b>.</p>
+    <ul class="alerts-list">
+      <li><b>The syringe</b>A small syringe on the widget. Grey: the next dose is not due yet. Amber with “!”: the dose time has passed and you have not marked it. Green with a tick: you marked it as administered.</li>
+      <li><b>Checking the status</b>Hover the syringe to see when the insulin was administered (or that it is due) and when the next dose is, in your computer’s date and time format.</li>
+      <li><b>Marking a dose</b>Click the syringe and confirm. Click it again to undo a tap made by mistake. It asks first, because a mistaken tap would hide a missed dose.</li>
+      <li><b>Each dose has its own period</b>Once or twice a day, at the times you choose. The next period opens 2 hours before the dose time and the syringe goes back to grey. A tap made a little early still counts for the right dose.</li>
+      <li><b>Reminders</b>A notification at the dose time, repeated every 15, 30 or 60 minutes until you mark it. They stop 6 hours after the dose time, so a missed dose does not wake you at night. Snooze and the sound setting apply as for glucose alerts.</li>
+      <li><b>What is saved</b>The reminder’s settings and the time you last tapped “administered”. No amounts and no history.</li>
+      <li><b>Turning it off</b>Right-click the widget and choose <i>Turn off the insulin reminder</i>. The syringe disappears and the saved time is deleted.</li>
+    </ul>
+    <div class="warn"><b>This is a memory aid, not a medical tool.</b> It cannot know about a dose you did not tap in the app, it does not record how much you administered, and it gives no dosing advice. It only works while the app is running. Follow your care team’s instructions.</div>
   </div>
 </section>
 
@@ -398,11 +414,11 @@
 <section class="alt" id="help">
   <div class="wrap">
     <h2>Troubleshoot</h2>
-    <p class="sub">The widget says what is wrong in the small status text next to the number.</p>
+    <p class="sub">The widget says what is wrong in the small status text next to the value.</p>
     <div class="table-scroll">
       <table>
         <tr><th>It says</th><th>What it means</th><th>What to do</th></tr>
-        <tr><td><span class="t-amber">reconnecting</span></td><td>A temporary problem: no internet, or LibreView is busy. After a couple of minutes it also says how old the number is ("not updating · 12 min ago").</td><td>Nothing. It tries again every minute.</td></tr>
+        <tr><td><span class="t-amber">reconnecting</span></td><td>A temporary problem: no internet, or LibreView is busy. After a couple of minutes it also says how old the value is ("not updating · 12 min ago").</td><td>Nothing. It tries again every minute.</td></tr>
         <tr><td><span class="t-red">sign-in needed</span></td><td>The follower email or password is no longer accepted.</td><td>Menu &gt; Sign out, start it again and sign in.</td></tr>
         <tr><td><span class="t-red">service changed</span></td><td>LibreLinkUp is no longer answering the way this app expects, three checks in a row. Abbott may have changed or blocked the unofficial service.</td><td>Menu &gt; <b>Check for updates…</b>. A notification tells you once, and clicking it opens the same page.</td></tr>
       </table>

@@ -8,6 +8,7 @@ These keep the app safe and simple. Changes that break them will not be merged.
 
 - **Read-only.** The app only reads from LibreView (the login request aside). It never changes account or sensor data.
 - **No glucose data on disk.** Only the encrypted login and preferences are stored. History and exports are out of scope.
+  The insulin reminder adds one timestamp, the last "administered" tap, and nothing more: no doses, amounts or history.
 - **Nothing leaves the machine** except requests to LibreView.
 - **No sensor protocol work** and no extraction of keys or data from the phone app or the sensor.
 - **No medical claims.** The app is not a medical device and alerts are not a safety system.

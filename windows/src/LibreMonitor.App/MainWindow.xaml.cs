@@ -37,6 +37,7 @@ public partial class MainWindow : Window
     private GlucoseMonitor? _monitor;
     private (string Email, string Password) _credentials;
     private readonly AlertEvaluator _alerts = new();
+    private readonly InsulinReminderEvaluator _insulinReminder = new();
     private MonitorUpdate? _last;
     private MonitorUpdate? _lastReal;           // newest real update, kept while a simulation is showing
     private SimulationScenario? _simulation;    // developer branch: fake readings for checking colours
@@ -83,10 +84,15 @@ public partial class MainWindow : Window
             // A simulated reading is rebuilt each tick so it does not age into the grey "old reading" state.
             if (_simulation is not null) ShowSimulation();
             else { RenderAge(); Graph.Refresh(); EvaluateAlerts(); }
+            EvaluateInsulin(); // follows the clock, not the readings, so it runs whatever the glucose state is
         };
         _tick.Start();
 
-        Loaded += async (_, _) => await StartAsync();
+        Loaded += async (_, _) =>
+        {
+            EvaluateInsulin();
+            await StartAsync();
+        };
         Closed += async (_, _) =>
         {
             SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
@@ -192,18 +198,133 @@ public partial class MainWindow : Window
 
     private void Alerts_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new AlertsWindow(_settings.Alerts, _settings.Unit, TestAlert) { Owner = this };
-        if (dialog.ShowDialog() != true || dialog.Result is not { } result) return;
+        var dialog = new AlertsWindow(_settings.Alerts, _settings.Insulin, _settings.Unit, TestAlert) { Owner = this };
+        if (dialog.ShowDialog() != true || dialog.Result is not { } result || dialog.InsulinResult is not { } insulin) return;
 
         _settings.Alerts = result;
+        _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastAdministeredAt = null }; // off means nothing stays saved
         _settings.Save();
         _alerts.Reset(); // new thresholds start a fresh episode
+        _insulinReminder.Reset();
         EvaluateAlerts();
+        EvaluateInsulin();
+    }
+
+    // ---- insulin ---------------------------------------------------------------
+
+    private void EvaluateInsulin()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var raised = _insulinReminder.Evaluate(_settings.Insulin, now, TimeZoneInfo.Local, _alerts.SnoozedUntil(now));
+        if (raised is not null)
+        {
+            var title = raised.IsReminder ? "Reminder: insulin" : "Insulin";
+            _tray.Notify(title, $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
+            if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
+        }
+
+        RenderInsulin();
+    }
+
+    /// <summary>Date and time in the format of the user's Windows region settings, for the syringe's tooltip.</summary>
+    private static string Stamp(DateTimeOffset moment)
+    {
+        var local = moment.ToLocalTime();
+        return $"{local.ToString("d", CultureInfo.CurrentCulture)} {local.ToString("t", CultureInfo.CurrentCulture)}";
+    }
+
+    /// <summary>The syringe: grey before the dose is due, amber with ! once due, green with a tick once marked.</summary>
+    private void RenderInsulin()
+    {
+        var insulin = _settings.Insulin;
+        var visibility = insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
+        if (InsulinButton.Visibility != visibility)
+        {
+            InsulinButton.Visibility = visibility;
+            ApplyLayoutScale(); // the layout leaves room for the icon
+        }
+
+        if (!insulin.Enabled) return;
+
+        var status = InsulinSchedule.Status(insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local);
+        var theme = Palette.Current;
+        var next = Stamp(InsulinSchedule.NextSlotAfter(insulin, status.Slot, TimeZoneInfo.Local));
+
+        switch (status.State)
+        {
+            case DoseState.Administered:
+                SyringePath.Stroke = Palette.Brush(theme.InRange);
+                InsulinBadge.Background = Palette.Brush(theme.InRange);
+                InsulinBadgeText.Text = "✓";
+                InsulinBadge.Visibility = Visibility.Visible;
+                InsulinButton.ToolTip = $"Insulin administered on {Stamp(status.AdministeredAt!.Value)}.\nNext dose at {next}.";
+                break;
+
+            case DoseState.Due:
+                SyringePath.Stroke = Palette.Brush(theme.High);
+                InsulinBadge.Background = Palette.Brush(theme.High);
+                InsulinBadgeText.Text = "!";
+                InsulinBadge.Visibility = Visibility.Visible;
+                InsulinButton.ToolTip = $"Insulin due since {Stamp(status.Slot)}, not administered yet.\nNext dose at {next}.";
+                break;
+
+            default:
+                SyringePath.Stroke = Palette.Brush(theme.Muted);
+                InsulinBadge.Visibility = Visibility.Collapsed;
+                InsulinButton.ToolTip = $"Insulin not administered yet.\nNext dose at {Stamp(status.Slot)}.";
+                break;
+        }
+    }
+
+    // Like the close button, this acts on the press: DragMove would swallow the button-up.
+    private void Insulin_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        ToggleInsulin();
+    }
+
+    private void InsulinMenu_Click(object sender, RoutedEventArgs e) => ToggleInsulin();
+
+    /// <summary>Turns the reminder off. The last "administered" time is forgotten too, so nothing about it stays saved.</summary>
+    private void InsulinOff_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.Insulin = _settings.Insulin with { Enabled = false, LastAdministeredAt = null };
+        _settings.Save();
+        _insulinReminder.Reset();
+        EvaluateInsulin();
+    }
+
+    /// <summary>Marks the current dose as administered, or removes the mark. Both ask first: a wrong "administered" would hide a missed dose.</summary>
+    private void ToggleInsulin()
+    {
+        var status = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local);
+
+        if (status.State == DoseState.Administered)
+        {
+            var undo = MessageBox.Show(this,
+                $"Remove the \"administered\" mark?\n\nInsulin administered on {Stamp(status.AdministeredAt ?? status.Slot)}.\nOnly do this if you did not administer it.",
+                "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (undo != MessageBoxResult.Yes) return;
+
+            _settings.Insulin = _settings.Insulin.Undo();
+        }
+        else
+        {
+            var mark = MessageBox.Show(this,
+                $"Mark the {Stamp(status.Slot)} insulin dose as administered?",
+                "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
+            if (mark != MessageBoxResult.Yes) return;
+
+            _settings.Insulin = _settings.Insulin.MarkAdministered(DateTimeOffset.UtcNow);
+        }
+
+        _settings.Save();
+        EvaluateInsulin();
     }
 
     private bool TestAlert(bool sound)
     {
-        var shown = _tray.Notify("Test alert", "This is how a glucose alert will look.");
+        var shown = _tray.Notify("Test alert", "This is how an alert will look.");
         if (sound) System.Media.SystemSounds.Exclamation.Play();
         return shown;
     }
@@ -218,6 +339,7 @@ public partial class MainWindow : Window
     {
         _alerts.Resume();
         EvaluateAlerts();
+        EvaluateInsulin();
     }
 
     private void RenderValue()
@@ -256,6 +378,7 @@ public partial class MainWindow : Window
         RenderValue();
         RenderAge();
         UpdateAlertBorder(DateTimeOffset.UtcNow); // the alert colours come from the theme
+        RenderInsulin();
         Graph.Refresh();
     }
 
@@ -352,7 +475,7 @@ public partial class MainWindow : Window
 
         if (_problem is not null)
         {
-            // The number on screen is getting old while the service cannot be reached: say how old.
+            // The value on screen is getting old while the service cannot be reached: say how old.
             AgeText.Text = _problem == "reconnecting" && age is { TotalMinutes: >= 2 } old
                 ? $"not updating · {FormatAge(old)}"
                 : _problem;
@@ -458,29 +581,44 @@ public partial class MainWindow : Window
 
     private enum HeaderArrangement
     {
-        /// <summary>Number and arrow on the left, unit and age on the right. Used with the graph, and on a wide, short card.</summary>
+        /// <summary>Value and arrow on the left, unit and age on the right. Used with the graph, and on a wide, short card.</summary>
         SideBySide,
 
-        /// <summary>Number and arrow, with the unit and age on one line underneath. Lets the number grow on a small card.</summary>
+        /// <summary>Value and arrow, with the unit and age on one line underneath. Lets the value grow on a small card.</summary>
         Stacked,
+    }
+
+    /// <summary>
+    /// The syringe sits beside the unit and age lines, or, when those are stacked under the value, right of the arrow
+    /// (as on the Mac), so it does not end up on the unit line.
+    /// </summary>
+    private void PlaceInsulinButton(bool besideArrow)
+    {
+        var target = besideArrow ? ValueStack : InfoBlock;
+        if (InsulinButton.Parent == target) return;
+
+        ((Panel)InsulinButton.Parent).Children.Remove(InsulinButton);
+        target.Children.Insert(besideArrow ? target.Children.Count : 0, InsulinButton);
     }
 
     private void ArrangeHeader(HeaderArrangement arrangement)
     {
+        PlaceInsulinButton(arrangement == HeaderArrangement.Stacked);
+
         if (arrangement == HeaderArrangement.Stacked)
         {
-            Grid.SetRow(InfoStack, 1);
+            Grid.SetRow(InfoBlock, 1);
             ValueStack.HorizontalAlignment = HorizontalAlignment.Center;
-            InfoStack.HorizontalAlignment = HorizontalAlignment.Center;
+            InfoBlock.HorizontalAlignment = HorizontalAlignment.Center;
             InfoStack.Orientation = Orientation.Horizontal;
             UnitText.HorizontalAlignment = HorizontalAlignment.Left;
             AgeText.HorizontalAlignment = HorizontalAlignment.Left;
         }
         else
         {
-            Grid.SetRow(InfoStack, 0);
+            Grid.SetRow(InfoBlock, 0);
             ValueStack.HorizontalAlignment = HorizontalAlignment.Left;
-            InfoStack.HorizontalAlignment = HorizontalAlignment.Right;
+            InfoBlock.HorizontalAlignment = HorizontalAlignment.Right;
             InfoStack.Orientation = Orientation.Vertical;
             UnitText.HorizontalAlignment = HorizontalAlignment.Right;
             AgeText.HorizontalAlignment = HorizontalAlignment.Right;
@@ -495,16 +633,42 @@ public partial class MainWindow : Window
         AgeText.FontSize = 11 * infoScale;
 
         // The gaps scale with the text as well. Fixed pixel gaps look right at the default size but make a large
-        // number crowd its arrow, and the unit run into the age text.
+        // value crowd its arrow, and the unit run into the age text.
         ArrowText.Margin = new Thickness((_settings.ShowGraph ? 8 : 12) * valueScale, 0, 0, 0);
 
         var stacked = InfoStack.Orientation == Orientation.Horizontal;
         UnitText.Margin = stacked ? new Thickness(0, 0, 7 * infoScale, 0) : new Thickness(0);
         if (!_settings.ShowGraph)
         {
-            // Space between the number and the line under it (the right-hand margin is only used with the graph).
-            InfoStack.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
+            // Space between the value and the line under it (the right-hand margin is only used with the graph).
+            InfoBlock.Margin = stacked ? new Thickness(0, 6 * infoScale, 0, 0) : new Thickness(0);
         }
+
+        // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes the
+        // width of this block, and everything beside it moves or resizes.
+        // The syringe is sized with the text: beside the unit and age lines it is centred on them, and beside the
+        // arrow (stacked layout) it is a little smaller and sits at the arrow's side.
+        var besideArrow = stacked;
+        InsulinButton.Width = InsulinButton.Height = 26 * (besideArrow
+            ? Math.Clamp(valueScale, 0.6, 2)
+            : Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4));
+        InsulinButton.Margin = besideArrow
+            ? new Thickness(11.5 * valueScale, 0, 0, 0) // the same visible gap as between the value and the arrow
+            : new Thickness(0, 0, 8 * infoScale, 0);
+
+        // A fixed width for the text, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago"
+        // changes the width of this block, and everything beside it moves or resizes.
+        var age = TextWidth("59 min ago", AgeText.FontSize);
+        var unit = TextWidth("mmol/L", UnitText.FontSize);
+        // Stacked, the line is centred under the row, so it needs no fixed width: one would push the text off centre.
+        InfoStack.MinWidth = stacked ? 0 : Math.Max(age, unit);
+    }
+
+    private double TextWidth(string text, double fontSize)
+    {
+        var typeface = new Typeface(AgeText.FontFamily, AgeText.FontStyle, AgeText.FontWeight, AgeText.FontStretch);
+        return new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, fontSize,
+            Brushes.Black, VisualTreeHelper.GetDpi(this).PixelsPerDip).WidthIncludingTrailingWhitespace;
     }
 
     /// <summary>Natural size of the header, at base font sizes, in the given arrangement.</summary>
@@ -512,24 +676,29 @@ public partial class MainWindow : Window
     {
         ArrangeHeader(arrangement);
         SetHeaderFonts(1, 1);
+        return CurrentHeaderSize(arrangement);
+    }
 
+    /// <summary>Size the header wants right now, at whatever font sizes are applied.</summary>
+    private Size CurrentHeaderSize(HeaderArrangement arrangement)
+    {
         var unbounded = new Size(double.PositiveInfinity, double.PositiveInfinity);
         ValueStack.Measure(unbounded);
-        InfoStack.Measure(unbounded);
+        InfoBlock.Measure(unbounded);
 
         return arrangement == HeaderArrangement.Stacked
             ? new Size(
-                Math.Max(ValueStack.DesiredSize.Width, InfoStack.DesiredSize.Width),
-                ValueStack.DesiredSize.Height + InfoStack.DesiredSize.Height)
+                Math.Max(ValueStack.DesiredSize.Width, InfoBlock.DesiredSize.Width),
+                ValueStack.DesiredSize.Height + InfoBlock.DesiredSize.Height)
             : new Size(
-                ValueStack.DesiredSize.Width + InfoStack.DesiredSize.Width + 24,
-                Math.Max(ValueStack.DesiredSize.Height, InfoStack.DesiredSize.Height));
+                ValueStack.DesiredSize.Width + InfoBlock.DesiredSize.Width + 24,
+                Math.Max(ValueStack.DesiredSize.Height, InfoBlock.DesiredSize.Height));
     }
 
     /// <summary>
     /// With the graph shown the text scales with the card as a whole. With the graph hidden the header fills the card:
-    /// both arrangements are measured and the one that lets the number grow larger is used, so a small card is not
-    /// left mostly empty beside a small number.
+    /// both arrangements are measured and the one that lets the value grow larger is used, so a small card is not
+    /// left mostly empty beside a small value.
     /// </summary>
     private void ApplyLayoutScale()
     {
@@ -538,20 +707,20 @@ public partial class MainWindow : Window
             var scale = Math.Clamp(Math.Min((ActualWidth - 24) / DefaultCardWidth, (ActualHeight - 24) / DefaultCardHeight), 0.75, 2.4);
             var small = Math.Clamp(scale, 1, 1.7);
 
-            ContentGrid.Margin = new Thickness(16, 10, 14, 6);
+            ContentGrid.Margin = new Thickness(16, 10, 16, 6); // the same on both sides, matching the graph
             ArrangeHeader(HeaderArrangement.SideBySide);
             SetHeaderFonts(scale, small);
-            InfoStack.Margin = new Thickness(0, 0, 18, 0); // room for the close button
+            InfoBlock.Margin = new Thickness(0);
             return;
         }
 
         // The close-button margin is dropped here: it does not scale with the text, so keeping it would make
-        // the number and the info block collide in narrow cards. The card padding is also tighter, to give the number room.
+        // the value and the info block collide in narrow cards. The card padding is also tighter, to give the value room.
         ContentGrid.Margin = new Thickness(10, 6, 10, 6);
-        InfoStack.Margin = new Thickness(0);
+        InfoBlock.Margin = new Thickness(0);
 
-        var availableWidth = ActualWidth - 24 - 20; // shadow margin, then the card's own padding
-        var availableHeight = ActualHeight - 24 - 12;
+        var availableWidth = ActualWidth - 24 - 2 - 20; // shadow margin, the card's border, then its own padding
+        var availableHeight = ActualHeight - 24 - 2 - 12;
 
         double Fit(Size natural) =>
             natural.Width <= 0 || natural.Height <= 0
@@ -565,6 +734,16 @@ public partial class MainWindow : Window
         ArrangeHeader(useStacked ? HeaderArrangement.Stacked : HeaderArrangement.SideBySide);
         var fit = useStacked ? stacked : sideBySide;
         SetHeaderFonts(fit, fit);
+
+        // Not everything scales in step with the text (the syringe has size limits, the gaps are rounded), so check the
+        // result and shrink a little if it still does not fit. Otherwise the last item in the row is cut off.
+        var actual = CurrentHeaderSize(useStacked ? HeaderArrangement.Stacked : HeaderArrangement.SideBySide);
+        var over = Math.Max(actual.Width / availableWidth, actual.Height / availableHeight);
+        if (over > 1)
+        {
+            fit = Math.Max(fit / over, 0.3);
+            SetHeaderFonts(fit, fit);
+        }
     }
 
     private void Resize_DragDelta(object sender, DragDeltaEventArgs e)
@@ -643,6 +822,12 @@ public partial class MainWindow : Window
         {
             item.IsChecked = index < 0 ? _simulation is null : _simulation == Simulation.Scenarios[index];
         }
+
+        InsulinItem.Visibility = InsulinOffItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
+        InsulinSetupItem.Visibility = _settings.Insulin.Enabled ? Visibility.Collapsed : Visibility.Visible;
+        InsulinItem.Header = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local).State == DoseState.Administered
+            ? "Insulin: undo \"administered\""
+            : "Insulin: mark as administered";
 
         var snoozedUntil = _alerts.SnoozedUntil(DateTimeOffset.UtcNow);
         ResumeItem.IsEnabled = snoozedUntil is not null;
@@ -759,7 +944,7 @@ public partial class MainWindow : Window
         $"Libre Monitor {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n\n"
         + "Libre Monitor shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
         + "Nothing about your glucose readings is saved on this PC. The only things stored are your login (encrypted, and readable only by your Windows user) "
-        + "and your display preferences, such as units, theme, window position and alert limits.\n\n"
+        + "and your preferences, such as units, theme, window position, alert limits and the insulin reminder (its times, and when you last marked a dose as administered).\n\n"
         + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions.",
         "About Libre Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
 

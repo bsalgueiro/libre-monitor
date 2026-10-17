@@ -12,7 +12,7 @@ namespace LibreMonitor.App;
 /// </summary>
 public sealed class GlucoseGraph : FrameworkElement
 {
-    private const double PadRight = 12;
+    private const double PadRight = 5; // room for the "now" dot; the card padding supplies the rest, matching the left side
     private const double PadTop = 6;
     private const double PadBottom = 14;
     // History arrives every ~15 minutes and the newest reading can trail it by a while, so only a real outage breaks the line.

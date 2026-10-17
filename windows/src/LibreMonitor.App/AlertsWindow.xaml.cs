@@ -12,18 +12,21 @@ namespace LibreMonitor.App;
 public partial class AlertsWindow : Window
 {
     private readonly AlertSettings _original;
+    private readonly InsulinSettings _originalInsulin;
     private readonly GlucoseUnit _unit;
     private readonly Func<bool, bool> _sendTest;
     private readonly string _lowShown;
     private readonly string _highShown;
 
     public AlertSettings? Result { get; private set; }
+    public InsulinSettings? InsulinResult { get; private set; }
 
     /// <param name="sendTest">Shows a sample notification (and plays the sound if the argument is true); returns whether a notification could be shown.</param>
-    public AlertsWindow(AlertSettings current, GlucoseUnit unit, Func<bool, bool> sendTest)
+    public AlertsWindow(AlertSettings current, InsulinSettings insulin, GlucoseUnit unit, Func<bool, bool> sendTest)
     {
         InitializeComponent();
         _original = current;
+        _originalInsulin = insulin;
         _unit = unit;
         _sendTest = sendTest;
 
@@ -41,6 +44,47 @@ public partial class AlertsWindow : Window
 
         RepeatBox.SelectedItem = RepeatBox.Items.Cast<ComboBoxItem>()
             .MinBy(item => Math.Abs(int.Parse((string)item.Tag) - current.RepeatMinutes));
+
+        InsulinBox.IsChecked = insulin.Enabled;
+        DosesBox.SelectedIndex = insulin.DosesPerDay == 2 ? 1 : 0;
+        FirstTime.Text = ShowTime(insulin.FirstDoseMinutes);
+        SecondTime.Text = ShowTime(insulin.SecondDoseMinutes);
+        InsulinRepeatBox.SelectedItem = InsulinRepeatBox.Items.Cast<ComboBoxItem>()
+            .MinBy(item => Math.Abs(int.Parse((string)item.Tag) - insulin.RepeatMinutes));
+        UpdateInsulinPanel();
+    }
+
+    private static string ShowTime(int minutes) => $"{minutes / 60:00}:{minutes % 60:00}";
+
+    private static bool TryParseTime(string text, out int minutes)
+    {
+        minutes = 0;
+        var parts = text.Trim().Split(':');
+        if (parts.Length != 2
+            || !int.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var hour)
+            || !int.TryParse(parts[1], NumberStyles.None, CultureInfo.InvariantCulture, out var minute)
+            || hour > 23 || minute > 59)
+        {
+            return false;
+        }
+
+        minutes = hour * 60 + minute;
+        return true;
+    }
+
+    private void Insulin_Changed(object sender, RoutedEventArgs e) => UpdateInsulinPanel();
+
+    private void Doses_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateInsulinPanel();
+
+    private void UpdateInsulinPanel()
+    {
+        if (InsulinPanel is null || DosesBox.SelectedItem is null) return; // still loading
+
+        var twice = ((ComboBoxItem)DosesBox.SelectedItem).Tag as string == "2";
+        InsulinPanel.IsEnabled = InsulinBox.IsChecked == true;
+        InsulinPanel.Opacity = InsulinPanel.IsEnabled ? 1 : 0.5;
+        SecondRow.Visibility = twice ? Visibility.Visible : Visibility.Collapsed;
+        FirstLabel.Text = twice ? "First time" : "Time";
     }
 
     private string Show(double mgPerDl) => GlucoseUnits.Format(mgPerDl, _unit, CultureInfo.CurrentCulture);
@@ -52,8 +96,8 @@ public partial class AlertsWindow : Window
         Foreground = Palette.Brush(theme.Text);
 
         // CheckBox sets its own text colour instead of inheriting the window's, which left dark labels on the dark card.
-        LowBox.Foreground = HighBox.Foreground = SoundBox.Foreground = Palette.Brush(theme.Text);
-        DisclaimerText.Foreground = Palette.Brush(theme.Muted);
+        LowBox.Foreground = HighBox.Foreground = SoundBox.Foreground = InsulinBox.Foreground = Palette.Brush(theme.Text);
+        DisclaimerText.Foreground = InsulinDisclaimerText.Foreground = TimeHint.Foreground = Palette.Brush(theme.Muted);
         InfoText.Foreground = Palette.Brush(theme.Muted);
     }
 
@@ -92,7 +136,30 @@ public partial class AlertsWindow : Window
             return;
         }
 
+        // The "administered" mark is kept as it was: only the schedule is edited here.
+        var insulin = _originalInsulin with
+        {
+            Enabled = InsulinBox.IsChecked == true,
+            DosesPerDay = ((ComboBoxItem)DosesBox.SelectedItem).Tag as string == "2" ? 2 : 1,
+            RepeatMinutes = int.Parse((string)((ComboBoxItem)InsulinRepeatBox.SelectedItem).Tag),
+        };
+
+        if (!TryParseTime(FirstTime.Text, out var first) || (insulin.DosesPerDay == 2 && !TryParseTime(SecondTime.Text, out _)))
+        {
+            ShowError("Enter each dose time as hours and minutes, like 08:00.");
+            return;
+        }
+
+        TryParseTime(SecondTime.Text, out var second);
+        insulin = insulin with { FirstDoseMinutes = first, SecondDoseMinutes = insulin.DosesPerDay == 2 ? second : _originalInsulin.SecondDoseMinutes };
+        if (insulin.Enabled && insulin.Validate() is { } insulinProblem)
+        {
+            ShowError(insulinProblem);
+            return;
+        }
+
         Result = settings;
+        InsulinResult = insulin;
         DialogResult = true;
     }
 

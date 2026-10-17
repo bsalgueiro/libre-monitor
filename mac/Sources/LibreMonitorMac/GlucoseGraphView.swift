@@ -36,7 +36,7 @@ struct GraphRenderer {
     let theme: WidgetTheme
     let hoverX: CGFloat?
 
-    private let padRight: CGFloat = 12
+    private let padRight: CGFloat = 5 // room for the "now" dot; the card padding supplies the rest, matching the left side
     private let padTop: CGFloat = 6
     private let padBottom: CGFloat = 14
     // History arrives every ~15 minutes and the newest reading can trail it by a while, so only a real outage breaks the line.

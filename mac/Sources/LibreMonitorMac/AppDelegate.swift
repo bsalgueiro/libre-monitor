@@ -32,7 +32,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let aboutController = AboutWindowController()
     private let alertsController = AlertsWindowController()
     private let alertEvaluator = AlertEvaluator()
+    private let insulinEvaluator = InsulinReminderEvaluator()
     private var lastAlertSettings = AlertSettings()
+    private var lastInsulinSettings = InsulinSettings()
     private var tickTimer: Timer?
     private var settingsObserver: AnyCancellable?
     private var lastScrollChange = Date.distantPast
@@ -49,6 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Notifier.shared.start()
         lastAlertSettings = model.settings.alerts
+        lastInsulinSettings = model.settings.insulin
         panel = makePanel()
         statusItem = StatusItemController(
             isWidgetVisible: { [weak self] in self?.panel.isVisible ?? false },
@@ -70,9 +73,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.lastAlertSettings = settings.alerts
                 self?.alertEvaluator.reset()
             }
+            if settings.insulin != self?.lastInsulinSettings {
+                self?.lastInsulinSettings = settings.insulin
+                self?.insulinEvaluator.reset()
+            }
             Task { @MainActor in
                 self?.refreshStatusItem()
                 self?.evaluateAlerts()
+                self?.evaluateInsulin()
             }
         }
 
@@ -114,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             moveToCorner: { [weak self] corner in self?.moveToCorner(corner) },
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
             showAlerts: { [weak self] in self?.showAlerts() },
+            toggleInsulin: { [weak self] in self?.toggleInsulin() },
             snoozeAlerts: { [weak self] minutes in self?.snoozeAlerts(minutes: minutes) },
             resumeAlerts: { [weak self] in self?.resumeAlerts() },
             checkForUpdates: { NSWorkspace.shared.open(AppInfo.releasesUrl) },
@@ -173,7 +182,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         lastScrollChange = Date()
     }
 
-    /// Switches between the graph layout and the compact (number only) layout, keeping the widget's top-left corner.
+    /// Switches between the graph layout and the compact (value only) layout, keeping the widget's top-left corner.
     private func applyGraphMode(show: Bool, force: Bool = false) {
         guard force || show != graphShown else { return }
 
@@ -266,6 +275,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         model.tick()
         refreshStatusItem()
         evaluateAlerts()
+        evaluateInsulin() // follows the clock, not the readings, so it runs whatever the glucose state is
     }
 
     // MARK: - Alerts
@@ -299,18 +309,71 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Insulin
+
+    private func evaluateInsulin() {
+        let now = Date()
+        let snoozed = model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
+        guard let raised = insulinEvaluator.evaluate(
+            model.settings.insulin, now: now, calendar: .current, snoozedUntil: snoozed)
+        else { return }
+
+        let sound = model.settings.alerts.sound
+        let title = raised.isReminder ? "Reminder: insulin" : "Insulin"
+        Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as administered yet.", sound: sound) { posted in
+            if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
+        }
+    }
+
+    private func clockText(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = Calendar.current.isDateInToday(date) ? "HH:mm" : "EEE HH:mm"
+        return formatter.string(from: date)
+    }
+
+    /// Marks the current dose as administered, or removes the mark. Both ask first: a wrong "administered" would hide a missed dose.
+    private func toggleInsulin() {
+        guard let status = model.insulinStatus else { return }
+
+        let alert = NSAlert()
+        alert.alertStyle = .informational
+        if status.state == .administered {
+            alert.messageText = "Remove the “administered” mark?"
+            alert.informativeText = "Insulin administered on \(formatDateTime(status.administeredAt ?? status.slot)).\n"
+                + "Only do this if you did not administer it."
+            alert.addButton(withTitle: "Remove mark")
+        } else {
+            alert.messageText = "Mark the \(formatDateTime(status.slot)) insulin dose as administered?"
+            alert.addButton(withTitle: "Mark as administered")
+        }
+        alert.addButton(withTitle: "Cancel")
+
+        NSApp.activate(ignoringOtherApps: true)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        model.settings.insulin = status.state == .administered
+            ? model.settings.insulin.undone()
+            : model.settings.insulin.markingAdministered(at: Date())
+    }
+
     private func showAlerts() {
         alertsController.show(
-            unit: model.settings.unit, settings: model.settings.alerts,
+            unit: model.settings.unit, settings: model.settings.alerts, insulin: model.settings.insulin,
             sendTest: { sound, done in
-                Notifier.shared.post(title: "Test alert", body: "This is how a glucose alert will look.", sound: sound) { posted in
+                Notifier.shared.post(title: "Test alert", body: "This is how an alert will look.", sound: sound) { posted in
                     DispatchQueue.main.async {
                         if !posted && sound { NSSound.beep() }
                         done(posted)
                     }
                 }
             },
-            onSave: { [weak self] new in self?.model.settings.alerts = new })
+            onSave: { [weak self] alerts, insulin in
+                guard let self else { return }
+                var settings = model.settings // one assignment, so the settings are saved once
+                settings.alerts = alerts
+                settings.insulin = insulin
+                model.settings = settings
+            })
     }
 
     private func snoozeAlerts(minutes: Int) {
@@ -323,6 +386,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         alertEvaluator.resume()
         model.snoozedUntil = nil
         evaluateAlerts()
+        evaluateInsulin()
     }
 
     private func refreshStatusItem() {

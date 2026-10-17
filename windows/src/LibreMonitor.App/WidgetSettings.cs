@@ -29,6 +29,12 @@ public sealed class WidgetSettings
     /// <summary>Thresholds are stored in mg/dL whatever unit is displayed. Both alerts start switched off.</summary>
     public AlertSettings Alerts { get; set; } = new();
 
+    /// <summary>
+    /// The insulin reminder: its schedule and the time the dose was last marked as administered. That one
+    /// timestamp is the only thing recorded about it (no amounts, no history). Off by default.
+    /// </summary>
+    public InsulinSettings Insulin { get; set; } = new();
+
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public GlucoseUnit Unit { get; set; } = GlucoseUnit.MgPerDl;
 

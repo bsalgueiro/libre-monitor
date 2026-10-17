@@ -77,6 +77,11 @@ final class AppModel: ObservableObject {
         return list
     }
 
+    /// Where the current insulin dose stands; nil while the reminder is off.
+    var insulinStatus: DoseStatus? {
+        settings.insulin.enabled ? InsulinSchedule.status(settings.insulin, now: now, calendar: .current) : nil
+    }
+
     var age: TimeInterval? { current.map { now.timeIntervalSince($0.timestamp) } }
 
     var isStale: Bool { (age ?? 0) > Self.staleAfter }
