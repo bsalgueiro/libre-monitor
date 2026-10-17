@@ -21,42 +21,42 @@ final class SensorTests: XCTestCase {
         XCTAssertTrue(SensorSchedule.remaining(sensor, now: after(15)) < 0)
     }
 
-    // ---- life span ----
+    // ---- duration ----
 
-    func testEndsAtUsesTheChosenLifeSpan() {
-        XCTAssertEqual(SensorSchedule.endsAt(sensor, lifeDays: 15), after(15))
-        XCTAssertEqual(SensorSchedule.endsAt(sensor, lifeDays: 14), after(14))
+    func testEndsAtUsesTheChosenDuration() {
+        XCTAssertEqual(SensorSchedule.endsAt(sensor, durationDays: 15), after(15))
+        XCTAssertEqual(SensorSchedule.endsAt(sensor, durationDays: 14), after(14))
     }
 
-    func testAnUnknownLifeSpanFallsBackToFourteenDays() {
+    func testAnUnknownDurationFallsBackToFourteenDays() {
         for days in [0, 13, 16, -5] {
-            XCTAssertEqual(SensorSchedule.normalizeLifeDays(days), SensorSchedule.defaultLifeDays)
-            XCTAssertEqual(SensorSchedule.endsAt(sensor, lifeDays: days), after(14))
+            XCTAssertEqual(SensorSchedule.normalizeDurationDays(days), SensorSchedule.defaultDurationDays)
+            XCTAssertEqual(SensorSchedule.endsAt(sensor, durationDays: days), after(14))
         }
     }
 
     func testTheChoicesIncludeTheDefaultAndOnlyHoldSensibleValues() {
-        XCTAssertTrue(SensorSchedule.lifeChoices.contains(SensorSchedule.defaultLifeDays))
-        for days in SensorSchedule.lifeChoices {
+        XCTAssertTrue(SensorSchedule.durationChoices.contains(SensorSchedule.defaultDurationDays))
+        for days in SensorSchedule.durationChoices {
             XCTAssertTrue(days >= 10 && days <= 20)
         }
     }
 
-    func testALongerLifeSpanMovesTheNoticeLater() {
+    func testALongerDurationMovesTheNoticeLater() {
         let e = SensorExpiryEvaluator()
 
-        XCTAssertNil(e.evaluate(sensor, now: after(13), lifeDays: 15))
-        XCTAssertNotNil(e.evaluate(sensor, now: after(14), lifeDays: 15))
+        XCTAssertNil(e.evaluate(sensor, now: after(13), durationDays: 15))
+        XCTAssertNotNil(e.evaluate(sensor, now: after(14), durationDays: 15))
     }
 
-    func testChangingTheLifeSpanAllowsANewNotice() {
+    func testChangingTheDurationAllowsANewNotice() {
         let e = SensorExpiryEvaluator()
-        XCTAssertNotNil(e.evaluate(sensor, now: after(13), lifeDays: 14))
-        XCTAssertNil(e.evaluate(sensor, now: after(13, hours: 1), lifeDays: 14))
+        XCTAssertNotNil(e.evaluate(sensor, now: after(13), durationDays: 14))
+        XCTAssertNil(e.evaluate(sensor, now: after(13, hours: 1), durationDays: 14))
 
         // Switched to 15 days: that notice came a day early, so another is due when 15 days are nearly up.
-        XCTAssertNil(e.evaluate(sensor, now: after(13, hours: 2), lifeDays: 15))
-        XCTAssertNotNil(e.evaluate(sensor, now: after(14), lifeDays: 15))
+        XCTAssertNil(e.evaluate(sensor, now: after(13, hours: 2), durationDays: 15))
+        XCTAssertNotNil(e.evaluate(sensor, now: after(14), durationDays: 15))
     }
 
     // ---- notification ----

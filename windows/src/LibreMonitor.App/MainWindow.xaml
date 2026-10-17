@@ -42,15 +42,13 @@
         </Border.Effect>
         <Border.ContextMenu>
             <ContextMenu x:Name="Menu" Opened="Menu_Opened">
-                <MenuItem x:Name="SensorItem" IsEnabled="False" Visibility="Collapsed"/>
-                <MenuItem x:Name="SensorLifeMenu" Header="Sensor life" Visibility="Collapsed"/>
-                <Separator x:Name="SensorSeparator" Visibility="Collapsed"/>
+                <!-- Graph -->
+                <MenuItem x:Name="GraphItem" Header="Show graph" IsCheckable="True" Click="Graph_Click"/>
                 <MenuItem x:Name="RangeMenu" Header="Time range">
                     <MenuItem x:Name="Range3" Header="Last 3 hours" Click="Range_Click" Tag="3"/>
                     <MenuItem x:Name="Range6" Header="Last 6 hours" Click="Range_Click" Tag="6"/>
                     <MenuItem x:Name="Range12" Header="Last 12 hours" Click="Range_Click" Tag="12"/>
                 </MenuItem>
-                <MenuItem x:Name="GraphItem" Header="Show graph" IsCheckable="True" Click="Graph_Click"/>
                 <Separator/>
                 <MenuItem Header="Units">
                     <MenuItem x:Name="UnitMg" Header="mg/dL" Click="Unit_Click" Tag="MgPerDl"/>
@@ -61,6 +59,8 @@
                     <MenuItem x:Name="ThemeLight" Header="Light" Click="Theme_Click" Tag="Light"/>
                     <MenuItem x:Name="ThemeDark" Header="Dark" Click="Theme_Click" Tag="Dark"/>
                 </MenuItem>
+                <Separator/>
+                <!-- Alerts -->
                 <MenuItem Header="Alerts..." Click="Alerts_Click"/>
                 <MenuItem x:Name="InsulinItem" Header="Insulin: mark as administered" Click="InsulinMenu_Click" Visibility="Collapsed"/>
                 <MenuItem x:Name="InsulinOffItem" Header="Turn off the insulin reminder" Click="InsulinOff_Click" Visibility="Collapsed"/>
@@ -72,6 +72,12 @@
                     <Separator/>
                     <MenuItem x:Name="ResumeItem" Header="Resume alerts" Click="Resume_Click"/>
                 </MenuItem>
+                <Separator/>
+                <!-- Sensor (only while the service names a sensor) -->
+                <MenuItem x:Name="SensorItem" IsEnabled="False" Visibility="Collapsed"/>
+                <MenuItem x:Name="SensorDurationMenu" Header="Sensor duration" Visibility="Collapsed"/>
+                <Separator x:Name="SensorSeparator" Visibility="Collapsed"/>
+                <!-- Position and window -->
                 <MenuItem Header="Move to corner">
                     <MenuItem Header="Top left" Click="Corner_Click" Tag="TopLeft"/>
                     <MenuItem Header="Top right" Click="Corner_Click" Tag="TopRight"/>
@@ -82,6 +88,7 @@
                 <MenuItem x:Name="TrayItem" Header="Show tray icon" IsCheckable="True" Click="TrayIcon_Click"/>
                 <MenuItem x:Name="HideItem" Header="Hide to tray" Click="HideToTray_Click"/>
                 <Separator/>
+                <!-- App -->
                 <MenuItem Header="Check for updates..." Click="Updates_Click"/>
                 <MenuItem Header="About" Click="About_Click"/>
                 <MenuItem Header="Sign out and exit" Click="SignOut_Click"/>

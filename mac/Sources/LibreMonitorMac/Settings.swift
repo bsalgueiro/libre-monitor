@@ -20,8 +20,8 @@ struct WidgetSettings: Codable, Equatable {
     var alwaysOnTop = true
     var alerts = AlertSettings()
     var insulin = InsulinSettings()
-    /// How many days the user's sensor lasts (a choice from `SensorSchedule.lifeChoices`), used to estimate when it ends.
-    var sensorLifeDays = SensorSchedule.defaultLifeDays
+    /// How many days the user's sensor lasts (a choice from `SensorSchedule.durationChoices`), used to estimate when it ends.
+    var sensorDurationDays = SensorSchedule.defaultDurationDays
 
     init() {}
 
@@ -36,7 +36,7 @@ struct WidgetSettings: Codable, Equatable {
         alwaysOnTop = try c.decodeIfPresent(Bool.self, forKey: .alwaysOnTop) ?? alwaysOnTop
         alerts = try c.decodeIfPresent(AlertSettings.self, forKey: .alerts) ?? alerts
         insulin = try c.decodeIfPresent(InsulinSettings.self, forKey: .insulin) ?? insulin
-        sensorLifeDays = try c.decodeIfPresent(Int.self, forKey: .sensorLifeDays) ?? sensorLifeDays
+        sensorDurationDays = try c.decodeIfPresent(Int.self, forKey: .sensorDurationDays) ?? sensorDurationDays
     }
 }
 
