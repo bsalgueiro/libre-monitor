@@ -889,6 +889,7 @@ public partial class MainWindow : Window
         Range6.IsChecked = (int)Graph.Hours == 6;
         Range12.IsChecked = (int)Graph.Hours == 12;
         GraphItem.IsChecked = _settings.ShowGraph;
+        RangeMenu.IsEnabled = _settings.ShowGraph; // the range only affects the graph
         TopmostItem.IsChecked = Topmost;
         foreach (var (item, index) in _simulationItems)
         {
