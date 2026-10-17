@@ -195,6 +195,9 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 - **Notifications need the tray icon** on Windows. If you turn it off, alerts still play the sound and colour the border.
   On a Mac they use macOS notifications: the first time, macOS asks for permission, and you can change it later in
   System Settings > Notifications > Libre Monitor.
+- **Make sure you will notice them.** A Mac banner disappears after a few seconds. In System Settings > Notifications >
+  Libre Monitor, set the style to **Alerts** so a notification stays until you dismiss it. On Windows, Focus assist and Do
+  not disturb can hide notifications, so check them too.
 
 **Do not rely on these alerts for safety.** They only work while this app is running, your PC is on and awake, and your
 phone is uploading to LibreView. Readings can arrive minutes late, and Windows can hide notifications (for example in

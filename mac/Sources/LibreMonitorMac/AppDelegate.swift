@@ -306,11 +306,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func deliver(_ alert: AlertRaised, now: Date) {
         let unit = model.settings.unit
         let low = alert.kind == .low
-        var title = alert.isReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose")
+        // The title always says what this is about ("Low glucose alert", then "Low glucose reminder" on repeats);
+        // the body carries the reading, and "Still low" on a repeat.
+        var title = "\(low ? "Low" : "High") glucose \(alert.isReminder ? "reminder" : "alert")"
         if model.isSimulated { title = "SIMULATED · " + title }
 
         let value = GlucoseUnits.format(alert.reading.mgPerDl, unit: unit)
-        let body = "\(value) \(unit.label) \(alert.reading.trend.arrow) · \(formatAge(now.timeIntervalSince(alert.reading.timestamp)))"
+        let reading = "\(value) \(unit.label) \(alert.reading.trend.arrow) · \(formatAge(now.timeIntervalSince(alert.reading.timestamp)))"
+        let body = alert.isReminder ? "Still \(low ? "low" : "high"): \(reading)" : reading
         let sound = model.settings.alerts.sound
 
         Notifier.shared.post(title: title, body: body, sound: sound) { posted in
@@ -329,8 +332,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         else { return }
 
         let sound = model.settings.alerts.sound
-        let title = raised.isReminder ? "Reminder: insulin" : "Insulin"
-        Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as administered yet.", sound: sound) { posted in
+        let due = clockText(raised.slot)
+        let body = raised.isReminder
+            ? "Still not marked as administered. Due at \(due)."
+            : "Due at \(due). Not marked as administered yet."
+        Notifier.shared.post(title: "Insulin reminder", body: body, sound: sound) { posted in
             if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
         }
     }
