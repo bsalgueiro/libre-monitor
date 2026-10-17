@@ -6,29 +6,29 @@ public enum DoseState
     /// <summary>The next dose is not due yet and nothing has been marked for it.</summary>
     Upcoming,
 
-    /// <summary>The dose time has passed and the dose has not been marked as taken.</summary>
+    /// <summary>The dose time has passed and the dose has not been marked as administered.</summary>
     Due,
 
-    /// <summary>The user marked this dose as taken.</summary>
-    Taken,
+    /// <summary>The user marked this dose as administered.</summary>
+    Administered,
 }
 
 /// <summary>
-/// Settings for the daily insulin reminder, plus the time the user last marked a dose as taken.
+/// Settings for the daily insulin reminder, plus the time the user last marked a dose as administered.
 /// That one timestamp is all that is kept: no amounts and no history. The reminder is off by default.
 /// </summary>
 /// <param name="DosesPerDay">1 or 2.</param>
 /// <param name="FirstDoseMinutes">Minutes after local midnight.</param>
 /// <param name="SecondDoseMinutes">Minutes after local midnight; only used when <paramref name="DosesPerDay"/> is 2.</param>
 /// <param name="RepeatMinutes">Reminder interval while the dose is still not marked; 0 means remind once.</param>
-/// <param name="LastTakenAt">When the user last tapped "taken"; null if never or undone.</param>
+/// <param name="LastAdministeredAt">When the user last tapped "administered"; null if never or undone.</param>
 public sealed record InsulinSettings(
     bool Enabled = false,
     int DosesPerDay = 1,
     int FirstDoseMinutes = 8 * 60,
     int SecondDoseMinutes = 20 * 60,
     int RepeatMinutes = 30,
-    DateTimeOffset? LastTakenAt = null)
+    DateTimeOffset? LastAdministeredAt = null)
 {
     /// <summary>With two doses a day, the two times must be at least this far apart (both ways round the clock).</summary>
     public const int MinGapMinutes = 4 * 60;
@@ -64,17 +64,17 @@ public sealed record InsulinSettings(
         return null;
     }
 
-    /// <summary>The same settings with the current dose marked as taken now.</summary>
-    public InsulinSettings MarkTaken(DateTimeOffset now) => this with { LastTakenAt = now };
+    /// <summary>The same settings with the current dose marked as administered now.</summary>
+    public InsulinSettings MarkAdministered(DateTimeOffset now) => this with { LastAdministeredAt = now };
 
-    /// <summary>The same settings with the "taken" mark removed (for a tap by mistake).</summary>
-    public InsulinSettings Undo() => this with { LastTakenAt = null };
+    /// <summary>The same settings with the "administered" mark removed (for a tap by mistake).</summary>
+    public InsulinSettings Undo() => this with { LastAdministeredAt = null };
 }
 
 /// <summary>Where the current dose stands.</summary>
 /// <param name="Slot">The scheduled time of the dose this status is about.</param>
-/// <param name="TakenAt">When it was marked taken; only set when <paramref name="State"/> is <see cref="DoseState.Taken"/>.</param>
-public sealed record DoseStatus(DoseState State, DateTimeOffset Slot, DateTimeOffset? TakenAt);
+/// <param name="AdministeredAt">When it was marked administered; only set when <paramref name="State"/> is <see cref="DoseState.Administered"/>.</param>
+public sealed record DoseStatus(DoseState State, DateTimeOffset Slot, DateTimeOffset? AdministeredAt);
 
 /// <summary>
 /// Works out which dose a moment belongs to. Pure logic with no UI or clock of its own, so every rule can be tested.
@@ -111,9 +111,9 @@ public static class InsulinSchedule
     {
         var slot = SlotFor(settings, now, zone);
 
-        if (settings.LastTakenAt is { } taken && SlotFor(settings, taken, zone) == slot)
+        if (settings.LastAdministeredAt is { } administered && SlotFor(settings, administered, zone) == slot)
         {
-            return new DoseStatus(DoseState.Taken, slot, taken);
+            return new DoseStatus(DoseState.Administered, slot, administered);
         }
 
         return new DoseStatus(now >= slot ? DoseState.Due : DoseState.Upcoming, slot, null);
@@ -131,7 +131,7 @@ public static class InsulinSchedule
 public sealed record InsulinReminderRaised(DateTimeOffset Slot, bool IsReminder);
 
 /// <summary>
-/// Decides when to remind about a dose that is due and not marked as taken. One instance follows one schedule.
+/// Decides when to remind about a dose that is due and not marked as administered. One instance follows one schedule.
 /// Reminders repeat at the chosen interval until the dose is marked or <see cref="ReminderWindow"/> has passed.
 /// The dose still shows as due after that, but the app stops notifying (no night-time reminders for a missed dose).
 /// </summary>

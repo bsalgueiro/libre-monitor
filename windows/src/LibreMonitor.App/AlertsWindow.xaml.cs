@@ -136,7 +136,7 @@ public partial class AlertsWindow : Window
             return;
         }
 
-        // The "taken" mark is kept as it was: only the schedule is edited here.
+        // The "administered" mark is kept as it was: only the schedule is edited here.
         var insulin = _originalInsulin with
         {
             Enabled = InsulinBox.IsChecked == true,

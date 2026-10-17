@@ -16,10 +16,10 @@ Two self-contained platform folders, `windows/` and `mac/`, plus shared `docs/` 
 
 1. Read-only: only the login request writes anything to LibreView.
 2. No glucose data on disk. Only the encrypted login (DPAPI / Keychain) and preferences. No history, no CSV export.
-   The insulin reminder also keeps one timestamp (last "taken" tap). Never store dose amounts or a list of past doses.
+   The insulin reminder also keeps one timestamp (last "administered" tap). Never store dose amounts or a list of past doses.
 3. Network traffic goes only to LibreView hosts. Keep the check that the regional redirect stays on the service's own hosts.
 4. No sensor protocol work, no key extraction.
-5. No medical claims. The insulin reminder is a memory aid: no dosing advice, no amounts, and its text must stay neutral ("not marked as taken yet", never "take your insulin"). Never describe alerts as a safety system. Keep the "not a medical device" wording.
+5. No medical claims. The insulin reminder is a memory aid: no dosing advice, no amounts, and its text must stay neutral ("not marked as administered yet", never "administer your insulin"). Never describe alerts as a safety system. Keep the "not a medical device" wording.
 6. Never put credentials, tokens or real glucose data in code, tests, issues, logs or commits.
 7. Dev mode (`--dev`, `--simulate`) must not exist in Release builds. On Mac, CI greps the release binary for `--simulate`; do not weaken that.
 8. Tests use fake HTTP and never touch the network.

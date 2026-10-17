@@ -57,7 +57,7 @@
                     <MenuItem x:Name="ThemeDark" Header="Dark" Click="Theme_Click" Tag="Dark"/>
                 </MenuItem>
                 <MenuItem Header="Alerts..." Click="Alerts_Click"/>
-                <MenuItem x:Name="InsulinItem" Header="Insulin: mark as taken" Click="InsulinMenu_Click" Visibility="Collapsed"/>
+                <MenuItem x:Name="InsulinItem" Header="Insulin: mark as administered" Click="InsulinMenu_Click" Visibility="Collapsed"/>
                 <MenuItem x:Name="InsulinOffItem" Header="Turn off the insulin reminder" Click="InsulinOff_Click" Visibility="Collapsed"/>
                 <MenuItem x:Name="InsulinSetupItem" Header="Set up the insulin reminder..." Click="Alerts_Click"/>
                 <MenuItem x:Name="SnoozeMenu" Header="Snooze alerts">
@@ -115,10 +115,11 @@
             <!-- The graph draws its "now" dot 5px past its plot, so the plot ends exactly at the card padding like the left side. -->
             <local:GlucoseGraph x:Name="Graph" Grid.Row="1" Margin="0,2,-5,0"/>
 
-            <!-- Insulin check: grey = not due yet, amber ! = due, green tick = taken. Hidden unless the reminder is on. -->
+            <!-- Insulin check: grey = not due yet, amber ! = due, green tick = administered. Hidden unless the reminder is on. -->
             <Grid x:Name="InsulinButton" Grid.RowSpan="2" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Center"
                   Margin="0,0,16,0" Background="Transparent" Cursor="Hand" Visibility="Collapsed"
-                  MouseLeftButtonDown="Insulin_MouseLeftButtonDown">
+                  MouseLeftButtonDown="Insulin_MouseLeftButtonDown"
+                  ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="12000">
                 <Viewbox Margin="2,4,4,2">
                     <Canvas Width="24" Height="24">
                         <Path x:Name="SyringePath" StrokeThickness="1.7" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"

@@ -23,7 +23,7 @@ struct AboutView: View {
 
             Text("Nothing about your glucose readings is saved on this Mac. The only things stored are your login, in "
                 + "your Keychain, and your preferences, such as units, theme, window position, alert limits and the insulin "
-                + "reminder (its times, and when you last marked a dose as taken).")
+                + "reminder (its times, and when you last marked a dose as administered).")
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 

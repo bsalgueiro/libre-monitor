@@ -47,69 +47,69 @@ final class InsulinTests: XCTestCase {
         XCTAssertEqual(state(once, at(14, 15)), .due)
     }
 
-    func testMarkedDoseIsTakenUntilTheNextPeriodOpens() {
-        let taken = once.markingTaken(at: at(14, 8, 12))
+    func testMarkedDoseIsAdministeredUntilTheNextPeriodOpens() {
+        let administered = once.markingAdministered(at: at(14, 8, 12))
 
-        let status = InsulinSchedule.status(taken, now: at(14, 8, 13), calendar: cal)
-        XCTAssertEqual(status.state, .taken)
-        XCTAssertEqual(status.takenAt, at(14, 8, 12))
-        XCTAssertEqual(state(taken, at(14, 23, 59)), .taken)
-        XCTAssertEqual(state(taken, at(15, 5, 59)), .taken)
-        XCTAssertEqual(state(taken, at(15, 6)), .upcoming)
-        XCTAssertEqual(state(taken, at(15, 8)), .due)
+        let status = InsulinSchedule.status(administered, now: at(14, 8, 13), calendar: cal)
+        XCTAssertEqual(status.state, .administered)
+        XCTAssertEqual(status.administeredAt, at(14, 8, 12))
+        XCTAssertEqual(state(administered, at(14, 23, 59)), .administered)
+        XCTAssertEqual(state(administered, at(15, 5, 59)), .administered)
+        XCTAssertEqual(state(administered, at(15, 6)), .upcoming)
+        XCTAssertEqual(state(administered, at(15, 8)), .due)
     }
 
     func testATapBeforeTheDoseTimeCountsForThatDose() {
-        let taken = once.markingTaken(at: at(14, 6, 30))
+        let administered = once.markingAdministered(at: at(14, 6, 30))
 
-        XCTAssertEqual(state(taken, at(14, 6, 31)), .taken)
-        XCTAssertEqual(state(taken, at(14, 8, 30)), .taken)
-        XCTAssertEqual(state(taken, at(15, 6)), .upcoming)
+        XCTAssertEqual(state(administered, at(14, 6, 31)), .administered)
+        XCTAssertEqual(state(administered, at(14, 8, 30)), .administered)
+        XCTAssertEqual(state(administered, at(15, 6)), .upcoming)
     }
 
     func testATapForYesterdaysDoseDoesNotCountForToday() {
-        XCTAssertEqual(state(once.markingTaken(at: at(13, 8, 5)), at(14, 8)), .due)
+        XCTAssertEqual(state(once.markingAdministered(at: at(13, 8, 5)), at(14, 8)), .due)
     }
 
     func testUndoRemovesTheMark() {
-        let taken = once.markingTaken(at: at(14, 8, 5))
+        let administered = once.markingAdministered(at: at(14, 8, 5))
 
-        XCTAssertEqual(state(taken.undone(), at(14, 9)), .due)
-        XCTAssertNil(taken.undone().lastTakenAt)
+        XCTAssertEqual(state(administered.undone(), at(14, 9)), .due)
+        XCTAssertNil(administered.undone().lastAdministeredAt)
     }
 
-    func testATimestampInTheFutureIsNotTaken() {
-        XCTAssertEqual(state(once.markingTaken(at: at(20, 8)), at(14, 9)), .due)
+    func testATimestampInTheFutureIsNotAdministered() {
+        XCTAssertEqual(state(once.markingAdministered(at: at(20, 8)), at(14, 9)), .due)
     }
 
     func testTwiceHasTwoPeriodsADay() {
-        let morning = twice.markingTaken(at: at(14, 8, 10))
+        let morning = twice.markingAdministered(at: at(14, 8, 10))
 
-        XCTAssertEqual(state(morning, at(14, 9)), .taken)
-        XCTAssertEqual(state(morning, at(14, 17, 59)), .taken)
+        XCTAssertEqual(state(morning, at(14, 9)), .administered)
+        XCTAssertEqual(state(morning, at(14, 17, 59)), .administered)
         XCTAssertEqual(state(morning, at(14, 18)), .upcoming)
         XCTAssertEqual(state(morning, at(14, 20)), .due)
-        XCTAssertEqual(state(morning.markingTaken(at: at(14, 20, 5)), at(14, 21)), .taken)
-        XCTAssertEqual(state(morning.markingTaken(at: at(14, 20, 5)), at(15, 6)), .upcoming)
+        XCTAssertEqual(state(morning.markingAdministered(at: at(14, 20, 5)), at(14, 21)), .administered)
+        XCTAssertEqual(state(morning.markingAdministered(at: at(14, 20, 5)), at(15, 6)), .upcoming)
     }
 
     func testTwiceMorningTapDoesNotCoverTheEvening() {
-        XCTAssertEqual(state(twice.markingTaken(at: at(14, 8, 10)), at(14, 20, 1)), .due)
+        XCTAssertEqual(state(twice.markingAdministered(at: at(14, 8, 10)), at(14, 20, 1)), .due)
     }
 
     func testADoseNearMidnightWrapsCorrectly() {
         let late = InsulinSettings(enabled: true, dosesPerDay: 1, firstDoseMinutes: 23 * 60 + 30)
-        let taken = late.markingTaken(at: at(14, 23, 40))
+        let administered = late.markingAdministered(at: at(14, 23, 40))
 
-        XCTAssertEqual(state(taken, at(15, 1)), .taken)
-        XCTAssertEqual(state(taken, at(15, 21, 30)), .upcoming)
-        XCTAssertEqual(state(taken, at(15, 23, 30)), .due)
+        XCTAssertEqual(state(administered, at(15, 1)), .administered)
+        XCTAssertEqual(state(administered, at(15, 21, 30)), .upcoming)
+        XCTAssertEqual(state(administered, at(15, 23, 30)), .due)
     }
 
     func testADoseJustAfterMidnightCountsAnEveningTapAsEarly() {
         let early = InsulinSettings(enabled: true, dosesPerDay: 1, firstDoseMinutes: 30)
 
-        XCTAssertEqual(state(early.markingTaken(at: at(14, 23, 0)), at(15, 0, 40)), .taken)
+        XCTAssertEqual(state(early.markingAdministered(at: at(14, 23, 0)), at(15, 0, 40)), .administered)
     }
 
     func testTheCalendarZoneDecidesWhatLocalTimeMeans() {
@@ -128,7 +128,7 @@ final class InsulinTests: XCTestCase {
 
         XCTAssertFalse(defaults.enabled)
         XCTAssertNil(defaults.validate())
-        XCTAssertNil(defaults.lastTakenAt)
+        XCTAssertNil(defaults.lastAdministeredAt)
     }
 
     func testDosesPerDayMustBeOneOrTwo() {
@@ -191,10 +191,10 @@ final class InsulinTests: XCTestCase {
         let e = InsulinReminderEvaluator()
         XCTAssertNotNil(step(e, once, at(14, 8)))
 
-        let taken = once.markingTaken(at: at(14, 8, 10))
-        XCTAssertNil(step(e, taken, at(14, 8, 30)))
-        XCTAssertNil(step(e, taken, at(15, 7)))
-        XCTAssertNotNil(step(e, taken, at(15, 8)))
+        let administered = once.markingAdministered(at: at(14, 8, 10))
+        XCTAssertNil(step(e, administered, at(14, 8, 30)))
+        XCTAssertNil(step(e, administered, at(15, 7)))
+        XCTAssertNotNil(step(e, administered, at(15, 8)))
     }
 
     func testRepeatZeroRemindsOnlyOnce() {
@@ -238,10 +238,10 @@ final class InsulinTests: XCTestCase {
     func testTwiceEachDoseIsItsOwnEpisode() {
         let e = InsulinReminderEvaluator()
         XCTAssertNotNil(step(e, twice, at(14, 8)))
-        let morningTaken = twice.markingTaken(at: at(14, 8, 5))
-        XCTAssertNil(step(e, morningTaken, at(14, 12)))
+        let morningAdministered = twice.markingAdministered(at: at(14, 8, 5))
+        XCTAssertNil(step(e, morningAdministered, at(14, 12)))
 
-        let evening = step(e, morningTaken, at(14, 20))
+        let evening = step(e, morningAdministered, at(14, 20))
         XCTAssertEqual(evening?.isReminder, false)
         XCTAssertEqual(evening?.slot, at(14, 20))
     }

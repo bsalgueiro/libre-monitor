@@ -3,7 +3,7 @@ import LibreMonitorKit
 
 // Port of windows/src/LibreMonitor.App/WidgetSettings.cs. Nothing here is sensitive, and no glucose data is stored:
 // only preferences (the alert limits, and the insulin reminder: its times and when a dose was last
-// marked as taken, which is the only thing recorded about it).
+// marked as administered, which is the only thing recorded about it).
 
 enum ThemeChoice: String, Codable, CaseIterable {
     case system

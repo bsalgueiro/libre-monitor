@@ -44,71 +44,71 @@ public class InsulinTests
     }
 
     [Fact]
-    public void MarkedDose_IsTaken_UntilTheNextPeriodOpens()
+    public void MarkedDose_IsAdministered_UntilTheNextPeriodOpens()
     {
-        var taken = Once.MarkTaken(At(14, 8, 12));
+        var administered = Once.MarkAdministered(At(14, 8, 12));
 
-        var status = InsulinSchedule.Status(taken, At(14, 8, 13), Utc);
-        Assert.Equal(DoseState.Taken, status.State);
-        Assert.Equal(At(14, 8, 12), status.TakenAt);
-        Assert.Equal(DoseState.Taken, State(taken, At(14, 23, 59)));
-        Assert.Equal(DoseState.Taken, State(taken, At(15, 5, 59)));
-        Assert.Equal(DoseState.Upcoming, State(taken, At(15, 6)));
-        Assert.Equal(DoseState.Due, State(taken, At(15, 8)));
+        var status = InsulinSchedule.Status(administered, At(14, 8, 13), Utc);
+        Assert.Equal(DoseState.Administered, status.State);
+        Assert.Equal(At(14, 8, 12), status.AdministeredAt);
+        Assert.Equal(DoseState.Administered, State(administered, At(14, 23, 59)));
+        Assert.Equal(DoseState.Administered, State(administered, At(15, 5, 59)));
+        Assert.Equal(DoseState.Upcoming, State(administered, At(15, 6)));
+        Assert.Equal(DoseState.Due, State(administered, At(15, 8)));
     }
 
     [Fact]
     public void ATapBeforeTheDoseTime_CountsForThatDose()
     {
-        var taken = Once.MarkTaken(At(14, 6, 30));
+        var administered = Once.MarkAdministered(At(14, 6, 30));
 
-        Assert.Equal(DoseState.Taken, State(taken, At(14, 6, 31)));
-        Assert.Equal(DoseState.Taken, State(taken, At(14, 8, 30)));
-        Assert.Equal(DoseState.Upcoming, State(taken, At(15, 6)));
+        Assert.Equal(DoseState.Administered, State(administered, At(14, 6, 31)));
+        Assert.Equal(DoseState.Administered, State(administered, At(14, 8, 30)));
+        Assert.Equal(DoseState.Upcoming, State(administered, At(15, 6)));
     }
 
     [Fact]
     public void ATapForYesterdaysDose_DoesNotCountForToday()
     {
-        var taken = Once.MarkTaken(At(13, 8, 5));
+        var administered = Once.MarkAdministered(At(13, 8, 5));
 
-        Assert.Equal(DoseState.Due, State(taken, At(14, 8)));
+        Assert.Equal(DoseState.Due, State(administered, At(14, 8)));
     }
 
     [Fact]
     public void Undo_RemovesTheMark()
     {
-        var taken = Once.MarkTaken(At(14, 8, 5));
+        var administered = Once.MarkAdministered(At(14, 8, 5));
 
-        Assert.Equal(DoseState.Due, State(taken.Undo(), At(14, 9)));
-        Assert.Null(taken.Undo().LastTakenAt);
+        Assert.Equal(DoseState.Due, State(administered.Undo(), At(14, 9)));
+        Assert.Null(administered.Undo().LastAdministeredAt);
     }
 
     [Fact]
-    public void ATimestampInTheFuture_IsNotTaken()
+    public void ATimestampInTheFuture_IsNotAdministered()
     {
-        var taken = Once.MarkTaken(At(20, 8));
+        var administered = Once.MarkAdministered(At(20, 8));
 
-        Assert.Equal(DoseState.Due, State(taken, At(14, 9)));
+        Assert.Equal(DoseState.Due, State(administered, At(14, 9)));
     }
 
     [Fact]
     public void Twice_HasTwoPeriodsADay()
     {
-        var morning = Twice.MarkTaken(At(14, 8, 10));
+        var morning = Twice.MarkAdministered(At(14, 8, 10));
 
-        Assert.Equal(DoseState.Taken, State(morning, At(14, 9)));
-        Assert.Equal(DoseState.Taken, State(morning, At(14, 17, 59)));
+        Assert.Equal(DoseState.Administered, State(morning, At(14, 9)));
+        Assert.Equal(DoseState.Administered, State(morning, At(14, 17, 59)));
         Assert.Equal(DoseState.Upcoming, State(morning, At(14, 18)));
         Assert.Equal(DoseState.Due, State(morning, At(14, 20)));
-        Assert.Equal(DoseState.Taken, State(morning.MarkTaken(At(14, 20, 5)), At(14, 21)));
-        Assert.Equal(DoseState.Upcoming, State(morning.MarkTaken(At(14, 20, 5)), At(15, 6)));
+        Assert.Equal(DoseState.Administered, State(morning.MarkAdministered(At(14, 20, 5)), At(14, 21)));
+        Assert.Equal(DoseState.Upcoming, State(morning.MarkAdministered(At(14, 20, 5)), At(15, 6)));
     }
 
     [Fact]
     public void Twice_MorningTapDoesNotCoverTheEvening()
     {
-        var morning = Twice.MarkTaken(At(14, 8, 10));
+        var morning = Twice.MarkAdministered(At(14, 8, 10));
 
         Assert.Equal(DoseState.Due, State(morning, At(14, 20, 1)));
     }
@@ -117,20 +117,20 @@ public class InsulinTests
     public void ADoseNearMidnight_WrapsCorrectly()
     {
         var late = new InsulinSettings(Enabled: true, DosesPerDay: 1, FirstDoseMinutes: 23 * 60 + 30);
-        var taken = late.MarkTaken(At(14, 23, 40));
+        var administered = late.MarkAdministered(At(14, 23, 40));
 
-        Assert.Equal(DoseState.Taken, State(taken, At(15, 1)));
-        Assert.Equal(DoseState.Upcoming, State(taken, At(15, 21, 30)));
-        Assert.Equal(DoseState.Due, State(taken, At(15, 23, 30)));
+        Assert.Equal(DoseState.Administered, State(administered, At(15, 1)));
+        Assert.Equal(DoseState.Upcoming, State(administered, At(15, 21, 30)));
+        Assert.Equal(DoseState.Due, State(administered, At(15, 23, 30)));
     }
 
     [Fact]
     public void ADoseJustAfterMidnight_CountsAnEveningTapAsEarly()
     {
         var early = new InsulinSettings(Enabled: true, DosesPerDay: 1, FirstDoseMinutes: 30);
-        var taken = early.MarkTaken(At(14, 23, 0)); // within 2 hours before 00:30
+        var administered = early.MarkAdministered(At(14, 23, 0)); // within 2 hours before 00:30
 
-        Assert.Equal(DoseState.Taken, State(taken, At(15, 0, 40)));
+        Assert.Equal(DoseState.Administered, State(administered, At(15, 0, 40)));
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public class InsulinTests
 
         Assert.False(defaults.Enabled);
         Assert.Null(defaults.Validate());
-        Assert.Null(defaults.LastTakenAt);
+        Assert.Null(defaults.LastAdministeredAt);
     }
 
     [Theory]
@@ -241,10 +241,10 @@ public class InsulinTests
         var e = new InsulinReminderEvaluator();
         Assert.NotNull(Step(e, Once, At(14, 8)));
 
-        var taken = Once.MarkTaken(At(14, 8, 10));
-        Assert.Null(Step(e, taken, At(14, 8, 30)));
-        Assert.Null(Step(e, taken, At(15, 7)));
-        Assert.NotNull(Step(e, taken, At(15, 8)));
+        var administered = Once.MarkAdministered(At(14, 8, 10));
+        Assert.Null(Step(e, administered, At(14, 8, 30)));
+        Assert.Null(Step(e, administered, At(15, 7)));
+        Assert.NotNull(Step(e, administered, At(15, 8)));
     }
 
     [Fact]
@@ -297,10 +297,10 @@ public class InsulinTests
     {
         var e = new InsulinReminderEvaluator();
         Assert.NotNull(Step(e, Twice, At(14, 8)));
-        var morningTaken = Twice.MarkTaken(At(14, 8, 5));
-        Assert.Null(Step(e, morningTaken, At(14, 12)));
+        var morningAdministered = Twice.MarkAdministered(At(14, 8, 5));
+        Assert.Null(Step(e, morningAdministered, At(14, 12)));
 
-        var evening = Step(e, morningTaken, At(14, 20));
+        var evening = Step(e, morningAdministered, At(14, 20));
         Assert.False(evening!.IsReminder);
         Assert.Equal(At(14, 20), evening.Slot);
     }

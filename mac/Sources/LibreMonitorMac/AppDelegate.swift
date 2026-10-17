@@ -320,7 +320,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let sound = model.settings.alerts.sound
         let title = raised.isReminder ? "Reminder: insulin" : "Insulin"
-        Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as taken yet.", sound: sound) { posted in
+        Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as administered yet.", sound: sound) { posted in
             if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
         }
     }
@@ -331,28 +331,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return formatter.string(from: date)
     }
 
-    /// Marks the current dose as taken, or removes the mark. Both ask first: a wrong "taken" would hide a missed dose.
+    /// Marks the current dose as administered, or removes the mark. Both ask first: a wrong "administered" would hide a missed dose.
     private func toggleInsulin() {
         guard let status = model.insulinStatus else { return }
 
         let alert = NSAlert()
         alert.alertStyle = .informational
-        if status.state == .taken {
-            alert.messageText = "Remove the “taken” mark for the \(clockText(status.slot)) dose?"
-            alert.informativeText = "Only do this if you did not take it."
+        if status.state == .administered {
+            alert.messageText = "Remove the “administered” mark for the \(clockText(status.slot)) dose?"
+            alert.informativeText = "Only do this if you did not administer it."
             alert.addButton(withTitle: "Remove mark")
         } else {
-            alert.messageText = "Mark the \(clockText(status.slot)) insulin dose as taken?"
-            alert.addButton(withTitle: "Mark as taken")
+            alert.messageText = "Mark the \(clockText(status.slot)) insulin dose as administered?"
+            alert.addButton(withTitle: "Mark as administered")
         }
         alert.addButton(withTitle: "Cancel")
 
         NSApp.activate(ignoringOtherApps: true)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
-        model.settings.insulin = status.state == .taken
+        model.settings.insulin = status.state == .administered
             ? model.settings.insulin.undone()
-            : model.settings.insulin.markingTaken(at: Date())
+            : model.settings.insulin.markingAdministered(at: Date())
     }
 
     private func showAlerts() {

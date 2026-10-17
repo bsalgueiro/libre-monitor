@@ -143,13 +143,13 @@ struct AlertsView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Insulin").font(.headline)
 
-            Text("A reminder at your usual time, and a syringe icon on the widget to tap once the dose is taken, so you "
+            Text("A reminder at your usual time, and a syringe icon on the widget to tap once the dose is administered, so you "
                 + "can check later whether you already did. Off until you turn it on.")
                 .font(.callout)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Toggle("Remind me to take my insulin", isOn: $insulinEnabled).fontWeight(.semibold)
+            Toggle("Remind me to administer my insulin", isOn: $insulinEnabled).fontWeight(.semibold)
 
             VStack(alignment: .leading, spacing: 8) {
                 Picker("", selection: $dosesPerDay) {
@@ -166,7 +166,7 @@ struct AlertsView: View {
                         .frame(width: 230)
                 }
 
-                Picker("If not marked as taken, remind me", selection: $insulinRepeatMinutes) {
+                Picker("If not marked as administered, remind me", selection: $insulinRepeatMinutes) {
                     ForEach(Self.repeatChoices) { Text($0.label.replacingOccurrences(of: "alert once", with: "remind once")).tag($0.minutes) }
                 }
             }
@@ -235,14 +235,14 @@ struct AlertsView: View {
             return
         }
 
-        // The "taken" mark is kept as it was: only the schedule is edited here.
+        // The "administered" mark is kept as it was: only the schedule is edited here.
         var insulin = originalInsulin
         insulin.enabled = insulinEnabled
         insulin.dosesPerDay = dosesPerDay
         insulin.firstDoseMinutes = Self.minutes(of: firstDose)
         if dosesPerDay == 2 { insulin.secondDoseMinutes = Self.minutes(of: secondDose) }
         insulin.repeatMinutes = insulinRepeatMinutes
-        if !insulin.enabled { insulin.lastTakenAt = nil } // off means nothing about it stays saved
+        if !insulin.enabled { insulin.lastAdministeredAt = nil } // off means nothing about it stays saved
 
         if insulin.enabled, let problem = insulin.validate() {
             error = problem

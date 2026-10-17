@@ -202,7 +202,7 @@ public partial class MainWindow : Window
         if (dialog.ShowDialog() != true || dialog.Result is not { } result || dialog.InsulinResult is not { } insulin) return;
 
         _settings.Alerts = result;
-        _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastTakenAt = null }; // off means nothing stays saved
+        _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastAdministeredAt = null }; // off means nothing stays saved
         _settings.Save();
         _alerts.Reset(); // new thresholds start a fresh episode
         _insulinReminder.Reset();
@@ -219,7 +219,7 @@ public partial class MainWindow : Window
         if (raised is not null)
         {
             var title = raised.IsReminder ? "Reminder: insulin" : "Insulin";
-            _tray.Notify(title, $"Due at {raised.Slot:HH:mm}. Not marked as taken yet.");
+            _tray.Notify(title, $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
             if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
         }
 
@@ -251,12 +251,12 @@ public partial class MainWindow : Window
 
         switch (status.State)
         {
-            case DoseState.Taken:
+            case DoseState.Administered:
                 SyringePath.Stroke = Palette.Brush(theme.InRange);
                 InsulinBadge.Background = Palette.Brush(theme.InRange);
                 InsulinBadgeText.Text = "✓";
                 InsulinBadge.Visibility = Visibility.Visible;
-                InsulinButton.ToolTip = $"Insulin: marked as taken at {DayAndTime(status.TakenAt!.Value)}. Click to undo.";
+                InsulinButton.ToolTip = $"Insulin: marked as administered at {DayAndTime(status.AdministeredAt!.Value)}. Click to undo.";
                 break;
 
             case DoseState.Due:
@@ -264,13 +264,13 @@ public partial class MainWindow : Window
                 InsulinBadge.Background = Palette.Brush(theme.High);
                 InsulinBadgeText.Text = "!";
                 InsulinBadge.Visibility = Visibility.Visible;
-                InsulinButton.ToolTip = $"Insulin: due since {DayAndTime(status.Slot)}, not marked as taken. Click to mark it.";
+                InsulinButton.ToolTip = $"Insulin: due since {DayAndTime(status.Slot)}, not marked as administered. Click to mark it.";
                 break;
 
             default:
                 SyringePath.Stroke = Palette.Brush(theme.Muted);
                 InsulinBadge.Visibility = Visibility.Collapsed;
-                InsulinButton.ToolTip = $"Insulin: next dose at {slot}. Click to mark it as taken early.";
+                InsulinButton.ToolTip = $"Insulin: next dose at {slot}. Click to mark it as administered early.";
                 break;
         }
     }
@@ -284,25 +284,25 @@ public partial class MainWindow : Window
 
     private void InsulinMenu_Click(object sender, RoutedEventArgs e) => ToggleInsulin();
 
-    /// <summary>Turns the reminder off. The last "taken" time is forgotten too, so nothing about it stays saved.</summary>
+    /// <summary>Turns the reminder off. The last "administered" time is forgotten too, so nothing about it stays saved.</summary>
     private void InsulinOff_Click(object sender, RoutedEventArgs e)
     {
-        _settings.Insulin = _settings.Insulin with { Enabled = false, LastTakenAt = null };
+        _settings.Insulin = _settings.Insulin with { Enabled = false, LastAdministeredAt = null };
         _settings.Save();
         _insulinReminder.Reset();
         EvaluateInsulin();
     }
 
-    /// <summary>Marks the current dose as taken, or removes the mark. Both ask first: a wrong "taken" would hide a missed dose.</summary>
+    /// <summary>Marks the current dose as administered, or removes the mark. Both ask first: a wrong "administered" would hide a missed dose.</summary>
     private void ToggleInsulin()
     {
         var status = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local);
         var slot = DayAndTime(status.Slot);
 
-        if (status.State == DoseState.Taken)
+        if (status.State == DoseState.Administered)
         {
             var undo = MessageBox.Show(this,
-                $"Remove the \"taken\" mark for the {slot} dose?\n\nOnly do this if you did not take it.",
+                $"Remove the \"administered\" mark for the {slot} dose?\n\nOnly do this if you did not administer it.",
                 "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (undo != MessageBoxResult.Yes) return;
 
@@ -311,11 +311,11 @@ public partial class MainWindow : Window
         else
         {
             var mark = MessageBox.Show(this,
-                $"Mark the {slot} insulin dose as taken?",
+                $"Mark the {slot} insulin dose as administered?",
                 "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (mark != MessageBoxResult.Yes) return;
 
-            _settings.Insulin = _settings.Insulin.MarkTaken(DateTimeOffset.UtcNow);
+            _settings.Insulin = _settings.Insulin.MarkAdministered(DateTimeOffset.UtcNow);
         }
 
         _settings.Save();
@@ -784,9 +784,9 @@ public partial class MainWindow : Window
 
         InsulinItem.Visibility = InsulinOffItem.Visibility = _settings.Insulin.Enabled ? Visibility.Visible : Visibility.Collapsed;
         InsulinSetupItem.Visibility = _settings.Insulin.Enabled ? Visibility.Collapsed : Visibility.Visible;
-        InsulinItem.Header = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local).State == DoseState.Taken
-            ? "Insulin: undo \"taken\""
-            : "Insulin: mark as taken";
+        InsulinItem.Header = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local).State == DoseState.Administered
+            ? "Insulin: undo \"administered\""
+            : "Insulin: mark as administered";
 
         var snoozedUntil = _alerts.SnoozedUntil(DateTimeOffset.UtcNow);
         ResumeItem.IsEnabled = snoozedUntil is not null;
@@ -903,7 +903,7 @@ public partial class MainWindow : Window
         $"Libre Monitor {typeof(MainWindow).Assembly.GetName().Version?.ToString(3)}\n\n"
         + "Libre Monitor shows glucose data that the LibreLink app has already uploaded, read through LibreLinkUp. It never talks to the sensor and never changes any data.\n\n"
         + "Nothing about your glucose readings is saved on this PC. The only things stored are your login (encrypted, and readable only by your Windows user) "
-        + "and your preferences, such as units, theme, window position, alert limits and the insulin reminder (its times, and when you last marked a dose as taken).\n\n"
+        + "and your preferences, such as units, theme, window position, alert limits and the insulin reminder (its times, and when you last marked a dose as administered).\n\n"
         + "It is not a medical device and is not affiliated with Abbott. Do not use it for treatment decisions.",
         "About Libre Monitor", MessageBoxButton.OK, MessageBoxImage.Information);
 

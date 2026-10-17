@@ -6,13 +6,13 @@ import Foundation
 public enum DoseState: Sendable, Equatable {
     /// The next dose is not due yet and nothing has been marked for it.
     case upcoming
-    /// The dose time has passed and the dose has not been marked as taken.
+    /// The dose time has passed and the dose has not been marked as administered.
     case due
-    /// The user marked this dose as taken.
-    case taken
+    /// The user marked this dose as administered.
+    case administered
 }
 
-/// Settings for the daily insulin reminder, plus the time the user last marked a dose as taken.
+/// Settings for the daily insulin reminder, plus the time the user last marked a dose as administered.
 /// That one timestamp is all that is kept: no amounts and no history. The reminder is off by default.
 public struct InsulinSettings: Codable, Equatable, Sendable {
     /// With two doses a day, the two times must be at least this far apart (both ways round the clock).
@@ -27,8 +27,8 @@ public struct InsulinSettings: Codable, Equatable, Sendable {
     public var secondDoseMinutes: Int
     /// Reminder interval while the dose is still not marked; 0 means remind once.
     public var repeatMinutes: Int
-    /// When the user last tapped "taken"; nil if never or undone.
-    public var lastTakenAt: Date?
+    /// When the user last tapped "administered"; nil if never or undone.
+    public var lastAdministeredAt: Date?
 
     public init(
         enabled: Bool = false,
@@ -36,14 +36,14 @@ public struct InsulinSettings: Codable, Equatable, Sendable {
         firstDoseMinutes: Int = 8 * 60,
         secondDoseMinutes: Int = 20 * 60,
         repeatMinutes: Int = 30,
-        lastTakenAt: Date? = nil)
+        lastAdministeredAt: Date? = nil)
     {
         self.enabled = enabled
         self.dosesPerDay = dosesPerDay
         self.firstDoseMinutes = firstDoseMinutes
         self.secondDoseMinutes = secondDoseMinutes
         self.repeatMinutes = repeatMinutes
-        self.lastTakenAt = lastTakenAt
+        self.lastAdministeredAt = lastAdministeredAt
     }
 
     /// The dose times, earliest first.
@@ -73,17 +73,17 @@ public struct InsulinSettings: Codable, Equatable, Sendable {
         return nil
     }
 
-    /// The same settings with the current dose marked as taken now.
-    public func markingTaken(at now: Date) -> InsulinSettings {
+    /// The same settings with the current dose marked as administered now.
+    public func markingAdministered(at now: Date) -> InsulinSettings {
         var copy = self
-        copy.lastTakenAt = now
+        copy.lastAdministeredAt = now
         return copy
     }
 
-    /// The same settings with the "taken" mark removed (for a tap by mistake).
+    /// The same settings with the "administered" mark removed (for a tap by mistake).
     public func undone() -> InsulinSettings {
         var copy = self
-        copy.lastTakenAt = nil
+        copy.lastAdministeredAt = nil
         return copy
     }
 }
@@ -93,13 +93,13 @@ public struct DoseStatus: Equatable, Sendable {
     public let state: DoseState
     /// The scheduled time of the dose this status is about.
     public let slot: Date
-    /// When it was marked taken; only set when `state` is `.taken`.
-    public let takenAt: Date?
+    /// When it was marked administered; only set when `state` is `.administered`.
+    public let administeredAt: Date?
 
-    public init(state: DoseState, slot: Date, takenAt: Date?) {
+    public init(state: DoseState, slot: Date, administeredAt: Date?) {
         self.state = state
         self.slot = slot
-        self.takenAt = takenAt
+        self.administeredAt = administeredAt
     }
 }
 
@@ -132,11 +132,11 @@ public enum InsulinSchedule {
     public static func status(_ settings: InsulinSettings, now: Date, calendar: Calendar) -> DoseStatus {
         let slot = slot(for: settings, at: now, calendar: calendar)
 
-        if let taken = settings.lastTakenAt, self.slot(for: settings, at: taken, calendar: calendar) == slot {
-            return DoseStatus(state: .taken, slot: slot, takenAt: taken)
+        if let administered = settings.lastAdministeredAt, self.slot(for: settings, at: administered, calendar: calendar) == slot {
+            return DoseStatus(state: .administered, slot: slot, administeredAt: administered)
         }
 
-        return DoseStatus(state: now >= slot ? .due : .upcoming, slot: slot, takenAt: nil)
+        return DoseStatus(state: now >= slot ? .due : .upcoming, slot: slot, administeredAt: nil)
     }
 
     /// The wall-clock time on that day. A time the clocks skip (spring forward) lands after the gap.
@@ -160,7 +160,7 @@ public struct InsulinReminderRaised: Equatable, Sendable {
     }
 }
 
-/// Decides when to remind about a dose that is due and not marked as taken. One instance follows one schedule.
+/// Decides when to remind about a dose that is due and not marked as administered. One instance follows one schedule.
 /// Reminders repeat at the chosen interval until the dose is marked or `reminderWindow` has passed.
 /// The dose still shows as due after that, but the app stops notifying (no night-time reminders for a missed dose).
 public final class InsulinReminderEvaluator {

@@ -42,6 +42,7 @@ struct WidgetView: View {
     @Environment(\.colorScheme) private var colorScheme
     @State private var hovering = false
     @State private var overCloseButton = false
+    @State private var overInsulin = false
 
     private static let defaultWidth: CGFloat = 280
     private static let defaultHeight: CGFloat = 172
@@ -93,29 +94,60 @@ struct WidgetView: View {
                 .opacity(hovering || overCloseButton ? 1 : 0)
                 .animation(.easeInOut(duration: 0.12), value: hovering || overCloseButton)
         }
+        .overlay(alignment: .bottom) {
+            // The system tooltip does not appear reliably on a floating widget, so this one is drawn in the card, in
+            // the same style as the graph's hover label.
+            if overInsulin, let dose = model.insulinStatus {
+                insulinTooltip(dose, theme: theme)
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 10)
+                    .allowsHitTesting(false)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.12), value: overInsulin)
         .contextMenu { menuContent }
     }
 
-    /// The insulin check: grey = not due yet, amber ! = due, green tick = taken. Only shown while the
-    /// reminder is on. Clicking asks to mark the dose as taken (or to undo that).
-    private func insulinButton(_ status: DoseStatus, theme: WidgetTheme, scale: CGFloat = 1) -> some View {
-        let color: Color
-        let mark: String?
-        let help: String
-        switch status.state {
-        case .taken:
-            color = theme.inRange
-            mark = "✓"
-            help = "Insulin: marked as taken at \(dayAndTime(status.takenAt ?? status.slot)). Click to undo."
-        case .due:
-            color = theme.high
-            mark = "!"
-            help = "Insulin: due since \(dayAndTime(status.slot)), not marked as taken. Click to mark it."
-        case .upcoming:
-            color = theme.muted
-            mark = nil
-            help = "Insulin: next dose at \(dayAndTime(status.slot)). Click to mark it as taken early."
+    private func insulinColor(_ state: DoseState, theme: WidgetTheme) -> Color {
+        switch state {
+        case .administered: return theme.inRange
+        case .due: return theme.high
+        case .upcoming: return theme.muted
         }
+    }
+
+    /// What the syringe means right now, for the hover message.
+    private func insulinMessage(_ status: DoseStatus) -> String {
+        switch status.state {
+        case .administered:
+            return "Insulin: marked as administered at \(dayAndTime(status.administeredAt ?? status.slot)). Click to undo."
+        case .due:
+            return "Insulin: due since \(dayAndTime(status.slot)), not marked as administered. Click to mark it."
+        case .upcoming:
+            return "Insulin: next dose at \(dayAndTime(status.slot)). Click to mark it as administered early."
+        }
+    }
+
+    private func insulinTooltip(_ status: DoseStatus, theme: WidgetTheme) -> some View {
+        Text(insulinMessage(status))
+            .font(.system(size: 11))
+            .foregroundColor(theme.text)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(
+                RoundedRectangle(cornerRadius: 6)
+                    .fill(theme.pill)
+                    .overlay(RoundedRectangle(cornerRadius: 6).stroke(insulinColor(status.state, theme: theme).opacity(0.67), lineWidth: 1)))
+    }
+
+    /// The insulin check: grey = not due yet, amber ! = due, green tick = administered. Only shown while the
+    /// reminder is on. Clicking asks to mark the dose as administered (or to undo that).
+    private func insulinButton(_ status: DoseStatus, theme: WidgetTheme, scale: CGFloat = 1) -> some View {
+        let color = insulinColor(status.state, theme: theme)
+        let mark: String? = status.state == .administered ? "✓" : (status.state == .due ? "!" : nil)
 
         return Button { actions.toggleInsulin() } label: {
             ZStack(alignment: .bottomTrailing) {
@@ -135,7 +167,7 @@ struct WidgetView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .help(help)
+        .onHover { overInsulin = $0 }
     }
 
     private func dayAndTime(_ date: Date) -> String {
@@ -341,13 +373,13 @@ struct WidgetView: View {
         Button("Alerts…") { actions.showAlerts() }
 
         if let status = model.insulinStatus {
-            Button(status.state == .taken ? "Insulin: undo “taken”" : "Insulin: mark as taken") {
+            Button(status.state == .administered ? "Insulin: undo “administered”" : "Insulin: mark as administered") {
                 actions.toggleInsulin()
             }
-            // Turning it off also forgets the last "taken" time, so nothing about it stays saved.
+            // Turning it off also forgets the last "administered" time, so nothing about it stays saved.
             Button("Turn off the insulin reminder") {
                 model.settings.insulin.enabled = false
-                model.settings.insulin.lastTakenAt = nil
+                model.settings.insulin.lastAdministeredAt = nil
             }
         } else {
             Button("Set up the insulin reminder…") { actions.showAlerts() }
