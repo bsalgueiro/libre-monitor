@@ -33,6 +33,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let alertsController = AlertsWindowController()
     private let alertEvaluator = AlertEvaluator()
     private let insulinEvaluator = InsulinReminderEvaluator()
+    private let sensorEvaluator = SensorExpiryEvaluator()
     private var lastAlertSettings = AlertSettings()
     private var lastInsulinSettings = InsulinSettings()
     private var tickTimer: Timer?
@@ -236,6 +237,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.model.apply(update)
                 self?.refreshStatusItem()
                 self?.evaluateAlerts()
+                self?.evaluateSensor()
             }
         }
         monitor.onFailure = { [weak self] _, fatal in
@@ -286,6 +288,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         refreshStatusItem()
         evaluateAlerts()
         evaluateInsulin() // follows the clock, not the readings, so it runs whatever the glucose state is
+        evaluateSensor()
+    }
+
+    // MARK: - Sensor
+
+    private func evaluateSensor() {
+        let now = Date()
+        let snoozed = model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
+        guard let raised = sensorEvaluator.evaluate(model.sensor, now: now, snoozedUntil: snoozed) else { return }
+
+        Notifier.shared.post(
+            title: "Sensor ending soon",
+            body: "The sensor is due to end about \(formatDateTime(raised.endsAt)).",
+            sound: false)
     }
 
     // MARK: - Alerts

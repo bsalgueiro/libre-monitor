@@ -168,6 +168,50 @@ public class LibreLinkUpClientTests
         Assert.Equal(Trend.Unknown, snapshot.History[0].Trend);
     }
 
+    private static async Task<SensorInfo?> SensorFrom(string dataJson)
+    {
+        var (client, _) = Create(new StubHandler().Enqueue(LoginOk).Enqueue($$"""{"status":0,"data":{{dataJson}}}"""));
+        await client.LoginAsync("a@b.c", "pw");
+        return (await client.GetGraphAsync("p1")).Sensor;
+    }
+
+    [Fact]
+    public async Task GetGraph_ReadsTheSensorActivationTime()
+    {
+        var sensor = await SensorFrom("""{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"deviceId":"d","sn":"X","a":1791551084,"w":60,"pt":3,"s":true,"lj":false},"device":{}}]}""");
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 9, 13, 4, 44, TimeSpan.Zero), sensor!.ActivatedAt);
+    }
+
+    [Fact]
+    public async Task GetGraph_UsesTheNewestActiveSensor_AndIgnoresInactiveOnes()
+    {
+        var sensor = await SensorFrom("""{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"a":1791551084,"s":true}},{"sensor":{"a":1792000000,"s":true}},{"sensor":{"a":1793000000,"s":false}}]}""");
+
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1792000000), sensor!.ActivatedAt);
+    }
+
+    [Fact]
+    public async Task GetGraph_FallsBackToTheConnectionsSensor()
+    {
+        var sensor = await SensorFrom("""{"connection":{"sensor":{"a":1791551084}},"graphData":[]}""");
+
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1791551084), sensor!.ActivatedAt);
+    }
+
+    [Theory]
+    [InlineData("""{"connection":{},"graphData":[]}""")]
+    [InlineData("""{"connection":{},"graphData":[],"activeSensors":[]}""")]
+    [InlineData("""{"connection":{},"graphData":[],"activeSensors":"oops"}""")]
+    [InlineData("""{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"sn":"X"}}]}""")]
+    [InlineData("""{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"a":"1791551084"}}]}""")]
+    [InlineData("""{"connection":{},"graphData":[],"activeSensors":[{"sensor":{"a":5}}]}""")]
+    [InlineData("""{"connection":{},"graphData":[],"activeSensors":[{"sensor":null},7,{}]}""")]
+    public async Task GetGraph_WithoutAUsableSensor_ReturnsNullSensor_AndDoesNotFail(string dataJson)
+    {
+        Assert.Null(await SensorFrom(dataJson));
+    }
+
     [Fact]
     public async Task GetGraph_WithNoMeasurement_ReturnsNullCurrent()
     {

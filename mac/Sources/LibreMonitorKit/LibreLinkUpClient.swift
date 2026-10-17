@@ -127,7 +127,42 @@ public actor LibreLinkUpClient {
             history = try graph.map { try Self.parseReading($0) }
         }
 
-        return GlucoseSnapshot(current: current, history: history)
+        return GlucoseSnapshot(current: current, history: history, sensor: Self.parseSensor(data))
+    }
+
+    /// The activation time of the sensor in use, or nil when the service does not say. The answer is optional extra
+    /// information, so anything unexpected here means "unknown", never a service change. Only the activation time is
+    /// read: the serial number and device ids are never touched.
+    private static func parseSensor(_ data: [String: Any]) -> SensorInfo? {
+        var newest: Date?
+
+        func isBoolean(_ number: NSNumber) -> Bool { CFGetTypeID(number) == CFBooleanGetTypeID() }
+
+        func consider(_ value: Any?) {
+            guard let sensor = value as? [String: Any] else { return }
+
+            // "s" says whether the sensor is the active one; only an explicit false rules it out.
+            if let active = sensor["s"] as? NSNumber, isBoolean(active), !active.boolValue { return }
+
+            // From 2001 to 2096: anything else is not a date.
+            guard let activated = sensor["a"] as? NSNumber, !isBoolean(activated) else { return }
+            let seconds = activated.int64Value
+            guard seconds >= 1_000_000_000, seconds <= 4_000_000_000 else { return }
+
+            let at = Date(timeIntervalSince1970: TimeInterval(seconds))
+            if newest == nil || at > newest! { newest = at }
+        }
+
+        if let list = data["activeSensors"] as? [Any] {
+            for entry in list { consider((entry as? [String: Any])?["sensor"]) }
+        }
+
+        // The same information also appears on the connection, for answers that carry no list.
+        if newest == nil, let connection = data["connection"] as? [String: Any] {
+            consider(connection["sensor"])
+        }
+
+        return newest.map { SensorInfo(activatedAt: $0) }
     }
 
     private static func requireObject(_ json: Any) throws -> [String: Any] {

@@ -42,6 +42,8 @@
         </Border.Effect>
         <Border.ContextMenu>
             <ContextMenu x:Name="Menu" Opened="Menu_Opened">
+                <MenuItem x:Name="SensorItem" IsEnabled="False" Visibility="Collapsed"/>
+                <Separator x:Name="SensorSeparator" Visibility="Collapsed"/>
                 <MenuItem x:Name="Range3" Header="Last 3 hours" Click="Range_Click" Tag="3"/>
                 <MenuItem x:Name="Range6" Header="Last 6 hours" Click="Range_Click" Tag="6"/>
                 <MenuItem x:Name="Range12" Header="Last 12 hours" Click="Range_Click" Tag="12"/>
