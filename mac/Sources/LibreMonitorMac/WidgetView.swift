@@ -159,9 +159,10 @@ struct WidgetView: View {
                     .frame(width: 25 * scale, height: 25 * scale)
 
                 if let mark {
+                    // Never smaller than a legible mark, however small the syringe is drawn.
                     Circle().fill(color)
-                        .frame(width: 12 * scale, height: 12 * scale)
-                        .overlay(Text(mark).font(.system(size: 8.5 * scale, weight: .heavy)).foregroundColor(.white))
+                        .frame(width: max(10, 12 * scale), height: max(10, 12 * scale))
+                        .overlay(Text(mark).font(.system(size: max(7, 8.5 * scale), weight: .heavy)).foregroundColor(.white))
                 }
             }
             .frame(width: 28 * scale, height: 28 * scale)
@@ -198,15 +199,19 @@ struct WidgetView: View {
 
             Spacer(minLength: 16 * spacingScale)
 
-            if insulinInHeader, let dose = model.insulinStatus {
-                insulinButton(dose, theme: theme, scale: min(max(valueScale, 0.7), 1.7))
-                    .padding(.horizontal, -2 * infoScale) // the drawn syringe is smaller than its click area
-            }
+            // The syringe shares the unit's line, so it takes no extra width from the value.
+            let dose = insulinInHeader ? model.insulinStatus : nil
+            let iconScale = min(max(valueScale, 0.85), model.settings.showGraph ? 1.7 : 4) * 0.78
 
             VStack(alignment: .trailing, spacing: 0) {
-                Text(model.settings.unit.label)
-                    .font(.system(size: 11 * infoScale))
-                    .foregroundColor(theme.muted)
+                HStack(spacing: 2 * infoScale) {
+                    if let dose {
+                        insulinButton(dose, theme: theme, scale: iconScale)
+                    }
+                    Text(model.settings.unit.label)
+                        .font(.system(size: 11 * infoScale))
+                        .foregroundColor(theme.muted)
+                }
                 Text(status.text)
                     .font(.system(size: 11 * infoScale))
                     .foregroundColor(status.color)
@@ -215,15 +220,19 @@ struct WidgetView: View {
             }
             // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes
             // the width of this block and everything beside it moves or resizes.
-            .frame(minWidth: Self.statusColumnWidth(scale: infoScale), alignment: .trailing)
+            .frame(minWidth: Self.statusColumnWidth(scale: infoScale, iconWidth: dose == nil ? 0 : 28 * iconScale), alignment: .trailing)
             .layoutPriority(1)
         }
     }
 
     /// Width of the widest everyday age text ("59 min ago") at the given text scale.
-    private static func statusColumnWidth(scale: CGFloat) -> CGFloat {
+    private static func statusColumnWidth(scale: CGFloat, iconWidth: CGFloat) -> CGFloat {
         let font = NSFont.systemFont(ofSize: 11 * scale)
-        return ceil(("59 min ago" as NSString).size(withAttributes: [.font: font]).width)
+        func width(_ text: String) -> CGFloat { ceil((text as NSString).size(withAttributes: [.font: font]).width) }
+
+        // Either the age line, or the syringe plus the longest unit ("mmol/L") on the unit line.
+        let unitLine = iconWidth == 0 ? 0 : iconWidth + 2 * scale + width("mmol/L")
+        return max(width("59 min ago"), unitLine)
     }
 
     /// The normal layout: header on top, graph below. Text scales with the card.
@@ -275,7 +284,7 @@ struct WidgetView: View {
 
         // The syringe sits in the value's row, so it adds to the width of both arrangements.
         let withInsulin = model.settings.insulin.enabled
-        let sideBySide = fit(CGSize(width: Self.sideBySideDesign.width + (withInsulin ? 34 : 0), height: Self.sideBySideDesign.height))
+        let sideBySide = fit(Self.sideBySideDesign)
         let stacked = fit(CGSize(width: Self.stackedDesign.width + (withInsulin ? 10 : 0), height: Self.stackedDesign.height))
         return stacked > sideBySide ? (true, stacked) : (false, sideBySide)
     }

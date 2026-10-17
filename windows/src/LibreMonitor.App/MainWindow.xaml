@@ -103,8 +103,33 @@
                 </StackPanel>
 
                 <StackPanel x:Name="InfoStack" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,18,0">
-                    <TextBlock x:Name="UnitText" Text="mg/dL" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"/>
-                    <TextBlock x:Name="AgeText" Text="connecting" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"/>
+                    <!-- The syringe shares the unit's line, so it takes no extra width from the value. -->
+                    <StackPanel x:Name="UnitRow" Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- Insulin check: grey = not due yet, amber ! = due, green tick = administered. Hidden unless the reminder is on. -->
+                <Grid x:Name="InsulinButton" Width="28" Height="28" VerticalAlignment="Center"
+                      Margin="0,0,2,0" Background="Transparent" Cursor="Hand" Visibility="Collapsed"
+                      MouseLeftButtonDown="Insulin_MouseLeftButtonDown"
+                      ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="12000">
+                    <Viewbox Margin="2,4,4,2">
+                        <Canvas Width="24" Height="24">
+                            <Path x:Name="SyringePath" StrokeThickness="1.7" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                  Data="M9,6 L15,6 L15,18 L9,18 Z M7,6 L17,6 M12,6 L12,2 M9,2 L15,2 M12,18 L12,23 M15,10 L13,10 M15,13 L13,13 M15,16 L13,16"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="45" CenterX="12" CenterY="12"/>
+                                </Path.RenderTransform>
+                            </Path>
+                        </Canvas>
+                    </Viewbox>
+                    <Border x:Name="InsulinBadge" Width="13" Height="13" CornerRadius="7" HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                            Visibility="Collapsed">
+                        <TextBlock x:Name="InsulinBadgeText" FontSize="9" FontWeight="Bold" Foreground="White"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
+                    </Border>
+                </Grid>
+                        <TextBlock x:Name="UnitText" Text="mg/dL" FontSize="11" Foreground="{DynamicResource MutedBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    <TextBlock x:Name="AgeText" Text="connecting" VerticalAlignment="Center" FontSize="11" Foreground="{DynamicResource MutedBrush}" HorizontalAlignment="Right"/>
                 </StackPanel>
 
                 <TextBlock x:Name="CloseButton" Text="✕" FontSize="11" Foreground="{DynamicResource MutedBrush}" Opacity="0"
@@ -115,28 +140,6 @@
             <!-- The graph draws its "now" dot 5px past its plot, so the plot ends exactly at the card padding like the left side. -->
             <local:GlucoseGraph x:Name="Graph" Grid.Row="1" Margin="0,2,-5,0"/>
 
-            <!-- Insulin check: grey = not due yet, amber ! = due, green tick = administered. Hidden unless the reminder is on. -->
-            <Grid x:Name="InsulinButton" Grid.RowSpan="2" Width="28" Height="28" HorizontalAlignment="Right" VerticalAlignment="Center"
-                  Margin="0,0,16,0" Background="Transparent" Cursor="Hand" Visibility="Collapsed"
-                  MouseLeftButtonDown="Insulin_MouseLeftButtonDown"
-                  ToolTipService.InitialShowDelay="150" ToolTipService.ShowDuration="12000">
-                <Viewbox Margin="2,4,4,2">
-                    <Canvas Width="24" Height="24">
-                        <Path x:Name="SyringePath" StrokeThickness="1.7" StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
-                              Data="M9,6 L15,6 L15,18 L9,18 Z M7,6 L17,6 M12,6 L12,2 M9,2 L15,2 M12,18 L12,23 M15,10 L13,10 M15,13 L13,13 M15,16 L13,16"
-                              RenderTransformOrigin="0.5,0.5">
-                            <Path.RenderTransform>
-                                <RotateTransform Angle="45" CenterX="12" CenterY="12"/>
-                            </Path.RenderTransform>
-                        </Path>
-                    </Canvas>
-                </Viewbox>
-                <Border x:Name="InsulinBadge" Width="13" Height="13" CornerRadius="7" HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                        Visibility="Collapsed">
-                    <TextBlock x:Name="InsulinBadgeText" FontSize="9" FontWeight="Bold" Foreground="White"
-                               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-1,0,0"/>
-                </Border>
-            </Grid>
         </Grid>
     </Border>
 

@@ -597,6 +597,7 @@ public partial class MainWindow : Window
             InfoStack.HorizontalAlignment = HorizontalAlignment.Center;
             InfoStack.Orientation = Orientation.Horizontal;
             UnitText.HorizontalAlignment = HorizontalAlignment.Left;
+            UnitRow.HorizontalAlignment = HorizontalAlignment.Left;
             AgeText.HorizontalAlignment = HorizontalAlignment.Left;
         }
         else
@@ -606,6 +607,7 @@ public partial class MainWindow : Window
             InfoStack.HorizontalAlignment = HorizontalAlignment.Right;
             InfoStack.Orientation = Orientation.Vertical;
             UnitText.HorizontalAlignment = HorizontalAlignment.Right;
+            UnitRow.HorizontalAlignment = HorizontalAlignment.Right;
             AgeText.HorizontalAlignment = HorizontalAlignment.Right;
         }
     }
@@ -631,8 +633,14 @@ public partial class MainWindow : Window
 
         // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes the
         // width of this block, and everything beside it moves or resizes.
+        // The syringe shares the unit's line, so it is sized with the text and counted in that line's width.
+        var showIcon = InsulinButton.Visibility == Visibility.Visible;
+        var iconSize = 22 * Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4);
+        InsulinButton.Width = InsulinButton.Height = iconSize;
+
         var age = TextWidth("59 min ago", AgeText.FontSize);
-        InfoStack.MinWidth = stacked ? TextWidth("mmol/L", UnitText.FontSize) + UnitText.Margin.Right + age : age;
+        var unitLine = TextWidth("mmol/L", UnitText.FontSize) + (showIcon ? iconSize + InsulinButton.Margin.Right : 0);
+        InfoStack.MinWidth = stacked ? unitLine + UnitText.Margin.Right + age : Math.Max(age, unitLine);
     }
 
     private double TextWidth(string text, double fontSize)
@@ -677,30 +685,15 @@ public partial class MainWindow : Window
             ArrangeHeader(HeaderArrangement.SideBySide);
             SetHeaderFonts(scale, small);
             InfoStack.Margin = new Thickness(0);
-
-            // The syringe sits in the header row, centred vertically, just left of the unit and age text.
-            InfoStack.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-            Grid.SetRow(InsulinButton, 0);
-            Grid.SetRowSpan(InsulinButton, 1);
-            InsulinButton.VerticalAlignment = VerticalAlignment.Center;
-            InsulinButton.Width = InsulinButton.Height = 28 * Math.Clamp(scale, 0.7, 1.7);
-            InsulinButton.Margin = new Thickness(0, 0, InfoStack.DesiredSize.Width + 4 * small, 0);
             return;
         }
 
         // The close-button margin is dropped here: it does not scale with the text, so keeping it would make
         // the value and the info block collide in narrow cards. The card padding is also tighter, to give the value room.
-        // With the insulin icon shown, a strip on the right keeps it clear of the value.
-        var iconStrip = _settings.Insulin.Enabled ? 22 : 0;
-        ContentGrid.Margin = new Thickness(10, 6, 10 + iconStrip, 6);
-        Grid.SetRow(InsulinButton, 0);
-        Grid.SetRowSpan(InsulinButton, 2);
-        InsulinButton.VerticalAlignment = VerticalAlignment.Center;
-        InsulinButton.Width = InsulinButton.Height = 28;
-        InsulinButton.Margin = new Thickness(0, 0, -iconStrip, 0);
+        ContentGrid.Margin = new Thickness(10, 6, 10, 6);
         InfoStack.Margin = new Thickness(0);
 
-        var availableWidth = ActualWidth - 24 - 20 - iconStrip; // shadow margin, then the card's own padding
+        var availableWidth = ActualWidth - 24 - 20; // shadow margin, then the card's own padding
         var availableHeight = ActualHeight - 24 - 12;
 
         double Fit(Size natural) =>
