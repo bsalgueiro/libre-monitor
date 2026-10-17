@@ -338,11 +338,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         alert.alertStyle = .informational
         if status.state == .administered {
-            alert.messageText = "Remove the “administered” mark for the \(clockText(status.slot)) dose?"
-            alert.informativeText = "Only do this if you did not administer it."
+            alert.messageText = "Remove the “administered” mark?"
+            alert.informativeText = "Insulin administered on \(formatDateTime(status.administeredAt ?? status.slot)).\n"
+                + "Only do this if you did not administer it."
             alert.addButton(withTitle: "Remove mark")
         } else {
-            alert.messageText = "Mark the \(clockText(status.slot)) insulin dose as administered?"
+            alert.messageText = "Mark the \(formatDateTime(status.slot)) insulin dose as administered?"
             alert.addButton(withTitle: "Mark as administered")
         }
         alert.addButton(withTitle: "Cancel")

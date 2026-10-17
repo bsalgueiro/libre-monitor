@@ -132,12 +132,7 @@ struct WidgetView: View {
     }
 
     /// Date and time in the format of the Mac's region settings, for the syringe's hover message.
-    private func stamp(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
+    private func stamp(_ date: Date) -> String { formatDateTime(date) }
 
     private func insulinTooltip(_ status: DoseStatus, theme: WidgetTheme) -> some View {
         Text(insulinMessage(status))
@@ -181,11 +176,6 @@ struct WidgetView: View {
         .onHover { overInsulin = $0 }
     }
 
-    private func dayAndTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = Calendar.current.isDateInToday(date) ? "HH:mm" : "EEE HH:mm"
-        return formatter.string(from: date)
-    }
 
     /// Value, arrow and unit/status, shared by both layouts so they can never drift apart.
     /// `valueScale` and `infoScale` size the text; `spacingScale` keeps the gaps in proportion.

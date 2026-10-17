@@ -233,12 +233,6 @@ public partial class MainWindow : Window
         return $"{local.ToString("d", CultureInfo.CurrentCulture)} {local.ToString("t", CultureInfo.CurrentCulture)}";
     }
 
-    private static string DayAndTime(DateTimeOffset moment)
-    {
-        var local = moment.ToLocalTime();
-        return local.Date == DateTime.Today ? local.ToString("HH:mm") : local.ToString("ddd HH:mm");
-    }
-
     /// <summary>The syringe: grey before the dose is due, amber with ! once due, green with a tick once marked.</summary>
     private void RenderInsulin()
     {
@@ -304,12 +298,11 @@ public partial class MainWindow : Window
     private void ToggleInsulin()
     {
         var status = InsulinSchedule.Status(_settings.Insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local);
-        var slot = DayAndTime(status.Slot);
 
         if (status.State == DoseState.Administered)
         {
             var undo = MessageBox.Show(this,
-                $"Remove the \"administered\" mark for the {slot} dose?\n\nOnly do this if you did not administer it.",
+                $"Remove the \"administered\" mark?\n\nInsulin administered on {Stamp(status.AdministeredAt ?? status.Slot)}.\nOnly do this if you did not administer it.",
                 "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (undo != MessageBoxResult.Yes) return;
 
@@ -318,7 +311,7 @@ public partial class MainWindow : Window
         else
         {
             var mark = MessageBox.Show(this,
-                $"Mark the {slot} insulin dose as administered?",
+                $"Mark the {Stamp(status.Slot)} insulin dose as administered?",
                 "Insulin", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No);
             if (mark != MessageBoxResult.Yes) return;
 
