@@ -588,8 +588,23 @@ public partial class MainWindow : Window
         Stacked,
     }
 
+    /// <summary>
+    /// The syringe sits beside the unit and age lines, or, when those are stacked under the value, right of the arrow
+    /// (as on the Mac), so it does not end up on the unit line.
+    /// </summary>
+    private void PlaceInsulinButton(bool besideArrow)
+    {
+        var target = besideArrow ? ValueStack : InfoBlock;
+        if (InsulinButton.Parent == target) return;
+
+        ((Panel)InsulinButton.Parent).Children.Remove(InsulinButton);
+        target.Children.Insert(besideArrow ? target.Children.Count : 0, InsulinButton);
+    }
+
     private void ArrangeHeader(HeaderArrangement arrangement)
     {
+        PlaceInsulinButton(arrangement == HeaderArrangement.Stacked);
+
         if (arrangement == HeaderArrangement.Stacked)
         {
             Grid.SetRow(InfoBlock, 1);
@@ -631,9 +646,15 @@ public partial class MainWindow : Window
 
         // A fixed width, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago" changes the
         // width of this block, and everything beside it moves or resizes.
-        // The syringe sits beside the unit and age lines, centred on them. It is sized with the text.
-        InsulinButton.Width = InsulinButton.Height = 26 * Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4);
-        InsulinButton.Margin = new Thickness(0, 0, 8 * infoScale, 0);
+        // The syringe is sized with the text: beside the unit and age lines it is centred on them, and beside the
+        // arrow (stacked layout) it is a little smaller and sits at the arrow's side.
+        var besideArrow = stacked;
+        InsulinButton.Width = InsulinButton.Height = 26 * (besideArrow
+            ? Math.Clamp(valueScale, 0.6, 2)
+            : Math.Clamp(valueScale, 0.85, _settings.ShowGraph ? 1.7 : 4));
+        InsulinButton.Margin = besideArrow
+            ? new Thickness(10 * valueScale, 0, 0, 0)
+            : new Thickness(0, 0, 8 * infoScale, 0);
 
         // A fixed width for the text, as wide as the longest normal age text. Otherwise "just now" becoming "1 min ago"
         // changes the width of this block, and everything beside it moves or resizes.
