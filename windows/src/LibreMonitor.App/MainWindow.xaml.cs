@@ -173,8 +173,8 @@ public partial class MainWindow : Window
     {
         var unit = _settings.Unit;
         var low = alert.Kind == AlertKind.Low;
-        var title = (_simulation is not null ? "SIMULATED · " : string.Empty)
-            + (alert.IsReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose"));
+        // One message, however many times it repeats: the title says what it is, the body carries the reading.
+        var title = (_simulation is not null ? "SIMULATED · " : string.Empty) + $"{(low ? "Low" : "High")} glucose alert";
         var text = $"{GlucoseUnits.Format(alert.Reading.MgPerDl, unit, CultureInfo.CurrentCulture)} {unit.Label()} "
             + $"{alert.Reading.Trend.ToArrow()} · {FormatAge(now - alert.Reading.TimestampUtc)}";
 
@@ -220,8 +220,7 @@ public partial class MainWindow : Window
         var raised = _insulinReminder.Evaluate(_settings.Insulin, now, TimeZoneInfo.Local, _alerts.SnoozedUntil(now));
         if (raised is not null)
         {
-            var title = raised.IsReminder ? "Reminder: insulin" : "Insulin";
-            _tray.Notify(title, $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
+            _tray.Notify("Insulin reminder", $"Due at {raised.Slot:HH:mm}. Not marked as administered yet.");
             if (_settings.Alerts.Sound) System.Media.SystemSounds.Exclamation.Play();
         }
 

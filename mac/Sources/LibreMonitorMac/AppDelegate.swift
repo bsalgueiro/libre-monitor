@@ -306,7 +306,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func deliver(_ alert: AlertRaised, now: Date) {
         let unit = model.settings.unit
         let low = alert.kind == .low
-        var title = alert.isReminder ? (low ? "Still low" : "Still high") : (low ? "Low glucose" : "High glucose")
+        // One message, however many times it repeats: the title says what it is, the body carries the reading.
+        var title = "\(low ? "Low" : "High") glucose alert"
         if model.isSimulated { title = "SIMULATED · " + title }
 
         let value = GlucoseUnits.format(alert.reading.mgPerDl, unit: unit)
@@ -329,8 +330,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         else { return }
 
         let sound = model.settings.alerts.sound
-        let title = raised.isReminder ? "Reminder: insulin" : "Insulin"
-        Notifier.shared.post(title: title, body: "Due at \(clockText(raised.slot)). Not marked as administered yet.", sound: sound) { posted in
+        let body = "Due at \(clockText(raised.slot)). Not marked as administered yet."
+        Notifier.shared.post(title: "Insulin reminder", body: body, sound: sound) { posted in
             if !posted && sound { DispatchQueue.main.async { NSSound.beep() } }
         }
     }
