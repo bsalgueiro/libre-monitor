@@ -129,6 +129,23 @@ public enum InsulinSchedule {
         return best ?? day
     }
 
+    /// - Returns: the scheduled time of the dose after `slot`.
+    public static func nextSlot(after slot: Date, settings: InsulinSettings, calendar: Calendar) -> Date {
+        let day = calendar.startOfDay(for: slot)
+        var best: Date?
+
+        for offset in 0...1 {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: day) else { continue }
+            for minutes in settings.doseMinutes {
+                let candidate = slotAt(date, minutes: minutes, calendar: calendar)
+                if candidate > slot && (best == nil || candidate < best!) { best = candidate }
+            }
+        }
+
+        // The next day always has a slot after this one, so the fallback is never used.
+        return best ?? slot.addingTimeInterval(24 * 3600)
+    }
+
     public static func status(_ settings: InsulinSettings, now: Date, calendar: Calendar) -> DoseStatus {
         let slot = slot(for: settings, at: now, calendar: calendar)
 

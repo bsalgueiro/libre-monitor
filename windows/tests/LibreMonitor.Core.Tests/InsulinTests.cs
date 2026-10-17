@@ -159,6 +159,27 @@ public class InsulinTests
         Assert.Equal(30, status.Slot.Minute);
     }
 
+    [Fact]
+    public void NextSlot_IsTomorrow_ForASingleDose()
+    {
+        Assert.Equal(At(15, 8), InsulinSchedule.NextSlotAfter(Once, At(14, 8), Utc));
+    }
+
+    [Fact]
+    public void NextSlot_AlternatesBetweenTheTwoDoses()
+    {
+        Assert.Equal(At(14, 20), InsulinSchedule.NextSlotAfter(Twice, At(14, 8), Utc));
+        Assert.Equal(At(15, 8), InsulinSchedule.NextSlotAfter(Twice, At(14, 20), Utc));
+    }
+
+    [Fact]
+    public void NextSlot_WrapsPastMidnight()
+    {
+        var late = new InsulinSettings(Enabled: true, DosesPerDay: 1, FirstDoseMinutes: 23 * 60 + 30);
+
+        Assert.Equal(At(15, 23, 30), InsulinSchedule.NextSlotAfter(late, At(14, 23, 30), Utc));
+    }
+
     // ---- validation --------------------------------------------------------------------------
 
     [Fact]

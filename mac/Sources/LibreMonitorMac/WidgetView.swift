@@ -120,14 +120,23 @@ struct WidgetView: View {
 
     /// What the syringe means right now, for the hover message.
     private func insulinMessage(_ status: DoseStatus) -> String {
+        let next = stamp(InsulinSchedule.nextSlot(after: status.slot, settings: model.settings.insulin, calendar: .current))
         switch status.state {
         case .administered:
-            return "Insulin: marked as administered at \(dayAndTime(status.administeredAt ?? status.slot)). Click to undo."
+            return "Insulin administered on \(stamp(status.administeredAt ?? status.slot)).\nNext dose at \(next)."
         case .due:
-            return "Insulin: due since \(dayAndTime(status.slot)), not marked as administered. Click to mark it."
+            return "Insulin due since \(stamp(status.slot)), not administered yet.\nNext dose at \(next)."
         case .upcoming:
-            return "Insulin: next dose at \(dayAndTime(status.slot)). Click to mark it as administered early."
+            return "Insulin not administered yet.\nNext dose at \(stamp(status.slot))."
         }
+    }
+
+    /// Date and time as dd/mm/yy hh:mm am/pm, the same on every Mac, for the syringe's hover message.
+    private func stamp(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "dd/MM/yy hh:mm a"
+        return formatter.string(from: date)
     }
 
     private func insulinTooltip(_ status: DoseStatus, theme: WidgetTheme) -> some View {

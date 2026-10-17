@@ -121,6 +121,21 @@ final class InsulinTests: XCTestCase {
         XCTAssertEqual(status.slot, at(14, 5))
     }
 
+    func testNextSlotIsTomorrowForASingleDose() {
+        XCTAssertEqual(InsulinSchedule.nextSlot(after: at(14, 8), settings: once, calendar: cal), at(15, 8))
+    }
+
+    func testNextSlotAlternatesBetweenTheTwoDoses() {
+        XCTAssertEqual(InsulinSchedule.nextSlot(after: at(14, 8), settings: twice, calendar: cal), at(14, 20))
+        XCTAssertEqual(InsulinSchedule.nextSlot(after: at(14, 20), settings: twice, calendar: cal), at(15, 8))
+    }
+
+    func testNextSlotWrapsPastMidnight() {
+        let late = InsulinSettings(enabled: true, dosesPerDay: 1, firstDoseMinutes: 23 * 60 + 30)
+
+        XCTAssertEqual(InsulinSchedule.nextSlot(after: at(14, 23, 30), settings: late, calendar: cal), at(15, 23, 30))
+    }
+
     // ---- validation --------------------------------------------------------------------------
 
     func testDefaultsAreValidAndOff() {

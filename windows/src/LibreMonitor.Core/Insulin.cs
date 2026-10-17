@@ -107,6 +107,25 @@ public static class InsulinSchedule
         return best!.Value;
     }
 
+    /// <returns>The scheduled time of the dose after <paramref name="slot"/>.</returns>
+    public static DateTimeOffset NextSlotAfter(InsulinSettings settings, DateTimeOffset slot, TimeZoneInfo zone)
+    {
+        var day = TimeZoneInfo.ConvertTime(slot, zone).Date;
+        DateTimeOffset? best = null;
+
+        for (var offset = 0; offset <= 1; offset++)
+        {
+            foreach (var minutes in settings.DoseMinutes())
+            {
+                var candidate = SlotAt(day.AddDays(offset), minutes, zone);
+                if (candidate > slot && (best is null || candidate < best)) best = candidate;
+            }
+        }
+
+        // The next day always has a slot after this one, so this is never null.
+        return best!.Value;
+    }
+
     public static DoseStatus Status(InsulinSettings settings, DateTimeOffset now, TimeZoneInfo zone)
     {
         var slot = SlotFor(settings, now, zone);

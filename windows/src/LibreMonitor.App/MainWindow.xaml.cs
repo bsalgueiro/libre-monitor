@@ -226,6 +226,10 @@ public partial class MainWindow : Window
         RenderInsulin();
     }
 
+    /// <summary>Date and time as dd/mm/yy hh:mm am/pm, the same on every PC, for the syringe's tooltip.</summary>
+    private static string Stamp(DateTimeOffset moment) =>
+        moment.ToLocalTime().ToString("dd/MM/yy hh:mm tt", CultureInfo.InvariantCulture);
+
     private static string DayAndTime(DateTimeOffset moment)
     {
         var local = moment.ToLocalTime();
@@ -247,7 +251,7 @@ public partial class MainWindow : Window
 
         var status = InsulinSchedule.Status(insulin, DateTimeOffset.UtcNow, TimeZoneInfo.Local);
         var theme = Palette.Current;
-        var slot = status.Slot.ToString("HH:mm");
+        var next = Stamp(InsulinSchedule.NextSlotAfter(insulin, status.Slot, TimeZoneInfo.Local));
 
         switch (status.State)
         {
@@ -256,7 +260,7 @@ public partial class MainWindow : Window
                 InsulinBadge.Background = Palette.Brush(theme.InRange);
                 InsulinBadgeText.Text = "✓";
                 InsulinBadge.Visibility = Visibility.Visible;
-                InsulinButton.ToolTip = $"Insulin: marked as administered at {DayAndTime(status.AdministeredAt!.Value)}. Click to undo.";
+                InsulinButton.ToolTip = $"Insulin administered on {Stamp(status.AdministeredAt!.Value)}.\nNext dose at {next}.";
                 break;
 
             case DoseState.Due:
@@ -264,13 +268,13 @@ public partial class MainWindow : Window
                 InsulinBadge.Background = Palette.Brush(theme.High);
                 InsulinBadgeText.Text = "!";
                 InsulinBadge.Visibility = Visibility.Visible;
-                InsulinButton.ToolTip = $"Insulin: due since {DayAndTime(status.Slot)}, not marked as administered. Click to mark it.";
+                InsulinButton.ToolTip = $"Insulin due since {Stamp(status.Slot)}, not administered yet.\nNext dose at {next}.";
                 break;
 
             default:
                 SyringePath.Stroke = Palette.Brush(theme.Muted);
                 InsulinBadge.Visibility = Visibility.Collapsed;
-                InsulinButton.ToolTip = $"Insulin: next dose at {slot}. Click to mark it as administered early.";
+                InsulinButton.ToolTip = $"Insulin not administered yet.\nNext dose at {Stamp(status.Slot)}.";
                 break;
         }
     }
