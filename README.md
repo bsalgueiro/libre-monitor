@@ -199,8 +199,9 @@ turn on a low alert, a high alert, or both, and set your own limits (in mg/dL or
   when the snooze ends, you are alerted then.
 - **Pause everything:** choose **Menu > Snooze alerts > Until I turn them back on**, or tick **Pause all alerts** at the top of
   the Alerts window. Glucose, insulin and sensor alerts all stop, every other option in the window is greyed out, and it stays
-  that way, even after a restart, until you choose **Resume alerts** or untick the box. The widget still shows your readings,
-  and the menu says "Alerts paused" while it is on.
+  that way, even after a restart, until you choose **Resume alerts** or untick the box. The menu and the box are one switch:
+  changing either one changes the other straight away, even with the Alerts window open, without waiting for **Save**. The
+  widget still shows your readings, and the menu says "Alerts paused" while it is on.
 - **Sensor alert:** on the Sensor tab, choose how many days before the sensor ends to start alerting (1 to 7) and how often to
   repeat (once a day, every 6 hours or every hour). It is on by default, one day before, once a day.
 - **Old readings are ignored:** a reading more than 10 minutes old does not trigger an alert.

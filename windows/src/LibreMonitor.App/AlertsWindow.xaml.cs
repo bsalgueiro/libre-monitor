@@ -23,19 +23,24 @@ public partial class AlertsWindow : Window
     public InsulinSettings? InsulinResult { get; private set; }
     public SensorAlertSettings? SensorResult { get; private set; }
 
-    /// <summary>Whether all alerts are paused until turned back on.</summary>
-    public bool PausedResult { get; private set; }
+    private readonly Action<bool> _setPaused;
+    private bool _loading = true;
 
     /// <param name="sendTest">Shows a sample notification (and plays the sound if the argument is true); returns whether a notification could be shown.</param>
+    /// <param name="setPaused">
+    /// Pauses or resumes all alerts in the app, straight away and not on Save. "Pause all alerts" here is the same setting
+    /// as the pause and resume entries in the widget menu.
+    /// </param>
     public AlertsWindow(
         AlertSettings current, InsulinSettings insulin, SensorAlertSettings sensor, bool paused, GlucoseUnit unit,
-        Func<bool, bool> sendTest)
+        Func<bool, bool> sendTest, Action<bool> setPaused)
     {
         InitializeComponent();
         _original = current;
         _originalInsulin = insulin;
         _unit = unit;
         _sendTest = sendTest;
+        _setPaused = setPaused;
 
         ApplyTheme();
 
@@ -69,9 +74,14 @@ public partial class AlertsWindow : Window
 
         PauseBox.IsChecked = paused;
         UpdatePause();
+        _loading = false;
     }
 
-    private void Pause_Changed(object sender, RoutedEventArgs e) => UpdatePause();
+    private void Pause_Changed(object sender, RoutedEventArgs e)
+    {
+        UpdatePause();
+        if (!_loading) _setPaused(PauseBox.IsChecked == true); // applied at once, like the menu entries
+    }
 
     /// <summary>While everything is paused every other option is greyed out, until the box is unticked again.</summary>
     private void UpdatePause()
@@ -221,7 +231,6 @@ public partial class AlertsWindow : Window
         Result = settings;
         InsulinResult = insulin;
         SensorResult = sensor;
-        PausedResult = PauseBox.IsChecked == true;
         DialogResult = true;
     }
 

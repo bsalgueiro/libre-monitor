@@ -413,8 +413,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showAlerts() {
         alertsController.show(
-            unit: model.settings.unit, settings: model.settings.alerts, insulin: model.settings.insulin,
-            sensor: model.settings.sensorAlert, paused: model.settings.alertsPaused,
+            model: model, unit: model.settings.unit, settings: model.settings.alerts, insulin: model.settings.insulin,
+            sensor: model.settings.sensorAlert,
             sendTest: { sound, done in
                 Notifier.shared.post(title: "Test alert", body: "This is how an alert will look.", sound: sound) { posted in
                     DispatchQueue.main.async {
@@ -423,13 +423,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             },
-            onSave: { [weak self] alerts, insulin, sensor, paused in
+            onSave: { [weak self] alerts, insulin, sensor in
                 guard let self else { return }
+                // Re-read the settings now: the pause switch may have been changed (here or in the menu) while the window
+                // was open, and Save must not put an old value back.
                 var settings = model.settings // one assignment, so the settings are saved once
                 settings.alerts = alerts
                 settings.insulin = insulin
                 settings.sensorAlert = sensor
-                settings.alertsPaused = paused
                 model.settings = settings
             })
     }

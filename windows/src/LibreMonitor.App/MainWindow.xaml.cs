@@ -205,7 +205,8 @@ public partial class MainWindow : Window
 
     private void Alerts_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new AlertsWindow(_settings.Alerts, _settings.Insulin, _settings.SensorAlert, _settings.AlertsPaused, _settings.Unit, TestAlert)
+        var dialog = new AlertsWindow(
+            _settings.Alerts, _settings.Insulin, _settings.SensorAlert, _settings.AlertsPaused, _settings.Unit, TestAlert, SetPaused)
         {
             Owner = this,
         };
@@ -218,7 +219,6 @@ public partial class MainWindow : Window
         _settings.Alerts = result;
         _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastAdministeredAt = null }; // off means nothing stays saved
         _settings.SensorAlert = sensor;
-        _settings.AlertsPaused = dialog.PausedResult;
         _settings.Save();
         _alerts.Reset(); // new thresholds start a fresh episode
         _insulinReminder.Reset();
@@ -449,18 +449,25 @@ public partial class MainWindow : Window
     }
 
     /// <summary>Stops all alerts until they are turned back on, here or in the Alerts window.</summary>
-    private void Pause_Click(object sender, RoutedEventArgs e)
-    {
-        _settings.AlertsPaused = true;
-        _settings.Save();
-        ApplyPause();
-    }
+    private void Pause_Click(object sender, RoutedEventArgs e) => SetPaused(true);
 
     private void Resume_Click(object sender, RoutedEventArgs e)
     {
-        _settings.AlertsPaused = false;
+        _alerts.Resume(); // also ends a timed snooze
+        SetPaused(false);
+    }
+
+    /// <summary>
+    /// The one way to pause or resume every alert. The menu entries and the "Pause all alerts" box in the Alerts window both
+    /// come here, so they are the same setting and take effect straight away.
+    /// </summary>
+    private void SetPaused(bool paused)
+    {
+        _settings.AlertsPaused = paused;
         _settings.Save();
-        _alerts.Resume();
+        ApplyPause();
+        if (paused) return;
+
         EvaluateAlerts();
         EvaluateInsulin();
         EvaluateSensor();

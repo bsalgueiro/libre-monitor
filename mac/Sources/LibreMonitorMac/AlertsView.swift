@@ -6,13 +6,18 @@ import SwiftUI
 /// thresholds are edited in the unit the widget displays and converted to mg/dL for storage.
 /// Port of windows/src/LibreMonitor.App/AlertsWindow.xaml(.cs).
 struct AlertsView: View {
+    /// The app's own state. "Pause all alerts" is read from and written to it directly, so this checkbox and the widget
+    /// menu are the same setting: either one changes the other at once, and it does not wait for Save.
+    @ObservedObject var model: AppModel
     let unit: GlucoseUnit
     let original: AlertSettings
     let originalInsulin: InsulinSettings
     /// Sends a sample notification (and plays the sound if asked); reports whether one could be shown.
     let sendTest: (Bool, @escaping (Bool) -> Void) -> Void
-    let save: (AlertSettings, InsulinSettings, SensorAlertSettings, Bool) -> Void
+    let save: (AlertSettings, InsulinSettings, SensorAlertSettings) -> Void
     let cancel: () -> Void
+
+    private var paused: Bool { model.settings.alertsPaused }
 
     @State private var lowEnabled: Bool
     @State private var highEnabled: Bool
@@ -28,7 +33,6 @@ struct AlertsView: View {
     @State private var sensorEnabled: Bool
     @State private var sensorDays: Int
     @State private var sensorRepeat: Int
-    @State private var paused: Bool
     @State private var info: String?
     @State private var error: String?
 
@@ -71,10 +75,11 @@ struct AlertsView: View {
     }
 
     init(
-        unit: GlucoseUnit, original: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings, paused: Bool,
+        model: AppModel, unit: GlucoseUnit, original: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings,
         sendTest: @escaping (Bool, @escaping (Bool) -> Void) -> Void,
-        save: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings, Bool) -> Void, cancel: @escaping () -> Void)
+        save: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings) -> Void, cancel: @escaping () -> Void)
     {
+        self.model = model
         self.unit = unit
         self.original = original
         self.originalInsulin = insulin
@@ -111,14 +116,14 @@ struct AlertsView: View {
             abs($0 - sensor.repeatMinutes) < abs($1 - sensor.repeatMinutes)
         }
         _sensorRepeat = State(initialValue: nearestRepeat ?? 1440)
-        _paused = State(initialValue: paused)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Toggle("Pause all alerts", isOn: $paused).fontWeight(.semibold)
-                Text("Nothing will notify you until you untick this. The widget keeps showing your readings.")
+                Toggle("Pause all alerts", isOn: $model.settings.alertsPaused).fontWeight(.semibold)
+                Text("Nothing will notify you until you untick this. It takes effect straight away, and it is the same as "
+                    + "\"Snooze alerts > Until I turn them back on\" in the widget menu.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding(.leading, 20)
@@ -333,7 +338,7 @@ struct AlertsView: View {
             return
         }
 
-        save(settings, insulin, sensor, paused)
+        save(settings, insulin, sensor)
     }
 }
 
@@ -342,16 +347,16 @@ final class AlertsWindowController {
     private var window: NSWindow?
 
     func show(
-        unit: GlucoseUnit, settings: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings, paused: Bool,
+        model: AppModel, unit: GlucoseUnit, settings: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings,
         sendTest: @escaping (Bool, @escaping (Bool) -> Void) -> Void,
-        onSave: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings, Bool) -> Void)
+        onSave: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings) -> Void)
     {
         window?.close()
 
         let view = AlertsView(
-            unit: unit, original: settings, insulin: insulin, sensor: sensor, paused: paused, sendTest: sendTest,
-            save: { [weak self] new, newInsulin, newSensor, newPaused in
-                onSave(new, newInsulin, newSensor, newPaused)
+            model: model, unit: unit, original: settings, insulin: insulin, sensor: sensor, sendTest: sendTest,
+            save: { [weak self] new, newInsulin, newSensor in
+                onSave(new, newInsulin, newSensor)
                 self?.window?.close()
             },
             cancel: { [weak self] in self?.window?.close() })
