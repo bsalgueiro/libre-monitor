@@ -202,7 +202,7 @@ struct AlertsView: View {
         sendTest(sound) { shown in
             info = shown
                 ? "Test sent. If you saw nothing, check System Settings > Notifications and any Focus mode."
-                : "No notification could be shown. Check System Settings > Notifications > Libre Monitor. "
+                : "No notification could be shown. Check System Settings > Notifications > Libre Monitor Desktop. "
                     + "Alerts still use the sound and the card's coloured border."
         }
     }

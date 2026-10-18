@@ -3,13 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Libre Monitor</title>
-<meta name="description" content="A small, read-only desktop widget for your own FreeStyle Libre glucose data. Free and open source, for Windows and macOS. Unofficial.">
-<meta property="og:title" content="Libre Monitor">
-<meta property="og:description" content="Your FreeStyle Libre glucose, always visible on your desktop. Free, open source, read-only. Windows and macOS.">
+<title>Libre Monitor Desktop: FreeStyle Libre glucose widget for Windows and Mac</title>
+<link rel="canonical" href="https://bsalgueiro.github.io/libre-monitor/">
+<meta name="description" content="Libre Monitor Desktop: a small, free, open-source widget that shows your own FreeStyle Libre glucose on your Windows or Mac desktop. Read-only and unofficial.">
+<meta property="og:title" content="Libre Monitor Desktop">
+<meta property="og:site_name" content="Libre Monitor Desktop">
+<meta property="og:description" content="Your FreeStyle Libre glucose, always visible on your desktop. A free, open-source, read-only desktop app for Windows and macOS, not a phone app.">
 <meta property="og:image" content="https://bsalgueiro.github.io/libre-monitor/images/widget-dark.png">
 <meta property="og:type" content="website">
 <link rel="icon" href="images/icon.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Libre Monitor Desktop",
+ "description":"A small, free, open-source desktop widget that shows your own FreeStyle Libre glucose on Windows and macOS. Read-only and unofficial.",
+ "applicationCategory":"UtilitiesApplication","operatingSystem":"Windows 10, Windows 11, macOS 13 or newer",
+ "url":"https://bsalgueiro.github.io/libre-monitor/","downloadUrl":"https://github.com/bsalgueiro/libre-monitor/releases/latest",
+ "license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,
+ "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"}}
+</script>
 <style>
   :root {
     --bg: #f6f7f9;
@@ -80,6 +90,7 @@
   .hero { padding: 72px 0 40px; text-align: center; }
   .hero .logo { width: 104px; height: 104px; margin: 0 auto 20px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.25)); }
   h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.1; margin: 0 0 14px; letter-spacing: -.02em; }
+  h1 .name { display: block; font-size: .38em; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
   .lead { font-size: clamp(1.05rem, 2vw, 1.28rem); color: var(--muted); max-width: 640px; margin: 0 auto 28px; }
   .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 14px; }
   .btn {
@@ -183,7 +194,7 @@
 
 <header class="bar">
   <div class="wrap">
-    <a class="brand" href="#top"><img src="images/icon.png" alt="">Libre Monitor</a>
+    <a class="brand" href="#top"><img src="images/icon.png" alt="">Libre Monitor Desktop</a>
     <nav>
       <a class="hide-sm" href="#features">Features</a>
       <a class="hide-sm" href="#get-started">Get started</a>
@@ -199,9 +210,9 @@
 <!-- hero -->
 <div class="hero">
   <div class="wrap">
-    <img class="logo" src="images/icon.png" alt="Libre Monitor app icon">
-    <h1>Your FreeStyle Libre glucose, always visible on your desktop.</h1>
-    <p class="lead">A small widget for Windows and macOS. Free and open source.</p>
+    <img class="logo" src="images/icon.png" alt="Libre Monitor Desktop app icon">
+    <h1><span class="name">Libre Monitor Desktop</span>Your FreeStyle Libre glucose, always visible on your desktop.</h1>
+    <p class="lead">A LibreLink desktop widget for Windows and macOS. Free and open source.</p>
 
     <div class="cta">
       <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-win-x64.exe">
@@ -237,7 +248,7 @@
 <section class="alt" id="how">
   <div class="wrap">
     <h2>How it works</h2>
-    <p class="sub">The phone app reads the sensor and uploads to LibreView. Libre Monitor does <b>not</b> talk to the sensor. It signs in to the unofficial LibreLinkUp follower service and only reads what your phone has already uploaded.</p>
+    <p class="sub">The phone app reads the sensor and uploads to LibreView. Libre Monitor Desktop does <b>not</b> talk to the sensor. It signs in to the unofficial LibreLinkUp follower service and only reads what your phone has already uploaded.</p>
     <div class="flow">
       <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg><b>Sensor</b><span>on your body</span></div>
       <div class="arrow">→</div>
@@ -245,7 +256,7 @@
       <div class="arrow">→</div>
       <div class="node"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18h10a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.2 9.1 4.5 4.5 0 0 0 7 18Z"/></svg><b>LibreView</b><span>Abbott's cloud</span></div>
       <div class="arrow">→</div>
-      <div class="node me"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><b>Libre Monitor</b><span>your desktop</span></div>
+      <div class="node me"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg><b>Libre Monitor Desktop</b><span>on your computer</span></div>
     </div>
   </div>
 </section>

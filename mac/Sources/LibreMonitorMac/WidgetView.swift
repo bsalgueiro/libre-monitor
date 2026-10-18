@@ -468,7 +468,7 @@ struct WidgetView: View {
         Divider()
 
         Button("Check for updates…") { actions.checkForUpdates() }
-        Button("About Libre Monitor") { actions.showAbout() }
+        Button("About Libre Monitor Desktop") { actions.showAbout() }
         Button("Sign out and quit") { actions.signOut() }
         Button("Quit") { actions.quit() }
     }

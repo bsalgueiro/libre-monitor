@@ -98,4 +98,4 @@ jobs:
           cat SHA256SUMS.txt
           cd ..
           gh release create "$TAG" dist/LibreMonitor-win-x64.exe dist/LibreMonitor-mac.zip dist/SHA256SUMS.txt \
-            THIRD-PARTY-NOTICES.md --title "$TAG" --generate-notes
+            THIRD-PARTY-NOTICES.md --title "Libre Monitor Desktop $TAG" --generate-notes

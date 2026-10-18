@@ -24,7 +24,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(toggleItem)
         menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "Quit Libre Monitor", action: #selector(quitClicked), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: "Quit Libre Monitor Desktop", action: #selector(quitClicked), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 

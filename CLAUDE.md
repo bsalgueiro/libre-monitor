@@ -1,4 +1,4 @@
-# Libre Monitor
+# Libre Monitor Desktop
 
 Read-only desktop widget showing FreeStyle Libre glucose (Windows WPF/.NET 10, macOS Swift package). It signs in to the
 unofficial LibreLinkUp follower service and displays what the phone already uploaded. Hobby project, MIT code, CC BY 4.0 docs.
