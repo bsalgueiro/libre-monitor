@@ -2,22 +2,32 @@ import AppKit
 import LibreMonitorKit
 import SwiftUI
 
-/// Edits every alert, one tab per kind (glucose, insulin, sensor), and the switch that pauses them all. Glucose
-/// thresholds are edited in the unit the widget displays and converted to mg/dL for storage.
+/// Edits every alert, one tab per kind (glucose, insulin, sensor), and the switch that pauses them all. There is no Save:
+/// each change is applied as it is made (text fields when you leave them or press Return), and a value that is not valid
+/// is explained and left unapplied until it is fixed. Glucose thresholds are edited in the unit the widget displays and
+/// converted to mg/dL for storage.
 /// Port of windows/src/LibreMonitor.App/AlertsWindow.xaml(.cs).
 struct AlertsView: View {
     /// The app's own state. "Pause all alerts" is read from and written to it directly, so this checkbox and the widget
-    /// menu are the same setting: either one changes the other at once, and it does not wait for Save.
+    /// menu are the same setting: either one changes the other at once.
     @ObservedObject var model: AppModel
     let unit: GlucoseUnit
-    let original: AlertSettings
-    let originalInsulin: InsulinSettings
     /// Sends a sample notification (and plays the sound if asked); reports whether one could be shown.
     let sendTest: (Bool, @escaping (Bool) -> Void) -> Void
-    let save: (AlertSettings, InsulinSettings, SensorAlertSettings) -> Void
-    let cancel: () -> Void
+    /// Each of these is called every time a valid change is made.
+    let applyAlerts: (AlertSettings) -> Void
+    let applyInsulin: (InsulinSettings) -> Void
+    let applySensor: (SensorAlertSettings) -> Void
+    let close: () -> Void
 
     private var paused: Bool { model.settings.alertsPaused }
+
+    // What has been applied so far. The text-as-first-shown trick keeps a threshold left untouched at its exact stored
+    // value, so opening the window in mmol/L never nudges 70 mg/dL to 70.3 through rounding.
+    @State private var appliedAlerts: AlertSettings
+    @State private var appliedInsulin: InsulinSettings
+    @State private var lowShown: String
+    @State private var highShown: String
 
     @State private var lowEnabled: Bool
     @State private var highEnabled: Bool
@@ -34,12 +44,11 @@ struct AlertsView: View {
     @State private var sensorDays: Int
     @State private var sensorRepeat: Int
     @State private var info: String?
-    @State private var error: String?
+    @State private var errors: [String: String] = [:]
 
-    // The text as first shown is remembered: a threshold left untouched keeps its exact stored value, so opening and
-    // saving in mmol/L never nudges 70 mg/dL to 70.3 through rounding.
-    private let lowShown: String
-    private let highShown: String
+    private enum Field: Hashable { case low, high }
+    @FocusState private var focus: Field?
+    @State private var lastFocus: Field?
 
     private struct RepeatChoice: Identifiable {
         let minutes: Int
@@ -77,20 +86,23 @@ struct AlertsView: View {
     init(
         model: AppModel, unit: GlucoseUnit, original: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings,
         sendTest: @escaping (Bool, @escaping (Bool) -> Void) -> Void,
-        save: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings) -> Void, cancel: @escaping () -> Void)
+        applyAlerts: @escaping (AlertSettings) -> Void, applyInsulin: @escaping (InsulinSettings) -> Void,
+        applySensor: @escaping (SensorAlertSettings) -> Void, close: @escaping () -> Void)
     {
         self.model = model
         self.unit = unit
-        self.original = original
-        self.originalInsulin = insulin
         self.sendTest = sendTest
-        self.save = save
-        self.cancel = cancel
+        self.applyAlerts = applyAlerts
+        self.applyInsulin = applyInsulin
+        self.applySensor = applySensor
+        self.close = close
 
         let low = GlucoseUnits.format(original.lowMgPerDl, unit: unit)
         let high = GlucoseUnits.format(original.highMgPerDl, unit: unit)
-        lowShown = low
-        highShown = high
+        _appliedAlerts = State(initialValue: original)
+        _appliedInsulin = State(initialValue: insulin)
+        _lowShown = State(initialValue: low)
+        _highShown = State(initialValue: high)
 
         _lowEnabled = State(initialValue: original.lowEnabled)
         _highEnabled = State(initialValue: original.highEnabled)
@@ -118,12 +130,41 @@ struct AlertsView: View {
         _sensorRepeat = State(initialValue: nearestRepeat ?? 1440)
     }
 
+    // The inputs of each group, so one change handler per group is enough.
+    private struct GlucoseInputs: Equatable {
+        var lowEnabled: Bool
+        var highEnabled: Bool
+        var repeatMinutes: Int
+    }
+
+    private struct InsulinInputs: Equatable {
+        var enabled: Bool
+        var doses: Int
+        var first: Date
+        var second: Date
+        var repeatMinutes: Int
+    }
+
+    private struct SensorInputs: Equatable {
+        var enabled: Bool
+        var days: Int
+        var repeatMinutes: Int
+    }
+
+    private var glucoseInputs: GlucoseInputs { GlucoseInputs(lowEnabled: lowEnabled, highEnabled: highEnabled, repeatMinutes: repeatMinutes) }
+
+    private var insulinInputs: InsulinInputs {
+        InsulinInputs(enabled: insulinEnabled, doses: dosesPerDay, first: firstDose, second: secondDose, repeatMinutes: insulinRepeatMinutes)
+    }
+
+    private var sensorInputs: SensorInputs { SensorInputs(enabled: sensorEnabled, days: sensorDays, repeatMinutes: sensorRepeat) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Toggle("Pause all alerts", isOn: $model.settings.alertsPaused).fontWeight(.semibold)
-                Text("Nothing will notify you until you untick this. It takes effect straight away, and it is the same as "
-                    + "\"Snooze alerts > Until I turn them back on\" in the widget menu.")
+                Text("Nothing will notify you until you untick this. It is the same as \"Snooze alerts > Until I turn them "
+                    + "back on\" in the widget menu. Changes here are applied as you make them.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .padding(.leading, 20)
@@ -143,19 +184,27 @@ struct AlertsView: View {
             if let info {
                 Text(info).font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
             }
-            if let error {
-                Text(error).font(.callout).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
+            if let message = errors.sorted(by: { $0.key < $1.key }).first?.value {
+                Text(message).font(.callout).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
             }
 
             HStack {
                 Button("Send test alert") { runTest() }.disabled(paused)
                 Spacer()
-                Button("Cancel") { cancel() }.keyboardShortcut(.cancelAction)
-                Button("Save") { commit() }.keyboardShortcut(.defaultAction)
+                Button("Close") { close() }.keyboardShortcut(.cancelAction)
             }
         }
         .padding(24)
         .frame(width: 470)
+        .onChange(of: glucoseInputs) { _ in applyGlucose() }
+        .onChange(of: insulinInputs) { _ in applyInsulinChanges() }
+        .onChange(of: sensorInputs) { _ in applySensorChanges() }
+        .onChange(of: sound) { _ in applySound() }
+        .onChange(of: focus) { newField in
+            // A text field was left: apply what was typed into it.
+            if let previous = lastFocus, previous != newField { applyGlucose() }
+            lastFocus = newField
+        }
     }
 
     /// One tab's content: scrolls if it is taller than the tab, and is greyed out and disabled while everything is paused.
@@ -177,8 +226,8 @@ struct AlertsView: View {
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            limitRow("Alert when glucose goes below", isOn: $lowEnabled, text: $lowText)
-            limitRow("Alert when glucose goes above", isOn: $highEnabled, text: $highText)
+            limitRow("Alert when glucose goes below", isOn: $lowEnabled, text: $lowText, field: .low)
+            limitRow("Alert when glucose goes above", isOn: $highEnabled, text: $highText, field: .high)
 
             Picker("While still out of range, remind me", selection: $repeatMinutes) {
                 ForEach(Self.repeatChoices) { Text($0.label).tag($0.minutes) }
@@ -265,23 +314,30 @@ struct AlertsView: View {
         }
     }
 
-    private func limitRow(_ title: String, isOn: Binding<Bool>, text: Binding<String>) -> some View {
+    private func limitRow(_ title: String, isOn: Binding<Bool>, text: Binding<String>, field: Field) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Toggle(title, isOn: isOn).fontWeight(.semibold)
             HStack {
                 TextField("", text: text)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 80)
+                    .focused($focus, equals: field)
+                    .onSubmit { applyGlucose() }
                 Text(unit.label).foregroundColor(.secondary)
             }
             .padding(.leading, 20)
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Applying changes
+
+    private func setError(_ group: String, _ message: String?) {
+        errors[group] = message
+        info = nil
+    }
 
     private func runTest() {
-        error = nil
+        info = nil
         sendTest(sound) { shown in
             info = shown
                 ? "Test sent. If you saw nothing, check System Settings > Notifications and any Focus mode."
@@ -290,55 +346,75 @@ struct AlertsView: View {
         }
     }
 
-    /// The value in mg/dL, or nil (with the error set) when the text is not a number. Untouched text keeps its exact value.
+    /// The value in mg/dL, or nil (with the problem set) when the text is not a number. Untouched text keeps its exact value.
     private func read(_ text: String, shown: String, original: Double, name: String) -> Double? {
         let trimmed = text.trimmingCharacters(in: .whitespaces)
         if trimmed == shown { return original }
 
         // Accept either decimal separator, whatever the macOS language, since people type both.
         guard let value = Double(trimmed.replacingOccurrences(of: ",", with: ".")) else {
-            error = "Enter a number for the \(name) threshold."
+            setError("glucose", "Enter a number for the \(name) threshold.")
             return nil
         }
 
         return unit == .mmolPerL ? ((value * GlucoseUnits.mgPerDlPerMmolPerL) * 10).rounded() / 10 : value
     }
 
-    private func commit() {
-        guard let low = read(lowText, shown: lowShown, original: original.lowMgPerDl, name: "low"),
-              let high = read(highText, shown: highShown, original: original.highMgPerDl, name: "high")
-        else { return }
+    private func applyGlucose() {
+        guard let low = read(lowText, shown: lowShown, original: appliedAlerts.lowMgPerDl, name: "low"),
+              let high = read(highText, shown: highShown, original: appliedAlerts.highMgPerDl, name: "high")
+        else { return } // read has said what is wrong
 
         let settings = AlertSettings(
             lowEnabled: lowEnabled, lowMgPerDl: low, highEnabled: highEnabled, highMgPerDl: high,
             repeatMinutes: repeatMinutes, sound: sound)
 
         if let problem = settings.validate(unit: unit) {
-            error = problem
+            setError("glucose", problem)
             return
         }
 
-        // The "administered" mark is kept as it was: only the schedule is edited here.
-        var insulin = originalInsulin
+        setError("glucose", nil)
+        appliedAlerts = settings
+        lowShown = lowText.trimmingCharacters(in: .whitespaces)
+        highShown = highText.trimmingCharacters(in: .whitespaces)
+        applyAlerts(settings)
+    }
+
+    /// The sound is applied on its own, so a threshold that is half edited and not valid yet cannot hold it back.
+    private func applySound() {
+        appliedAlerts.sound = sound
+        applyAlerts(appliedAlerts)
+    }
+
+    private func applyInsulinChanges() {
+        // The "administered" mark belongs to the app, not this window, and is merged in by whoever applies this.
+        var insulin = appliedInsulin
         insulin.enabled = insulinEnabled
         insulin.dosesPerDay = dosesPerDay
         insulin.firstDoseMinutes = Self.minutes(of: firstDose)
         if dosesPerDay == 2 { insulin.secondDoseMinutes = Self.minutes(of: secondDose) }
         insulin.repeatMinutes = insulinRepeatMinutes
-        if !insulin.enabled { insulin.lastAdministeredAt = nil } // off means nothing about it stays saved
 
         if insulin.enabled, let problem = insulin.validate() {
-            error = problem
+            setError("insulin", problem)
             return
         }
 
+        setError("insulin", nil)
+        appliedInsulin = insulin
+        applyInsulin(insulin)
+    }
+
+    private func applySensorChanges() {
         let sensor = SensorAlertSettings(enabled: sensorEnabled, daysBefore: sensorDays, repeatMinutes: sensorRepeat)
         if let problem = sensor.validate() {
-            error = problem
+            setError("sensor", problem)
             return
         }
 
-        save(settings, insulin, sensor)
+        setError("sensor", nil)
+        applySensor(sensor)
     }
 }
 
@@ -349,17 +425,15 @@ final class AlertsWindowController {
     func show(
         model: AppModel, unit: GlucoseUnit, settings: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings,
         sendTest: @escaping (Bool, @escaping (Bool) -> Void) -> Void,
-        onSave: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings) -> Void)
+        applyAlerts: @escaping (AlertSettings) -> Void, applyInsulin: @escaping (InsulinSettings) -> Void,
+        applySensor: @escaping (SensorAlertSettings) -> Void)
     {
         window?.close()
 
         let view = AlertsView(
             model: model, unit: unit, original: settings, insulin: insulin, sensor: sensor, sendTest: sendTest,
-            save: { [weak self] new, newInsulin, newSensor in
-                onSave(new, newInsulin, newSensor)
-                self?.window?.close()
-            },
-            cancel: { [weak self] in self?.window?.close() })
+            applyAlerts: applyAlerts, applyInsulin: applyInsulin, applySensor: applySensor,
+            close: { [weak self] in self?.window?.close() })
 
         let window = NSWindow(contentViewController: NSHostingController(rootView: view))
         window.title = "Alerts"

@@ -186,7 +186,9 @@ and hides it to the menu bar, the menu bar item replaces the tray icon, and noti
 
 ## Alerts
 
-Open **Menu > Alerts...**. There is a tab for each kind of alert: **Glucose**, **Insulin** and **Sensor**. On the Glucose tab
+Open **Menu > Alerts...**. There is a tab for each kind of alert: **Glucose**, **Insulin** and **Sensor**. There is no Save
+button: every change is applied as you make it (a typed value when you leave the box or press Enter), and a value that is not
+valid is explained and left unapplied until you fix it. On the Glucose tab
 turn on a low alert, a high alert, or both, and set your own limits (in mg/dL or mmol/L, whichever the widget shows). They are
 **off until you turn them on**. Use **Send test alert** to see what one looks like.
 
@@ -200,7 +202,7 @@ turn on a low alert, a high alert, or both, and set your own limits (in mg/dL or
 - **Pause everything:** choose **Menu > Snooze alerts > Until I turn them back on**, or tick **Pause all alerts** at the top of
   the Alerts window. Glucose, insulin and sensor alerts all stop, every other option in the window is greyed out, and it stays
   that way, even after a restart, until you choose **Resume alerts** or untick the box. The menu and the box are one switch:
-  changing either one changes the other straight away, even with the Alerts window open, without waiting for **Save**. The
+  changing either one changes the other straight away, even with the Alerts window open. The
   widget still shows your readings, and the menu says "Alerts paused" while it is on.
 - **Sensor alert:** on the Sensor tab, choose how many days before the sensor ends to start alerting (1 to 7) and how often to
   repeat (once a day, every 6 hours or every hour). It is on by default, one day before, once a day.

@@ -60,7 +60,7 @@
     <StackPanel Margin="22">
         <CheckBox x:Name="PauseBox" Content="Pause all alerts" FontWeight="SemiBold" Checked="Pause_Changed" Unchecked="Pause_Changed"/>
         <TextBlock x:Name="PauseHint" Margin="22,2,0,0" TextWrapping="Wrap" FontSize="12"
-                   Text="Nothing will notify you until you untick this. The widget keeps showing your readings."/>
+                   Text="Nothing will notify you until you untick this. Changes here are applied as you make them."/>
 
         <TabControl x:Name="Tabs" Margin="0,14,0,0" Height="440">
             <!-- Glucose -->
@@ -175,8 +175,7 @@
         <Grid Margin="0,18,0,0">
             <Button x:Name="TestButton" Content="Send test alert" Padding="12,6" HorizontalAlignment="Left" Click="Test_Click"/>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Cancel" Width="90" Padding="6" Margin="0,0,8,0" IsCancel="True"/>
-                <Button Content="Save" Width="90" Padding="6" IsDefault="True" Click="Save_Click"/>
+                <Button Content="Close" Width="90" Padding="6" IsCancel="True" Click="Close_Click"/>
             </StackPanel>
         </Grid>
     </StackPanel>

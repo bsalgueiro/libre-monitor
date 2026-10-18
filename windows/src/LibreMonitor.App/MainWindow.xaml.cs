@@ -205,27 +205,47 @@ public partial class MainWindow : Window
 
     private void Alerts_Click(object sender, RoutedEventArgs e)
     {
+        // There is no Save: the window applies each change through these callbacks as it is made.
         var dialog = new AlertsWindow(
-            _settings.Alerts, _settings.Insulin, _settings.SensorAlert, _settings.AlertsPaused, _settings.Unit, TestAlert, SetPaused)
+            _settings.Alerts, _settings.Insulin, _settings.SensorAlert, _settings.AlertsPaused, _settings.Unit, TestAlert,
+            ApplyAlertSettings, ApplyInsulinSettings, ApplySensorSettings, SetPaused)
         {
             Owner = this,
         };
-        if (dialog.ShowDialog() != true || dialog.Result is not { } result || dialog.InsulinResult is not { } insulin
-            || dialog.SensorResult is not { } sensor)
-        {
-            return;
-        }
+        dialog.ShowDialog();
+    }
 
-        _settings.Alerts = result;
-        _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastAdministeredAt = null }; // off means nothing stays saved
-        _settings.SensorAlert = sensor;
+    private void ApplyAlertSettings(AlertSettings next)
+    {
+        // Changing only the sound must not start a new episode, or an alert already given would be given again.
+        var thresholdsChanged = _settings.Alerts with { Sound = next.Sound } != next;
+        _settings.Alerts = next;
         _settings.Save();
+        if (!thresholdsChanged) return;
+
         _alerts.Reset(); // new thresholds start a fresh episode
-        _insulinReminder.Reset();
-        _sensorExpiry.Reset();
-        ApplyPause();
         EvaluateAlerts();
+    }
+
+    private void ApplyInsulinSettings(InsulinSettings next)
+    {
+        // The last "administered" time belongs to the app, not the window; off means nothing about it stays saved.
+        next = next with { LastAdministeredAt = next.Enabled ? _settings.Insulin.LastAdministeredAt : null };
+        if (next == _settings.Insulin) return;
+
+        _settings.Insulin = next;
+        _settings.Save();
+        _insulinReminder.Reset();
         EvaluateInsulin();
+    }
+
+    private void ApplySensorSettings(SensorAlertSettings next)
+    {
+        if (next == _settings.SensorAlert) return;
+
+        _settings.SensorAlert = next;
+        _settings.Save();
+        _sensorExpiry.Reset();
         EvaluateSensor();
     }
 

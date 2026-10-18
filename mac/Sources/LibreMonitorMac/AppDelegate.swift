@@ -74,10 +74,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsObserver = model.$settings.sink { [weak self] settings in
             // @Published fires before the value is stored, so use the value it hands over and refresh afterwards.
             self?.applySettings(settings)
-            if settings.alerts != self?.lastAlertSettings {
-                // New limits start a fresh episode.
+            if let previous = self?.lastAlertSettings, settings.alerts != previous {
+                // New limits start a fresh episode. Changing only the sound must not, or an alert already given would
+                // be given again.
+                var comparable = settings.alerts
+                comparable.sound = previous.sound
+                if comparable != previous { self?.alertEvaluator.reset() }
                 self?.lastAlertSettings = settings.alerts
-                self?.alertEvaluator.reset()
             }
             if settings.insulin != self?.lastInsulinSettings {
                 self?.lastInsulinSettings = settings.insulin
@@ -423,16 +426,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             },
-            onSave: { [weak self] alerts, insulin, sensor in
+            applyAlerts: { [weak self] alerts in self?.model.settings.alerts = alerts },
+            applyInsulin: { [weak self] insulin in
                 guard let self else { return }
-                // Re-read the settings now: the pause switch may have been changed (here or in the menu) while the window
-                // was open, and Save must not put an old value back.
-                var settings = model.settings // one assignment, so the settings are saved once
-                settings.alerts = alerts
-                settings.insulin = insulin
-                settings.sensorAlert = sensor
-                model.settings = settings
-            })
+                // The last "administered" time belongs to the app, not the window (it can be tapped while the window is
+                // open); off means nothing about it stays saved.
+                var next = insulin
+                next.lastAdministeredAt = insulin.enabled ? model.settings.insulin.lastAdministeredAt : nil
+                if next != model.settings.insulin { model.settings.insulin = next }
+            },
+            applySensor: { [weak self] sensor in self?.model.settings.sensorAlert = sensor })
     }
 
     private func snoozeAlerts(minutes: Int) {
