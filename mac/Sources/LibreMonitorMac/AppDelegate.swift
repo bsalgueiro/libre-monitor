@@ -258,7 +258,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.refreshStatusItem()
                 Notifier.shared.post(
                     title: "Can't read LibreLinkUp",
-                    body: "Abbott may have changed or blocked the service. Click here to look for a newer version of Libre Monitor.",
+                    body: "Abbott may have changed or blocked the service. Click here to look for a newer version of Libre Monitor Desktop.",
                     sound: false, openURL: AppInfo.releasesUrl)
             }
         }

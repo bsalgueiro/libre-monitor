@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:libre-monitor}/mac",
+            "name": "Debug LibreMonitorMac (mac)",
+            "target": "LibreMonitorMac",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug LibreMonitorMac (mac)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:libre-monitor}/mac",
+            "name": "Release LibreMonitorMac (mac)",
+            "target": "LibreMonitorMac",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release LibreMonitorMac (mac)"
+        }
+    ]
+}

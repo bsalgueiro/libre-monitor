@@ -6,9 +6,9 @@ import SwiftUI
 struct AboutView: View {
     let close: () -> Void
 
-    /// "Libre Monitor 0.1.0" in a built app (the version make-app.sh stamps into it); just the name otherwise.
+    /// "Libre Monitor Desktop 0.1.0" in a built app (the version make-app.sh stamps into it); just the name otherwise.
     private var title: String {
-        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String).map { "Libre Monitor \($0)" } ?? "Libre Monitor"
+        (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String).map { "Libre Monitor Desktop \($0)" } ?? "Libre Monitor Desktop"
     }
 
     var body: some View {
@@ -47,7 +47,7 @@ final class AboutWindowController {
         if window == nil {
             let hosting = NSHostingController(rootView: AboutView(close: { [weak self] in self?.window?.close() }))
             let window = NSWindow(contentViewController: hosting)
-            window.title = "About Libre Monitor"
+            window.title = "About Libre Monitor Desktop"
             window.styleMask = [.titled, .closable]
             window.level = .floating
             window.isReleasedWhenClosed = false

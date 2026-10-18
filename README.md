@@ -2,7 +2,7 @@
 
 <img src="docs/images/icon.png" alt="" width="120">
 
-# Libre Monitor
+# Libre Monitor Desktop
 
 **Your FreeStyle Libre glucose, always visible on your desktop.**
 A small, read-only widget for Windows and macOS.
@@ -36,7 +36,7 @@ The phone app reads the sensor and uploads to LibreView. This project does **not
 unofficial LibreLinkUp follower service and only reads what the phone has already uploaded.
 
 ```
-Sensor  -->  LibreLink (phone)  -->  LibreView cloud  -->  Libre Monitor (your desktop)
+Sensor  -->  LibreLink (phone)  -->  LibreView cloud  -->  Libre Monitor Desktop (your computer)
 ```
 
 **Contents:** [For users](#for-users) · [For developers](#for-developers) · [License](#license) · [Trademarks](#trademarks-and-disclaimer)
@@ -199,9 +199,9 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
 - **Old readings are ignored:** a reading more than 10 minutes old does not trigger an alert.
 - **Notifications need the tray icon** on Windows. If you turn it off, alerts still play the sound and colour the border.
   On a Mac they use macOS notifications: the first time, macOS asks for permission, and you can change it later in
-  System Settings > Notifications > Libre Monitor.
+  System Settings > Notifications > Libre Monitor Desktop.
 - **Make sure you will notice them.** A Mac banner disappears after a few seconds. In System Settings > Notifications >
-  Libre Monitor, set the style to **Alerts** so a notification stays until you dismiss it. On Windows, Focus assist and Do
+  Libre Monitor Desktop, set the style to **Alerts** so a notification stays until you dismiss it. On Windows, Focus assist and Do
   not disturb can hide notifications, so check them too.
 
 **Do not rely on these alerts for safety.** They only work while this app is running, your PC is on and awake, and your
