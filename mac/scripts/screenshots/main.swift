@@ -258,6 +258,83 @@ struct DesktopScene<Widget: View>: View {
     }
 }
 
+// MARK: - The low alert as it appears on a Mac
+
+/// A notification banner in the style of macOS, with the text the app really sends for a low reading.
+struct NotificationBanner: View {
+    let dark: Bool
+    let icon: NSImage
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(nsImage: icon)
+                .resizable()
+                .frame(width: 38, height: 38)
+                .clipShape(RoundedRectangle(cornerRadius: 9))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.system(size: 13, weight: .semibold))
+                Text(message).font(.system(size: 13)).opacity(0.85)
+            }
+            Spacer(minLength: 8)
+            Text("now").font(.system(size: 11)).opacity(0.55)
+        }
+        .foregroundColor(dark ? .white : .black)
+        .padding(12)
+        .frame(width: 344)
+        .background(RoundedRectangle(cornerRadius: 18).fill(dark ? Color(white: 0.16).opacity(0.88) : Color(white: 0.98).opacity(0.86)))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Color.white.opacity(dark ? 0.14 : 0.55), lineWidth: 1))
+        .shadow(color: .black.opacity(0.3), radius: 16, y: 6)
+    }
+}
+
+/// The top-right corner of a desktop: menu bar, a low-glucose notification, and the widget with its red border.
+struct AlertScene<Widget: View>: View {
+    let widget: Widget
+    let banner: NotificationBanner
+    let value: String
+
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            LinearGradient(
+                colors: [Color(red: 0.08, green: 0.12, blue: 0.28), Color(red: 0.25, green: 0.17, blue: 0.47),
+                         Color(red: 0.55, green: 0.23, blue: 0.5), Color(red: 0.95, green: 0.54, blue: 0.37)],
+                startPoint: .topLeading, endPoint: .bottomTrailing)
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 0.3, green: 0.85, blue: 0.75), Color(red: 0.2, green: 0.5, blue: 0.9)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 360, height: 360).blur(radius: 70).position(x: 110, y: 60)
+            Circle()
+                .fill(LinearGradient(colors: [Color(red: 1.0, green: 0.55, blue: 0.4), Color(red: 0.9, green: 0.3, blue: 0.5)],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 380, height: 380).blur(radius: 70).position(x: 470, y: 330)
+
+            HStack(spacing: 16) {
+                Spacer()
+                Text(value)
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(Color(red: 0.25, green: 0.04, blue: 0.04))
+                    .padding(.horizontal, 6)
+                    .frame(height: 18)
+                    .background(RoundedRectangle(cornerRadius: 4).fill(Color(red: 1.0, green: 0.42, blue: 0.42)))
+                Image(systemName: "battery.100")
+                Image(systemName: "wifi")
+                Text("Tue 9:41").font(.system(size: 13))
+            }
+            .foregroundColor(.white)
+            .padding(.horizontal, 16)
+            .frame(width: 560, height: 28)
+            .background(Color.black.opacity(0.28))
+
+            banner.position(x: 560 - 16 - 172, y: 28 + 14 + 36)
+            widget.position(x: 560 - 16 - 140, y: 28 + 14 + 72 + 16 + 86)
+        }
+        .frame(width: 560, height: 330)
+        .clipped()
+    }
+}
+
 // MARK: - Output
 
 @MainActor
@@ -300,4 +377,13 @@ MainActor.assumeIsolated {
     done.lastAdministeredAt = Calendar.current.date(bySettingHour: 8, minute: 12, second: 0, of: now)
     write(card(makeModel(inRange, now: now, insulin: due), dark: true, width: 280, height: 172), to: "\(out)/insulin-due.png", scale: 3)
     write(card(makeModel(inRange, now: now, insulin: done), dark: true, width: 280, height: 172), to: "\(out)/insulin-done.png", scale: 3)
+
+    // The low alert as a Mac shows it: the system notification, and the widget with its red border.
+    let icon = NSImage(contentsOfFile: "\(out)/icon.png") ?? NSImage()
+    for dark in [true, false] {
+        let lowWidget = card(makeModel(lowCurve(now: now), now: now, zone: .low), dark: dark, width: 280, height: 172)
+            .shadow(color: .black.opacity(0.4), radius: 18, y: 8)
+        let banner = NotificationBanner(dark: dark, icon: icon, title: "Low glucose alert", message: "62 mg/dL \u{2198} · just now")
+        write(AlertScene(widget: lowWidget, banner: banner, value: "62"), to: "\(out)/alert-notification-\(dark ? "dark" : "light").jpg", scale: 2, jpeg: true)
+    }
 }

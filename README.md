@@ -73,11 +73,14 @@ The colours for low, in range and high are for display only. They are not alarms
 <br clear="all">
 
 <div align="center">
-<img src="docs/images/alert-low.png" alt="A low reading: red value and a red border around the widget" width="250">
-&nbsp;
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/alert-notification-dark.jpg">
+  <img src="docs/images/alert-notification-light.jpg" alt="A low glucose alert on a Mac: a notification and the widget with a red border" width="520">
+</picture>
+<br>
 <img src="docs/images/alert-high.png" alt="A high reading: amber value and an amber border around the widget" width="250">
 <br>
-<sub>The border turns red or amber while a reading is outside your alert limits (the readings in these pictures are made up).</sub>
+<sub>A system notification, and a border that turns red (low) or amber (high) while a reading is outside your alert limits (the readings in these pictures are made up).</sub>
 </div>
 
 ## On your desktop
@@ -421,8 +424,8 @@ binary for `--simulate` and fails if it finds it.
 ### Pictures for the website
 
 The images in `docs/images` are drawn, not captured. `./scripts/make-screenshots.sh` compiles the app's real widget view with a
-small program that feeds it made-up glucose curves, and writes the dark, light, compact, low, high and insulin pictures and the
-illustrated desktops (light and dark). They never show the "SIMULATED" label, no real data or desktop, and it does not touch the installed app,
+small program that feeds it made-up glucose curves, and writes the dark, light, compact, low, high and insulin pictures, the low-alert
+notification scene, and the illustrated desktops (light and dark). They never show the "SIMULATED" label, no real data or desktop, and it does not touch the installed app,
 its settings or its login. Run it again after any change to how the widget looks. It is a developer tool: it is not part of the
 app and is never built into a release.
 
