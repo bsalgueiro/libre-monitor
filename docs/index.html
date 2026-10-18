@@ -153,12 +153,13 @@
 
   /* three steps */
   .steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; list-style: none; padding: 0; margin: 0; counter-reset: s; }
-  .steps3 li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 26px; }
-  .steps3 li::before {
+  .steps3 > li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 26px; }
+  .steps3 > li::before {
     content: counter(s); width: 38px; height: 38px; border-radius: 12px; background: var(--accent); color: var(--accent-ink);
     display: grid; place-items: center; font-weight: 750; margin-bottom: 16px;
   }
-  .steps3 p { margin: 0; color: var(--muted); font-size: .98rem; }
+  .steps3 p { margin: 0 0 10px; color: var(--muted); font-size: .98rem; }
+  .steps3 ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .94rem; }
   @media (max-width: 760px) { .steps3 { grid-template-columns: 1fr; } }
 
   /* how it works */
@@ -200,14 +201,9 @@
   .desk .frame { border-radius: 16px; }
 
   /* getting started detail */
-  ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 14px; }
-  ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 38px 1fr; gap: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
-  ol.steps > li::before {
     content: counter(step); width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
     display: grid; place-items: center; font-weight: 700;
   }
-  ol.steps p { margin: 0; }
-  ol.steps ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
 
   table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: .96rem; }
   section.alt table { background: var(--bg); }
@@ -249,10 +245,10 @@
 
 
   /* a little movement: gentle hovers and a soft reveal on scroll. All of it is switched off for reduced motion. */
-  .card, .steps3 li, .flow .node, .alerts-list li, details, .frame, .btn, .bar nav a, .stage img {
+  .card, .steps3 > li, .flow .node, .alerts-list li, details, .frame, .btn, .bar nav a, .stage img {
     transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease, color .22s ease;
   }
-  .card:hover, .steps3 li:hover, .alerts-list li:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 12px 28px rgba(16, 26, 20, .10); }
+  .card:hover, .steps3 > li:hover, .alerts-list li:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 12px 28px rgba(16, 26, 20, .10); }
   .flow .node:hover { transform: translateY(-2px); border-color: var(--accent); }
   .btn:hover { transform: translateY(-1px); }
   .btn:active { transform: translateY(0); }
@@ -336,15 +332,30 @@
   </div>
 </div>
 
-<!-- three steps -->
-<section id="three-steps">
+<!-- getting started -->
+<section id="get-started">
   <div class="wrap">
-    <h2>Set up once</h2>
-    <p class="sub">Three steps. The full details are further down.</p>
+    <h2>Getting started</h2>
+    <p class="sub">Three steps, and you only do them once.</p>
     <ol class="steps3">
-      <li><h3>Invite a follower</h3><p>In the LibreLink phone app, invite a second email address to LibreLinkUp.</p></li>
-      <li><h3>Download</h3><p>Get the Windows or Mac app from the latest release. There is nothing else to install.</p></li>
-      <li><h3>Sign in</h3><p>Use the follower account, not your main one. Your value appears within a minute.</p></li>
+      <li>
+        <h3>Invite a follower</h3>
+        <p>In the LibreLink phone app open <i>Connected apps &gt; LibreLinkUp</i> and invite a second email address.</p>
+        <p>Then install the official LibreLinkUp app on a phone, create the account there with that email and accept the invitation. There is no website sign-up (see <a href="https://www.librelinkup.com">www.librelinkup.com</a>). This also clears the terms and email verification that signing in needs.</p>
+      </li>
+      <li>
+        <h3>Download</h3>
+        <p>Get the file for your computer from the <a href="https://github.com/bsalgueiro/libre-monitor/releases/latest">latest release</a>. There is nothing else to install.</p>
+        <ul><li>Windows: <code>LibreMonitor-win-x64.exe</code></li><li>Mac: <code>LibreMonitor-mac.zip</code></li></ul>
+      </li>
+      <li>
+        <h3>Sign in</h3>
+        <p>Start it and sign in with the <b>follower</b> account, not your main one. Your value appears within a minute.</p>
+        <ul>
+          <li>Windows: run the exe. If Windows shows a blue warning, see <a href="#warnings">first-open warnings</a>.</li>
+          <li>Mac: unzip, drag <b>LibreMonitor.app</b> into Applications and open it. macOS warns the first time, see <a href="#warnings">first-open warnings</a>. The app has no Dock icon: look for the widget and the menu bar item.</li>
+        </ul>
+      </li>
     </ol>
   </div>
 </section>
@@ -399,25 +410,6 @@
       <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="300">
       <p>Hide the graph and the value fills the widget, at any size.</p>
     </div>
-  </div>
-</section>
-
-<!-- getting started -->
-<section class="alt" id="get-started">
-  <div class="wrap">
-    <h2>Getting started</h2>
-    <p class="sub">The same three steps, with the details.</p>
-    <ol class="steps">
-      <li><div><p><b>Invite a follower.</b> In the LibreLink phone app open <i>Connected apps &gt; LibreLinkUp</i> and invite a second email address.</p></div></li>
-      <li><div><p><b>Create the follower account.</b> Install the official LibreLinkUp app on a phone and create the account there with that email, then accept the invitation. There is no website sign-up (see <a href="https://www.librelinkup.com">www.librelinkup.com</a>). This also clears the terms and email verification that signing in needs.</p></div></li>
-      <li><div><p><b>Download.</b> Get the file for your computer from the <a href="https://github.com/bsalgueiro/libre-monitor/releases/latest">latest release</a>.</p>
-        <ul><li>Windows: <code>LibreMonitor-win-x64.exe</code></li><li>Mac: <code>LibreMonitor-mac.zip</code></li></ul></div></li>
-      <li><div><p><b>Start it and sign in</b> with the <b>follower</b> account, not your main one.</p>
-        <ul>
-          <li>Windows: run the exe. If Windows shows a blue warning, see <a href="#warnings">first-open warnings</a>.</li>
-          <li>Mac: unzip, drag <b>LibreMonitor.app</b> into Applications and open it. macOS warns the first time, see <a href="#warnings">first-open warnings</a>. The app has no Dock icon: look for the widget and the menu bar item.</li>
-        </ul></div></li>
-    </ol>
   </div>
 </section>
 
