@@ -185,7 +185,7 @@
   .legal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
 
   footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: .92rem; }
-  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: center; }
   footer p { margin: 0; max-width: 640px; }
   footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
 </style>
@@ -200,6 +200,7 @@
       <a class="hide-sm" href="#get-started">Get started</a>
       <a class="hide-sm" href="#alerts">Alerts</a>
       <a class="hide-sm" href="#help">Help</a>
+      <a class="hide-sm" href="#about">About</a>
       <a href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
     </nav>
   </div>
@@ -448,11 +449,23 @@
   </div>
 </section>
 
+<!-- about -->
+<section class="alt" id="about">
+  <div class="wrap">
+    <h2>About</h2>
+    <p class="sub">I have diabetes, and I got tired of picking up my phone every time I wanted to check my glucose. So I built a small widget for my own desktop, and shared it in case it helps someone else.</p>
+    <div class="legal-grid">
+      <div class="card"><h3>Independent</h3><p>Not affiliated with Abbott in any way: it is not made, approved or supported by them. FreeStyle, Libre, LibreLink, LibreLinkUp and LibreView are Abbott's trademarks, used here only to say what this software works with.</p></div>
+      <div class="card"><h3>Not for profit</h3><p>A free hobby project, made as a personal project and not for money. It is not sold, has no ads and earns nothing.</p></div>
+      <div class="card"><h3>Use with care</h3><p>Not a medical device. It relies on an interface that Abbott does not publish for third parties, which may change or stop working at any time. Provided as is, without warranty.</p></div>
+    </div>
+  </div>
+</section>
+
 </main>
 
 <footer>
   <div class="wrap">
-    <p><b>Trademarks and disclaimer.</b> FreeStyle, Libre, LibreLink, LibreLinkUp and LibreView are trademarks of Abbott, used here only to say what this software works with. This is a free, non-commercial hobby project, made as a personal project and not for money: it is not sold, has no ads and earns nothing. It is independent and unofficial: it is not made, approved or supported by Abbott, and it uses an interface that Abbott does not publish for third parties and may change or block at any time. Provided as is, without warranty. Not a medical device.</p>
     <nav>
       <a href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
       <a href="https://github.com/bsalgueiro/libre-monitor/releases">Releases</a>
