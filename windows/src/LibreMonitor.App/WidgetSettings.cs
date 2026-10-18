@@ -29,6 +29,15 @@ public sealed class WidgetSettings
     /// <summary>Thresholds are stored in mg/dL whatever unit is displayed. Both alerts start switched off.</summary>
     public AlertSettings Alerts { get; set; } = new();
 
+    /// <summary>The "sensor is about to end" alert: on or off, how many days before the end to start, and how often to repeat.</summary>
+    public SensorAlertSettings SensorAlert { get; set; } = new();
+
+    /// <summary>
+    /// All alerts are paused until the user turns them back on (the same as a snooze with no end). Kept across restarts,
+    /// so the widget stays quiet until it is switched back on; the menu says so while it is on.
+    /// </summary>
+    public bool AlertsPaused { get; set; }
+
     /// <summary>How many days the user's sensor lasts (a choice from <see cref="SensorSchedule.DurationChoices"/>), used to estimate when it ends.</summary>
     public int SensorDurationDays { get; set; } = SensorSchedule.DefaultDurationDays;
 

@@ -14,9 +14,6 @@ public static class SensorSchedule
     /// <summary>The durations the user can choose from. More can be added here when another kind of sensor needs it.</summary>
     public static readonly IReadOnlyList<int> DurationChoices = [14, 15];
 
-    /// <summary>The notification about the sensor ending comes when this little time is left.</summary>
-    public static readonly TimeSpan NoticeBefore = TimeSpan.FromHours(24);
-
     /// <returns>The given duration if it is one of the choices, otherwise the default (for example a saved value that no longer exists).</returns>
     public static int NormalizeDurationDays(int days) => DurationChoices.Contains(days) ? days : DefaultDurationDays;
 
@@ -28,32 +25,77 @@ public static class SensorSchedule
         EndsAt(sensor, durationDays) - now;
 }
 
+/// <summary>
+/// The user's choices for the "sensor is about to end" alert. On by default, one day before the end, once a day, which
+/// is the single notice the app gave before this could be set.
+/// </summary>
+/// <param name="DaysBefore">How many days before the end the alerts start, 1 to <see cref="MaxDaysBefore"/>.</param>
+/// <param name="RepeatMinutes">How often to repeat once they have started: one of <see cref="RepeatChoices"/>.</param>
+public sealed record SensorAlertSettings(bool Enabled = true, int DaysBefore = 1, int RepeatMinutes = 1440)
+{
+    public const int MaxDaysBefore = 7;
+
+    /// <summary>Once a day, every 6 hours, every hour (in minutes).</summary>
+    public static readonly IReadOnlyList<int> RepeatChoices = [1440, 360, 60];
+
+    /// <returns>A message describing the first problem, or null when the settings are usable.</returns>
+    public string? Validate()
+    {
+        if (DaysBefore is < 1 or > MaxDaysBefore) return $"The sensor alert must start between 1 and {MaxDaysBefore} days before the end.";
+        if (!RepeatChoices.Contains(RepeatMinutes)) return "Choose how often to repeat the sensor alert.";
+        return null;
+    }
+}
+
 /// <summary>A notification that the sensor is about to end.</summary>
-public sealed record SensorEndingRaised(DateTimeOffset EndsAt);
+public sealed record SensorEndingRaised(DateTimeOffset EndsAt, bool IsReminder = false);
 
 /// <summary>
-/// Decides when to say the sensor is about to end: once per sensor and chosen duration, when
-/// <see cref="SensorSchedule.NoticeBefore"/> or less remains. Pure logic with no UI or clock of its own. Nothing is
-/// stored, so after a restart the notice may come once more for the same sensor. Changing the duration counts as a
-/// new question: a notice already given for 14 days does not stop one at the end of 15.
+/// Decides when to say the sensor is about to end: from <see cref="SensorAlertSettings.DaysBefore"/> days before the
+/// end, then again at the chosen interval, until the end. Pure logic with no UI or clock of its own. Nothing is stored,
+/// so after a restart the first notice may come once more for the same sensor. Changing the duration counts as a new
+/// question: notices given for 14 days do not stop the ones at the end of 15.
 /// </summary>
 public sealed class SensorExpiryEvaluator
 {
-    private (DateTimeOffset ActivatedAt, int DurationDays)? _notifiedFor;
+    private (DateTimeOffset ActivatedAt, int DurationDays)? _episode;
+    private DateTimeOffset? _lastRaisedAt;
 
-    /// <param name="snoozedUntil">The shared alert snooze, if one is active; the notice is raised once the snooze ends.</param>
-    public SensorEndingRaised? Evaluate(
-        SensorInfo? sensor, DateTimeOffset now, DateTimeOffset? snoozedUntil = null, int durationDays = SensorSchedule.DefaultDurationDays)
+    /// <summary>Forget what has been raised, for example after the settings change.</summary>
+    public void Reset()
     {
-        if (sensor is null) return null;
+        _episode = null;
+        _lastRaisedAt = null;
+    }
+
+    /// <param name="snoozedUntil">The shared alert snooze, if one is active; a held notice is raised once it ends.</param>
+    public SensorEndingRaised? Evaluate(
+        SensorInfo? sensor, DateTimeOffset now, SensorAlertSettings settings, DateTimeOffset? snoozedUntil = null,
+        int durationDays = SensorSchedule.DefaultDurationDays)
+    {
+        if (sensor is null || !settings.Enabled)
+        {
+            Reset();
+            return null;
+        }
 
         durationDays = SensorSchedule.NormalizeDurationDays(durationDays);
         var remaining = SensorSchedule.Remaining(sensor, now, durationDays);
-        if (remaining <= TimeSpan.Zero || remaining > SensorSchedule.NoticeBefore) return null;
-        if (_notifiedFor == (sensor.ActivatedAt, durationDays)) return null;
+        if (remaining <= TimeSpan.Zero || remaining > TimeSpan.FromDays(settings.DaysBefore)) return null;
+
+        if (_episode != (sensor.ActivatedAt, durationDays))
+        {
+            _episode = (sensor.ActivatedAt, durationDays);
+            _lastRaisedAt = null;
+        }
+
         if (snoozedUntil is { } until && now < until) return null;
 
-        _notifiedFor = (sensor.ActivatedAt, durationDays);
-        return new SensorEndingRaised(SensorSchedule.EndsAt(sensor, durationDays));
+        var neverRaised = _lastRaisedAt is null;
+        var reminderDue = _lastRaisedAt is { } last && now - last >= TimeSpan.FromMinutes(settings.RepeatMinutes);
+        if (!neverRaised && !reminderDue) return null;
+
+        _lastRaisedAt = now;
+        return new SensorEndingRaised(SensorSchedule.EndsAt(sensor, durationDays), IsReminder: !neverRaised);
     }
 }

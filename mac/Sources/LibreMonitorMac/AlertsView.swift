@@ -2,7 +2,8 @@ import AppKit
 import LibreMonitorKit
 import SwiftUI
 
-/// Edits the alert thresholds in the unit the widget displays. Values are converted to mg/dL for storage.
+/// Edits every alert, one tab per kind (glucose, insulin, sensor), and the switch that pauses them all. Glucose
+/// thresholds are edited in the unit the widget displays and converted to mg/dL for storage.
 /// Port of windows/src/LibreMonitor.App/AlertsWindow.xaml(.cs).
 struct AlertsView: View {
     let unit: GlucoseUnit
@@ -10,7 +11,7 @@ struct AlertsView: View {
     let originalInsulin: InsulinSettings
     /// Sends a sample notification (and plays the sound if asked); reports whether one could be shown.
     let sendTest: (Bool, @escaping (Bool) -> Void) -> Void
-    let save: (AlertSettings, InsulinSettings) -> Void
+    let save: (AlertSettings, InsulinSettings, SensorAlertSettings, Bool) -> Void
     let cancel: () -> Void
 
     @State private var lowEnabled: Bool
@@ -24,6 +25,10 @@ struct AlertsView: View {
     @State private var firstDose: Date
     @State private var secondDose: Date
     @State private var insulinRepeatMinutes: Int
+    @State private var sensorEnabled: Bool
+    @State private var sensorDays: Int
+    @State private var sensorRepeat: Int
+    @State private var paused: Bool
     @State private var info: String?
     @State private var error: String?
 
@@ -56,10 +61,19 @@ struct AlertsView: View {
         return (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
     }
 
+    private static func sensorRepeatLabel(_ minutes: Int) -> String {
+        switch minutes {
+        case 1440: return "Once a day"
+        case 360: return "Every 6 hours"
+        case 60: return "Every hour"
+        default: return "Every \(minutes) minutes"
+        }
+    }
+
     init(
-        unit: GlucoseUnit, original: AlertSettings, insulin: InsulinSettings,
+        unit: GlucoseUnit, original: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings, paused: Bool,
         sendTest: @escaping (Bool, @escaping (Bool) -> Void) -> Void,
-        save: @escaping (AlertSettings, InsulinSettings) -> Void, cancel: @escaping () -> Void)
+        save: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings, Bool) -> Void, cancel: @escaping () -> Void)
     {
         self.unit = unit
         self.original = original
@@ -90,12 +104,69 @@ struct AlertsView: View {
             abs($0.minutes - insulin.repeatMinutes) < abs($1.minutes - insulin.repeatMinutes)
         }
         _insulinRepeatMinutes = State(initialValue: nearestInsulin?.minutes ?? 30)
+
+        _sensorEnabled = State(initialValue: sensor.enabled)
+        _sensorDays = State(initialValue: min(max(sensor.daysBefore, 1), SensorAlertSettings.maxDaysBefore))
+        let nearestRepeat = SensorAlertSettings.repeatChoices.min {
+            abs($0 - sensor.repeatMinutes) < abs($1 - sensor.repeatMinutes)
+        }
+        _sensorRepeat = State(initialValue: nearestRepeat ?? 1440)
+        _paused = State(initialValue: paused)
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Glucose alerts").font(.headline)
+            VStack(alignment: .leading, spacing: 2) {
+                Toggle("Pause all alerts", isOn: $paused).fontWeight(.semibold)
+                Text("Nothing will notify you until you untick this. The widget keeps showing your readings.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.leading, 20)
+            }
 
+            TabView {
+                tabContent { glucoseTab }.tabItem { Text("Glucose") }
+                tabContent { insulinSection }.tabItem { Text("Insulin") }
+                tabContent { sensorTab }.tabItem { Text("Sensor") }
+            }
+            .frame(height: 410)
+
+            Toggle("Play a sound", isOn: $sound)
+                .disabled(paused)
+                .opacity(paused ? 0.45 : 1)
+
+            if let info {
+                Text(info).font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+            if let error {
+                Text(error).font(.callout).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
+            }
+
+            HStack {
+                Button("Send test alert") { runTest() }.disabled(paused)
+                Spacer()
+                Button("Cancel") { cancel() }.keyboardShortcut(.cancelAction)
+                Button("Save") { commit() }.keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 470)
+    }
+
+    /// One tab's content: scrolls if it is taller than the tab, and is greyed out and disabled while everything is paused.
+    private func tabContent<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        ScrollView {
+            content()
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 14)
+                .padding(.horizontal, 6)
+        }
+        .disabled(paused)
+        .opacity(paused ? 0.45 : 1)
+    }
+
+    private var glucoseTab: some View {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Get a notification when a reading goes below or above your own limits. Both are off until you turn them on.")
                 .font(.callout)
                 .foregroundColor(.secondary)
@@ -108,41 +179,48 @@ struct AlertsView: View {
                 ForEach(Self.repeatChoices) { Text($0.label).tag($0.minutes) }
             }
 
-            Toggle("Play a sound", isOn: $sound)
-
-            Divider()
-
-            insulinSection
-
             Text("Alerts only work while this app is running, your Mac is awake, and your phone is uploading. Readings can "
                 + "arrive minutes late, and macOS may hide notifications (for example in a Focus mode). Do not rely on this "
                 + "for safety: keep your sensor's own alarms on.")
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-
-            if let info {
-                Text(info).font(.callout).foregroundColor(.secondary).fixedSize(horizontal: false, vertical: true)
-            }
-            if let error {
-                Text(error).font(.callout).foregroundColor(.red).fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack {
-                Button("Send test alert") { runTest() }
-                Spacer()
-                Button("Cancel") { cancel() }.keyboardShortcut(.cancelAction)
-                Button("Save") { commit() }.keyboardShortcut(.defaultAction)
-            }
         }
-        .padding(24)
-        .frame(width: 420)
+    }
+
+    private var sensorTab: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Get a notification as your sensor gets close to its end. It is on by default.")
+                .font(.callout)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Toggle("Alert me before my sensor ends", isOn: $sensorEnabled).fontWeight(.semibold)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Picker("Start alerting", selection: $sensorDays) {
+                    ForEach(1...SensorAlertSettings.maxDaysBefore, id: \.self) {
+                        Text($0 == 1 ? "1 day before" : "\($0) days before").tag($0)
+                    }
+                }
+                Picker("Then repeat", selection: $sensorRepeat) {
+                    ForEach(SensorAlertSettings.repeatChoices, id: \.self) { Text(Self.sensorRepeatLabel($0)).tag($0) }
+                }
+            }
+            .padding(.leading, 20)
+            .disabled(!sensorEnabled)
+            .opacity(sensorEnabled ? 1 : 0.5)
+
+            Text("The end date is an estimate: the sensor's start plus its duration. Set the duration (14 or 15 days) in the "
+                + "widget menu, under Sensor duration.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var insulinSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Insulin").font(.headline)
-
             Text("A reminder at your usual time, and a syringe icon on the widget to tap once the dose is administered, so you "
                 + "can check later whether you already did. Off until you turn it on.")
                 .font(.callout)
@@ -249,7 +327,13 @@ struct AlertsView: View {
             return
         }
 
-        save(settings, insulin)
+        let sensor = SensorAlertSettings(enabled: sensorEnabled, daysBefore: sensorDays, repeatMinutes: sensorRepeat)
+        if let problem = sensor.validate() {
+            error = problem
+            return
+        }
+
+        save(settings, insulin, sensor, paused)
     }
 }
 
@@ -258,16 +342,16 @@ final class AlertsWindowController {
     private var window: NSWindow?
 
     func show(
-        unit: GlucoseUnit, settings: AlertSettings, insulin: InsulinSettings,
+        unit: GlucoseUnit, settings: AlertSettings, insulin: InsulinSettings, sensor: SensorAlertSettings, paused: Bool,
         sendTest: @escaping (Bool, @escaping (Bool) -> Void) -> Void,
-        onSave: @escaping (AlertSettings, InsulinSettings) -> Void)
+        onSave: @escaping (AlertSettings, InsulinSettings, SensorAlertSettings, Bool) -> Void)
     {
         window?.close()
 
         let view = AlertsView(
-            unit: unit, original: settings, insulin: insulin, sendTest: sendTest,
-            save: { [weak self] new, newInsulin in
-                onSave(new, newInsulin)
+            unit: unit, original: settings, insulin: insulin, sensor: sensor, paused: paused, sendTest: sendTest,
+            save: { [weak self] new, newInsulin, newSensor, newPaused in
+                onSave(new, newInsulin, newSensor, newPaused)
                 self?.window?.close()
             },
             cancel: { [weak self] in self?.window?.close() })

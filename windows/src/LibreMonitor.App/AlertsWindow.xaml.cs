@@ -7,7 +7,8 @@ using LibreMonitor.Core;
 namespace LibreMonitor.App;
 
 /// <summary>
-/// Edits the alert thresholds in the unit the widget displays. Values are converted to mg/dL for storage.
+/// Edits every alert, one tab per kind (glucose, insulin, sensor), and the switch that pauses them all. Glucose
+/// thresholds are edited in the unit the widget displays and converted to mg/dL for storage.
 /// </summary>
 public partial class AlertsWindow : Window
 {
@@ -20,9 +21,15 @@ public partial class AlertsWindow : Window
 
     public AlertSettings? Result { get; private set; }
     public InsulinSettings? InsulinResult { get; private set; }
+    public SensorAlertSettings? SensorResult { get; private set; }
+
+    /// <summary>Whether all alerts are paused until turned back on.</summary>
+    public bool PausedResult { get; private set; }
 
     /// <param name="sendTest">Shows a sample notification (and plays the sound if the argument is true); returns whether a notification could be shown.</param>
-    public AlertsWindow(AlertSettings current, InsulinSettings insulin, GlucoseUnit unit, Func<bool, bool> sendTest)
+    public AlertsWindow(
+        AlertSettings current, InsulinSettings insulin, SensorAlertSettings sensor, bool paused, GlucoseUnit unit,
+        Func<bool, bool> sendTest)
     {
         InitializeComponent();
         _original = current;
@@ -52,6 +59,41 @@ public partial class AlertsWindow : Window
         InsulinRepeatBox.SelectedItem = InsulinRepeatBox.Items.Cast<ComboBoxItem>()
             .MinBy(item => Math.Abs(int.Parse((string)item.Tag) - insulin.RepeatMinutes));
         UpdateInsulinPanel();
+
+        SensorBox.IsChecked = sensor.Enabled;
+        SensorDaysBox.SelectedItem = SensorDaysBox.Items.Cast<ComboBoxItem>()
+            .MinBy(item => Math.Abs(int.Parse((string)item.Tag) - sensor.DaysBefore));
+        SensorRepeatBox.SelectedItem = SensorRepeatBox.Items.Cast<ComboBoxItem>()
+            .MinBy(item => Math.Abs(int.Parse((string)item.Tag) - sensor.RepeatMinutes));
+        UpdateSensorPanel();
+
+        PauseBox.IsChecked = paused;
+        UpdatePause();
+    }
+
+    private void Pause_Changed(object sender, RoutedEventArgs e) => UpdatePause();
+
+    /// <summary>While everything is paused every other option is greyed out, until the box is unticked again.</summary>
+    private void UpdatePause()
+    {
+        if (SoundBox is null || TestButton is null) return; // still loading
+
+        var paused = PauseBox.IsChecked == true;
+        foreach (var part in new FrameworkElement[] { GlucoseTab, InsulinTab, SensorTab, SoundBox, TestButton })
+        {
+            part.IsEnabled = !paused;
+            part.Opacity = paused ? 0.45 : 1;
+        }
+    }
+
+    private void Sensor_Changed(object sender, RoutedEventArgs e) => UpdateSensorPanel();
+
+    private void UpdateSensorPanel()
+    {
+        if (SensorPanel is null) return; // still loading
+
+        SensorPanel.IsEnabled = SensorBox.IsChecked == true;
+        SensorPanel.Opacity = SensorPanel.IsEnabled ? 1 : 0.5;
     }
 
     private static string ShowTime(int minutes) => $"{minutes / 60:00}:{minutes % 60:00}";
@@ -96,9 +138,17 @@ public partial class AlertsWindow : Window
         Foreground = Palette.Brush(theme.Text);
 
         // CheckBox sets its own text colour instead of inheriting the window's, which left dark labels on the dark card.
-        LowBox.Foreground = HighBox.Foreground = SoundBox.Foreground = InsulinBox.Foreground = Palette.Brush(theme.Text);
-        DisclaimerText.Foreground = InsulinDisclaimerText.Foreground = TimeHint.Foreground = Palette.Brush(theme.Muted);
+        LowBox.Foreground = HighBox.Foreground = SoundBox.Foreground = InsulinBox.Foreground =
+            PauseBox.Foreground = SensorBox.Foreground = Palette.Brush(theme.Text);
+        DisclaimerText.Foreground = InsulinDisclaimerText.Foreground = TimeHint.Foreground =
+            PauseHint.Foreground = SensorNoteText.Foreground = Palette.Brush(theme.Muted);
         InfoText.Foreground = Palette.Brush(theme.Muted);
+
+        // The tabs are drawn from these (see the styles in the XAML).
+        Resources["TextBrush"] = Palette.Brush(theme.Text);
+        Resources["MutedBrush"] = Palette.Brush(theme.Muted);
+        Resources["AccentBrush"] = Palette.Brush(theme.InRange);
+        Resources["LineBrush"] = Palette.Brush(Palette.WithAlpha(theme.Ink, 50));
     }
 
     private bool TryRead(TextBox box, string shown, double original, string name, out double mgPerDl)
@@ -158,8 +208,20 @@ public partial class AlertsWindow : Window
             return;
         }
 
+        var sensor = new SensorAlertSettings(
+            Enabled: SensorBox.IsChecked == true,
+            DaysBefore: int.Parse((string)((ComboBoxItem)SensorDaysBox.SelectedItem).Tag),
+            RepeatMinutes: int.Parse((string)((ComboBoxItem)SensorRepeatBox.SelectedItem).Tag));
+        if (sensor.Validate() is { } sensorProblem)
+        {
+            ShowError(sensorProblem);
+            return;
+        }
+
         Result = settings;
         InsulinResult = insulin;
+        SensorResult = sensor;
+        PausedResult = PauseBox.IsChecked == true;
         DialogResult = true;
     }
 

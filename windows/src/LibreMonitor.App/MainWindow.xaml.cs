@@ -53,6 +53,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         _client = new LibreLinkUpClient(_http);
         BuildSensorDurationMenu();
+        ApplyPause(); // alerts stay paused across restarts until turned back on
 
         _tray = new TrayController(() => IsVisible, ToggleWidget, Close) { Visible = _settings.ShowTrayIcon };
 
@@ -204,16 +205,38 @@ public partial class MainWindow : Window
 
     private void Alerts_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new AlertsWindow(_settings.Alerts, _settings.Insulin, _settings.Unit, TestAlert) { Owner = this };
-        if (dialog.ShowDialog() != true || dialog.Result is not { } result || dialog.InsulinResult is not { } insulin) return;
+        var dialog = new AlertsWindow(_settings.Alerts, _settings.Insulin, _settings.SensorAlert, _settings.AlertsPaused, _settings.Unit, TestAlert)
+        {
+            Owner = this,
+        };
+        if (dialog.ShowDialog() != true || dialog.Result is not { } result || dialog.InsulinResult is not { } insulin
+            || dialog.SensorResult is not { } sensor)
+        {
+            return;
+        }
 
         _settings.Alerts = result;
         _settings.Insulin = insulin.Enabled ? insulin : insulin with { LastAdministeredAt = null }; // off means nothing stays saved
+        _settings.SensorAlert = sensor;
+        _settings.AlertsPaused = dialog.PausedResult;
         _settings.Save();
         _alerts.Reset(); // new thresholds start a fresh episode
         _insulinReminder.Reset();
+        _sensorExpiry.Reset();
+        ApplyPause();
         EvaluateAlerts();
         EvaluateInsulin();
+        EvaluateSensor();
+    }
+
+    /// <summary>
+    /// Makes the snooze match the "pause all alerts" setting. A pause is a snooze with no end, so every alert that already
+    /// follows the shared snooze (glucose, insulin, sensor) stops, and raises again as soon as the pause is lifted.
+    /// </summary>
+    private void ApplyPause()
+    {
+        if (_settings.AlertsPaused) _alerts.Snooze(DateTimeOffset.MaxValue);
+        else if (_alerts.SnoozedUntil(DateTimeOffset.UtcNow) == DateTimeOffset.MaxValue) _alerts.Resume();
     }
 
     // ---- sensor ----------------------------------------------------------------
@@ -224,7 +247,7 @@ public partial class MainWindow : Window
     private void EvaluateSensor()
     {
         var now = DateTimeOffset.UtcNow;
-        var raised = _sensorExpiry.Evaluate(CurrentSensor, now, _alerts.SnoozedUntil(now), SensorDuration);
+        var raised = _sensorExpiry.Evaluate(CurrentSensor, now, _settings.SensorAlert, _alerts.SnoozedUntil(now), SensorDuration);
         if (raised is not null)
         {
             _tray.Notify("Sensor reminder", $"The sensor is due to end about {Stamp(raised.EndsAt)}.");
@@ -420,15 +443,27 @@ public partial class MainWindow : Window
 
     private void Snooze_Click(object sender, RoutedEventArgs e)
     {
+        if (_settings.AlertsPaused) return; // already stopped until turned back on
         var minutes = int.Parse((string)((MenuItem)sender).Tag);
         _alerts.Snooze(DateTimeOffset.UtcNow.AddMinutes(minutes));
     }
 
+    /// <summary>Stops all alerts until they are turned back on, here or in the Alerts window.</summary>
+    private void Pause_Click(object sender, RoutedEventArgs e)
+    {
+        _settings.AlertsPaused = true;
+        _settings.Save();
+        ApplyPause();
+    }
+
     private void Resume_Click(object sender, RoutedEventArgs e)
     {
+        _settings.AlertsPaused = false;
+        _settings.Save();
         _alerts.Resume();
         EvaluateAlerts();
         EvaluateInsulin();
+        EvaluateSensor();
     }
 
     private void RenderValue()
@@ -936,9 +971,10 @@ public partial class MainWindow : Window
 
         var snoozedUntil = _alerts.SnoozedUntil(DateTimeOffset.UtcNow);
         ResumeItem.IsEnabled = snoozedUntil is not null;
-        SnoozeMenu.Header = snoozedUntil is { } until
-            ? $"Snooze alerts (until {until.ToLocalTime():HH:mm})"
-            : "Snooze alerts";
+        PauseItem.IsEnabled = !_settings.AlertsPaused;
+        SnoozeMenu.Header = _settings.AlertsPaused
+            ? "Alerts paused"
+            : snoozedUntil is { } until ? $"Snooze alerts (until {until.ToLocalTime():HH:mm})" : "Snooze alerts";
 
         TrayItem.IsChecked = _settings.ShowTrayIcon;
         HideItem.IsEnabled = _settings.ShowTrayIcon; // hiding the widget without a tray icon would leave no way to bring it back

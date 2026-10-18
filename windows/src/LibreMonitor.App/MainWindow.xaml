@@ -68,6 +68,7 @@
                     <MenuItem Header="For 30 minutes" Click="Snooze_Click" Tag="30"/>
                     <MenuItem Header="For 1 hour" Click="Snooze_Click" Tag="60"/>
                     <MenuItem Header="For 2 hours" Click="Snooze_Click" Tag="120"/>
+                    <MenuItem x:Name="PauseItem" Header="Until I turn them back on" Click="Pause_Click"/>
                     <Separator/>
                     <MenuItem x:Name="ResumeItem" Header="Resume alerts" Click="Resume_Click"/>
                 </MenuItem>
