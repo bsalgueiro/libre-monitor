@@ -184,6 +184,12 @@
   section.alt .card { background: var(--bg); }
   .card p { margin: 0; color: var(--muted); font-size: .96rem; }
   .features { margin-top: 56px; }
+  .how-grid { display: block; columns: 3 300px; column-gap: 16px; }
+  .how-grid .card { break-inside: avoid; margin-bottom: 16px; }
+  dl.how { margin: 12px 0 0; }
+  dl.how dt { font-weight: 600; font-size: .95rem; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  dl.how dt:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+  dl.how dd { margin: 2px 0 0; color: var(--muted); font-size: .93rem; }
 
   .compact { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 28px; margin-top: 40px; }
   .compact img { width: 300px; filter: drop-shadow(var(--shadow)); }
@@ -436,40 +442,6 @@
   </div>
 </section>
 
-<!-- using -->
-<section class="alt" id="using">
-  <div class="wrap">
-    <h2>Using the widget</h2>
-    <p class="sub">Position, size and preferences are remembered. Right-click the widget to open the menu.</p>
-    <div class="table-scroll">
-      <table>
-        <tr><th>To do this</th><th>Do this</th></tr>
-        <tr><td>Move it</td><td>Drag it</td></tr>
-        <tr><td>Resize it</td><td>Drag any edge or corner</td></tr>
-        <tr><td>Change the time range</td><td>Mouse wheel over the widget, or the menu</td></tr>
-        <tr><td>Hide or show the graph</td><td>Menu &gt; Show graph (untick it for a compact widget with just the value)</td></tr>
-        <tr><td>See a reading's value and time</td><td>Hover the graph</td></tr>
-        <tr><td>See when the sensor ends</td><td>Hover the unit and age text, or open the menu</td></tr>
-        <tr><td>Set how long your sensor lasts</td><td>Menu &gt; Sensor duration (14 or 15 days)</td></tr>
-        <tr><td>Refresh now</td><td>Double-click the value. It updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded</td></tr>
-        <tr><td>Switch mg/dL and mmol/L</td><td>Menu &gt; Units</td></tr>
-        <tr><td>Light, dark, transparent or follow the system</td><td>Menu &gt; Appearance</td></tr>
-        <tr><td>Set up low and high alerts</td><td>Menu &gt; Alerts…</td></tr>
-        <tr><td>Pause alerts</td><td>Menu &gt; Snooze alerts (for a while, or until you turn them back on)</td></tr>
-        <tr><td>Set up the insulin reminder</td><td>Menu &gt; Set up the insulin reminder… (or Menu &gt; Alerts…)</td></tr>
-        <tr><td>Mark an insulin dose as administered</td><td>Click the syringe and confirm (or Menu &gt; Insulin: mark as administered)</td></tr>
-        <tr><td>Turn the insulin reminder off</td><td>Menu &gt; Turn off the insulin reminder</td></tr>
-        <tr><td>Snap to a screen corner</td><td>Menu &gt; Move to corner</td></tr>
-        <tr><td>Hide it to the tray or menu bar</td><td>Click the ✕, or Menu &gt; Hide to tray</td></tr>
-        <tr><td>Bring it back</td><td>Click the tray or menu bar icon</td></tr>
-        <tr><td>Turn the tray icon off</td><td>Menu &gt; untick Show tray icon (the ✕ then exits instead of hiding)</td></tr>
-        <tr><td>Sign out</td><td>Menu &gt; Sign out and exit</td></tr>
-        <tr><td>Quit</td><td>Menu &gt; Exit, or the tray icon's menu</td></tr>
-      </table>
-    </div>
-  </div>
-</section>
-
 <!-- alerts -->
 <section id="alerts">
   <div class="wrap">
@@ -530,8 +502,49 @@
   </div>
 </section>
 
+<!-- using -->
+<section id="using">
+  <div class="wrap">
+    <h2>Using the widget</h2>
+    <p class="sub">Position, size and preferences are remembered. Right-click the widget to open the menu.</p>
+    <div class="grid how-grid">
+      <div class="card"><h3>Place it</h3><dl class="how">
+        <dt>Move it</dt><dd>Drag it</dd>
+        <dt>Resize it</dt><dd>Drag any edge or corner</dd>
+        <dt>Snap to a screen corner</dt><dd>Menu &gt; Move to corner</dd>
+        <dt>Hide it to the tray or menu bar</dt><dd>Click the ✕, or Menu &gt; Hide to tray</dd>
+        <dt>Bring it back</dt><dd>Click the tray or menu bar icon</dd>
+        <dt>Turn the tray icon off</dt><dd>Menu &gt; untick Show tray icon (the ✕ then exits instead of hiding)</dd>
+      </dl></div>
+      <div class="card"><h3>Look</h3><dl class="how">
+        <dt>Hide or show the graph</dt><dd>Menu &gt; Show graph (untick it for a compact widget with just the value)</dd>
+        <dt>Change the time range</dt><dd>Mouse wheel over the widget, or the menu</dd>
+        <dt>Switch mg/dL and mmol/L</dt><dd>Menu &gt; Units</dd>
+        <dt>Light, dark, transparent or follow the system</dt><dd>Menu &gt; Appearance</dd>
+        <dt>See a reading's value and time</dt><dd>Hover the graph</dd>
+      </dl></div>
+      <div class="card"><h3>Data</h3><dl class="how">
+        <dt>Refresh now</dt><dd>Double-click the value. It updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded</dd>
+        <dt>See when the sensor ends</dt><dd>Hover the unit and age text, or open the menu</dd>
+        <dt>Set how long your sensor lasts</dt><dd>Menu &gt; Sensor duration (14 or 15 days)</dd>
+      </dl></div>
+      <div class="card"><h3>Alerts and insulin</h3><dl class="how">
+        <dt>Set up low and high alerts</dt><dd>Menu &gt; Alerts…</dd>
+        <dt>Pause alerts</dt><dd>Menu &gt; Snooze alerts (for a while, or until you turn them back on)</dd>
+        <dt>Set up the insulin reminder</dt><dd>Menu &gt; Set up the insulin reminder… (or Menu &gt; Alerts…)</dd>
+        <dt>Mark an insulin dose as administered</dt><dd>Click the syringe and confirm (or Menu &gt; Insulin: mark as administered)</dd>
+        <dt>Turn the insulin reminder off</dt><dd>Menu &gt; Turn off the insulin reminder</dd>
+      </dl></div>
+      <div class="card"><h3>Leave</h3><dl class="how">
+        <dt>Sign out</dt><dd>Menu &gt; Sign out and exit</dd>
+        <dt>Quit</dt><dd>Menu &gt; Exit, or the tray icon's menu</dd>
+      </dl></div>
+    </div>
+  </div>
+</section>
+
 <!-- faq -->
-<section id="faq">
+<section class="alt" id="faq">
   <div class="wrap">
     <h2>FAQ</h2>
         <details>
@@ -562,7 +575,7 @@
 </section>
 
 <!-- open source -->
-<section class="alt" id="open-source">
+<section id="open-source">
   <div class="wrap">
     <h2>Built in the open</h2>
     <p class="sub">The code is on GitHub: read it, build it yourself, report problems or send improvements. Contributions are welcome.</p>
@@ -575,7 +588,7 @@
 </section>
 
 <!-- about -->
-<section id="about">
+<section class="alt" id="about">
   <div class="wrap">
     <h2>About</h2>
     <p class="sub">Created by a diabetic patient, who happens to be a software developer, tired of having to pick up the phone to check my glucose levels. It started as a tool for myself, and I am sharing it, free and open source, in case it helps others in the same situation.</p>
