@@ -9,3 +9,4 @@ TestResults/
 *.sqlite
 .env
 .DS_Store
+.vscode/
