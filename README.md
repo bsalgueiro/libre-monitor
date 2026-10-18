@@ -21,7 +21,7 @@ A small, read-only widget for Windows and macOS.
 
 <br>
 
-<img src="docs/images/widget-dark.png" alt="The widget in the dark theme: 121 mg/dL, a steady arrow and a six-hour graph" width="330">
+<img src="docs/images/widget-dark.png" alt="The widget in the dark theme: 118 mg/dL, a steady arrow and a six-hour graph" width="330">
 &nbsp;
 <img src="docs/images/widget-light.png" alt="The widget in the light theme" width="330">
 
@@ -77,19 +77,15 @@ The colours for low, in range and high are for display only. They are not alarms
 &nbsp;
 <img src="docs/images/alert-high.png" alt="A high reading: amber value and an amber border around the widget" width="250">
 <br>
-<sub>The border turns red or amber while a reading is outside your alert limits (these are simulated readings).</sub>
+<sub>The border turns red or amber while a reading is outside your alert limits (the readings in these pictures are made up).</sub>
 </div>
 
-## Screenshots
+## On your desktop
 
 <div align="center">
-<img src="docs/images/mac-light.png" alt="The macOS widget in the light theme" width="250">
-&nbsp;
-<img src="docs/images/mac-compact.png" alt="The macOS widget with the graph hidden" width="250">
-&nbsp;
-<img src="docs/images/mac-alert-low.png" alt="The macOS widget with a red alert border and a reading tooltip" width="250">
-<br><br>
-<img src="docs/images/mac-menu.png" alt="The macOS right-click menu" width="360">
+<img src="docs/images/desktop.jpg" alt="A desktop with two windows open and the Libre Monitor Desktop widget in the top-right corner" width="680">
+<br>
+<sub>An illustration: the windows are placeholders and the readings are made up.</sub>
 </div>
 
 ## Getting started
@@ -412,6 +408,14 @@ open build/LibreMonitor.app --args --simulate 2     # start with scenario 2 show
 
 On the Mac this code sits inside `#if DEBUG`, so a Release build does not contain it at all. CI searches the release
 binary for `--simulate` and fails if it finds it.
+
+### Pictures for the website
+
+The images in `docs/images` are drawn, not captured. `./scripts/make-screenshots.sh` compiles the app's real widget view with a
+small program that feeds it made-up glucose curves, and writes the dark, light, compact, low and high pictures and the
+illustrated desktop. They never show the "SIMULATED" label, no real data or desktop, and it does not touch the installed app,
+its settings or its login. Run it again after any change to how the widget looks. It is a developer tool: it is not part of the
+app and is never built into a release.
 
 ### Building the release app
 

@@ -9,7 +9,7 @@
 <meta property="og:title" content="Libre Monitor Desktop">
 <meta property="og:site_name" content="Libre Monitor Desktop">
 <meta property="og:description" content="Your FreeStyle Libre glucose, always visible on your desktop. A free, open-source, read-only desktop app for Windows and macOS, not a phone app.">
-<meta property="og:image" content="https://bsalgueiro.github.io/libre-monitor/images/widget-dark.png">
+<meta property="og:image" content="https://bsalgueiro.github.io/libre-monitor/images/desktop.jpg">
 <meta property="og:type" content="website">
 <link rel="icon" href="images/icon.png">
 <script type="application/ld+json">
@@ -140,6 +140,9 @@
   .pair figure { margin: 0; text-align: center; }
   .pair img { width: 250px; filter: drop-shadow(var(--shadow)); }
   .pair figcaption { margin-top: 10px; color: var(--muted); font-size: .9rem; }
+  .desk { max-width: 1000px; margin: 0 auto; }
+  .desk img { display: block; width: 100%; border-radius: 14px; filter: drop-shadow(var(--shadow)); }
+  .desk p { text-align: center; margin: 14px 0 0; }
   .mac-row { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; align-items: flex-start; }
   .mac-row img { filter: drop-shadow(var(--shadow)); }
 
@@ -229,7 +232,7 @@
 
     <div class="shots">
       <figure>
-        <img src="images/widget-dark.png" alt="The widget in the dark theme: 121 mg/dL, a steady arrow and a six-hour graph">
+        <img src="images/widget-dark.png" alt="The widget in the dark theme: 118 mg/dL, a steady arrow and a six-hour graph">
         <figcaption>Dark mode</figcaption>
       </figure>
       <figure>
@@ -274,8 +277,8 @@
         <div class="card"><h3>Read-only, no history</h3><p>It never changes your account or talks to the sensor, and keeps no readings on your computer. For history, use LibreView.</p></div>
       </div>
       <div>
-        <img src="images/mac-light.png" alt="The widget on macOS in the light theme: 121 mg/dL, a steady arrow and a six-hour graph" width="360">
-        <p class="small" style="text-align:center;margin-top:10px">The widget on macOS. Resize it to any size you like.</p>
+        <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="330">
+        <p class="small" style="text-align:center;margin-top:10px">Hide the graph and the value fills the widget.</p>
       </div>
     </div>
     <div class="grid">
@@ -288,28 +291,14 @@
   </div>
 </section>
 
-<!-- windows -->
+<!-- desktop -->
 <section class="alt">
   <div class="wrap">
-    <h2>On Windows</h2>
-    <p class="sub">Move it, resize it, change it to use it your way. Activate alerts to use Windows notifications.</p>
-    <div class="mac-row">
-      <img src="images/win-graph.png" alt="The Windows widget with the graph visible: 171 mg/dL, a steady arrow and a twelve-hour graph" width="190">
-      <img src="images/alert-low.png" alt="The Windows widget with a low reading: red value and a red border" width="250">
-      <img src="images/win-menu.png" alt="The Windows right-click menu" width="190">
-    </div>
-  </div>
-</section>
-
-<!-- mac -->
-<section>
-  <div class="wrap">
-    <h2>On a Mac</h2>
-    <p class="sub">The same widget, native to macOS, with a menu bar item and Notification Centre alerts.</p>
-    <div class="mac-row">
-      <img src="images/mac-compact.png" alt="The macOS widget with the graph hidden" width="250">
-      <img src="images/mac-alert-low.png" alt="The macOS widget with a red alert border and a reading tooltip" width="250">
-      <img src="images/mac-menu.png" alt="The macOS right-click menu" width="300">
+    <h2>On your desktop</h2>
+    <p class="sub">Always on top of your work, in the corner you choose.</p>
+    <div class="desk">
+      <img src="images/desktop.jpg" alt="A desktop with two windows open and the Libre Monitor Desktop widget in the top-right corner, showing 118 mg/dL and a graph" width="1000">
+      <p class="small">An illustration: the windows are placeholders and the readings are made up.</p>
     </div>
   </div>
 </section>

@@ -48,7 +48,10 @@ dotnet test                                   # Windows only for the App; Core t
 dotnet run --project windows/src/LibreMonitor.App -- --dev
 cd mac && swift test
 cd mac && ./scripts/make-app.sh --debug && open build/LibreMonitor.app --args --dev   # flags go to the app, not the script
+cd mac && ./scripts/make-screenshots.sh       # redraws docs/images from the real widget view (made-up readings, no "SIMULATED")
 ```
+The pictures on the website and README come from that script, not from screen captures, so they show no personal data and can be
+redone after any change to the widget. Never put a real screenshot of a desktop or real readings in the docs.
 
 Releases: push tag `vX.Y.Z`; `.github/workflows/release.yml` builds, tests, checksums and uploads. Do not tag or push without asking.
 
