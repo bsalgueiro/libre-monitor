@@ -247,6 +247,28 @@
   .cta .small { color: #fff; opacity: .85; margin-top: 18px; }
   .cta .small a { color: #fff; text-decoration: underline; }
 
+
+  /* a little movement: gentle hovers and a soft reveal on scroll. All of it is switched off for reduced motion. */
+  .card, .steps3 li, .flow .node, .alerts-list li, details, .frame, .btn, .bar nav a, .stage img {
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease, color .22s ease;
+  }
+  .card:hover, .steps3 li:hover, .alerts-list li:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 12px 28px rgba(16, 26, 20, .10); }
+  .flow .node:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .frame:hover { transform: translateY(-3px); }
+  details:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  summary { transition: color .2s ease; }
+  summary:hover { color: var(--accent-d); }
+  .stage:hover .a { transform: translateY(-4px); }
+  .stage:hover .b { transform: translateY(3px) rotate(-1deg); }
+  .js .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+  .js .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+    .js .reveal { opacity: 1; transform: none; }
+  }
+
   footer { padding: 36px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: .92rem; }
   footer .wrap { display: grid; gap: 14px; }
   footer p { margin: 0; max-width: 760px; }
@@ -599,5 +621,18 @@
   </div>
 </footer>
 
+
+<script>
+  // Fade sections in as they scroll into view. Without JavaScript, or if anything fails, everything simply shows.
+  try {
+    if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('js');
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('main section .wrap > *, .notice').forEach(function (el, i) { el.classList.add('reveal'); io.observe(el); });
+    }
+  } catch (e) { document.documentElement.classList.remove('js'); }
+</script>
 </body>
 </html>
