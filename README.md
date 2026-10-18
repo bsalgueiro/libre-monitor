@@ -59,7 +59,7 @@ Everything you need to install and use the widget. No programming knowledge requ
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
 - Shows when your sensor is due to end: hover the unit and age text, or open the menu. It is an estimate: 14 days after the
   sensor was started, or 15 if you choose that under **Menu > Sensor duration** (the Libre 2 Plus and Libre 3 Plus last 15). You
-  get one notification when about a day is left.
+  can also get alerts as it gets close (on by default; see the **Sensor** tab under [Alerts](#alerts)).
 - An optional [insulin reminder](#insulin-reminder): a reminder at your usual time, and a small syringe on the widget that you tap once the dose is administered, so you can check later whether you already did.
 - Your follower login is stored encrypted for your Windows user only, or in your Mac's Keychain. It is never shown or sent
   anywhere except to LibreView.
@@ -168,7 +168,7 @@ flag the single-file build.
 | Switch mg/dL and mmol/L | Menu > Units |
 | Light, dark or follow Windows | Menu > Appearance |
 | Set up low and high alerts | Menu > Alerts... |
-| Pause alerts for a while | Menu > Snooze alerts |
+| Pause alerts | Menu > Snooze alerts (for a while, or until you turn them back on) |
 | Set up the insulin reminder | Menu > Set up the insulin reminder... (or Menu > Alerts...) |
 | Mark an insulin dose as administered | Click the syringe and confirm (or Menu > Insulin: mark as administered) |
 | Turn the insulin reminder off | Menu > Turn off the insulin reminder |
@@ -186,8 +186,11 @@ and hides it to the menu bar, the menu bar item replaces the tray icon, and noti
 
 ## Alerts
 
-Open **Menu > Alerts...** to turn on a low alert, a high alert, or both, and set your own limits (in mg/dL or mmol/L,
-whichever the widget shows). They are **off until you turn them on**. Use **Send test alert** to see what one looks like.
+Open **Menu > Alerts...**. There is a tab for each kind of alert: **Glucose**, **Insulin** and **Sensor**. There is no Save
+button: every change is applied as you make it (a typed value when you leave the box or press Enter), and a value that is not
+valid is explained and left unapplied until you fix it. On the Glucose tab
+turn on a low alert, a high alert, or both, and set your own limits (in mg/dL or mmol/L, whichever the widget shows). They are
+**off until you turn them on**. Use **Send test alert** to see what one looks like.
 
 - **When it alerts:** once, when a reading goes below the low limit or above the high limit. The widget border also turns
   red (low) or amber (high) while the reading stays out of range.
@@ -196,6 +199,13 @@ whichever the widget shows). They are **off until you turn them on**. Use **Send
   the range before the next crossing counts as a new alert, so a value hovering on the line does not alert over and over.
 - **Snooze:** **Menu > Snooze alerts** pauses notifications for 30 minutes, 1 hour or 2 hours. If you are still out of range
   when the snooze ends, you are alerted then.
+- **Pause everything:** choose **Menu > Snooze alerts > Until I turn them back on**, or tick **Pause all alerts** at the top of
+  the Alerts window. Glucose, insulin and sensor alerts all stop, every other option in the window is greyed out, and it stays
+  that way, even after a restart, until you choose **Resume alerts** or untick the box. The menu and the box are one switch:
+  changing either one changes the other straight away, even with the Alerts window open. The
+  widget still shows your readings, and the menu says "Alerts paused" while it is on.
+- **Sensor alert:** on the Sensor tab, choose how many days before the sensor ends to start alerting (1 to 7) and how often to
+  repeat (once a day, every 6 hours or every hour). It is on by default, one day before, once a day.
 - **Old readings are ignored:** a reading more than 10 minutes old does not trigger an alert.
 - **Notifications need the tray icon** on Windows. If you turn it off, alerts still play the sound and colour the border.
   On a Mac they use macOS notifications: the first time, macOS asks for permission, and you can change it later in
@@ -211,8 +221,8 @@ Focus assist or Do not disturb). Keep your sensor's own alarms on.
 ## Insulin reminder
 
 If you administer insulin once or twice a day, the app can remind you and help you check whether you already administered
-it, so you do not administer it twice by mistake. Open **Menu > Set up the insulin reminder...** (or **Menu > Alerts...** and
-scroll to **Insulin**) and turn it on. It is **off until you turn it on**.
+it, so you do not administer it twice by mistake. Open **Menu > Set up the insulin reminder...** (or the **Insulin** tab under **Menu > Alerts...**)
+and turn it on. It is **off until you turn it on**.
 
 - **Set it up:** choose once or twice a day, the time of each dose (24-hour clock on Windows, your Mac's clock format on a
   Mac), and how often to be reminded again if you have not marked the dose.
@@ -453,8 +463,9 @@ delete the tag, fix the problem and tag again.
 - The sensor end date is estimated: LibreLinkUp reports when the sensor was activated (`activeSensors[].sensor.a`) but no end
   date or sensor type, so `SensorSchedule` adds the duration the user chose (a preference, 14 or 15 days; the choices
   live in `SensorSchedule.DurationChoices`, so another one is a one-line change). Only the activation time is read, never the
-  serial number or device ids, and it is not stored. The notice comes once per sensor and chosen duration, when
-  24 hours or less remain; a restart may repeat it once. A missing or odd field means nothing is shown, never a service
+  serial number or device ids, and it is not stored. Alerts start the chosen number of days before the end (1 to
+  7) and repeat at the chosen interval until it ends, tracked per sensor and chosen duration; a restart may repeat the first once.
+  Pausing all alerts is a snooze with no end (`DateTimeOffset.MaxValue`), so every alert that follows the shared snooze stops. A missing or odd field means nothing is shown, never a service
   change. `LibreMonitor.Cli --sensor` prints the shape of these fields, with text replaced by its length and no glucose
   values, to check what a given sensor reports.
 - The insulin reminder stores its schedule and one timestamp, the last "administered" tap, next to the other

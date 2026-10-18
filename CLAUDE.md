@@ -32,6 +32,8 @@ Two self-contained platform folders, `windows/` and `mac/`, plus shared `docs/` 
 - **Polling guard:** `GlucoseMonitor.RefreshNow` / `refreshNow` is the only way to poll outside the timer, and it is rate-limited
   there (at least 15 s between any two polls, none while one is running, at most 6 manual refreshes per 10 minutes). Keep the
   limits in the monitor, identical in Core and Kit, and route any new trigger (button, hotkey, wake) through it.
+- **One snooze for every alert:** glucose, insulin and sensor alerts all follow the shared snooze, and "pause all alerts" is that
+  snooze with no end (a saved setting). Any new alert must take the shared snooze too, so pausing really stops everything.
 - **Alert rules** live only in `Alerts.cs` / `Alerts.swift` with no UI or clock. Thresholds are stored in mg/dL regardless of display unit.
 - **Failure classification:** unexpected responses (403/404/410, non-zero API status, HTML instead of JSON, missing field, bad timestamp)
   are `ServiceChanged`, never "wrong password". Server errors and rate limits stay retryable. Raised after 3 in a row.

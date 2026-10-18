@@ -26,6 +26,7 @@ struct WidgetActions {
     var hideToMenuBar: () -> Void
     var showAlerts: () -> Void
     var toggleInsulin: () -> Void
+    var pauseAlerts: () -> Void
     var refreshNow: () -> Void
     var snoozeAlerts: (Int) -> Void
     var resumeAlerts: () -> Void
@@ -412,13 +413,18 @@ struct WidgetView: View {
             Button("Set up the insulin reminder…") { actions.showAlerts() }
         }
 
+        let paused = model.settings.alertsPaused
         let snoozed = model.snoozedUntil.flatMap { $0 > model.now ? $0 : nil }
-        Menu(snoozed.map { "Snooze alerts (until \(Self.clock.string(from: $0)))" } ?? "Snooze alerts") {
-            Button("For 30 minutes") { actions.snoozeAlerts(30) }
-            Button("For 1 hour") { actions.snoozeAlerts(60) }
-            Button("For 2 hours") { actions.snoozeAlerts(120) }
+        let snoozeTitle = paused
+            ? "Alerts paused"
+            : snoozed.map { "Snooze alerts (until \(Self.clock.string(from: $0)))" } ?? "Snooze alerts"
+        Menu(snoozeTitle) {
+            Button("For 30 minutes") { actions.snoozeAlerts(30) }.disabled(paused)
+            Button("For 1 hour") { actions.snoozeAlerts(60) }.disabled(paused)
+            Button("For 2 hours") { actions.snoozeAlerts(120) }.disabled(paused)
+            Button("Until I turn them back on") { actions.pauseAlerts() }.disabled(paused)
             Divider()
-            Button("Resume alerts") { actions.resumeAlerts() }.disabled(snoozed == nil)
+            Button("Resume alerts") { actions.resumeAlerts() }.disabled(snoozed == nil && !paused)
         }
 
         Divider()

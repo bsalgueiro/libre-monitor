@@ -36,6 +36,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let sensorEvaluator = SensorExpiryEvaluator()
     private var lastAlertSettings = AlertSettings()
     private var lastInsulinSettings = InsulinSettings()
+    private var lastSensorAlert = SensorAlertSettings()
+    private var lastPaused = false
     private var tickTimer: Timer?
     private var settingsObserver: AnyCancellable?
     private var lastScrollChange = Date.distantPast
@@ -53,6 +55,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Notifier.shared.start()
         lastAlertSettings = model.settings.alerts
         lastInsulinSettings = model.settings.insulin
+        lastSensorAlert = model.settings.sensorAlert
+        lastPaused = model.settings.alertsPaused
+        if lastPaused { alertEvaluator.snooze(until: .distantFuture) } // alerts stay paused across restarts until turned back on
         panel = makePanel()
         statusItem = StatusItemController(
             isWidgetVisible: { [weak self] in self?.panel.isVisible ?? false },
@@ -69,14 +74,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         settingsObserver = model.$settings.sink { [weak self] settings in
             // @Published fires before the value is stored, so use the value it hands over and refresh afterwards.
             self?.applySettings(settings)
-            if settings.alerts != self?.lastAlertSettings {
-                // New limits start a fresh episode.
+            if let previous = self?.lastAlertSettings, settings.alerts != previous {
+                // New limits start a fresh episode. Changing only the sound must not, or an alert already given would
+                // be given again.
+                var comparable = settings.alerts
+                comparable.sound = previous.sound
+                if comparable != previous { self?.alertEvaluator.reset() }
                 self?.lastAlertSettings = settings.alerts
-                self?.alertEvaluator.reset()
             }
             if settings.insulin != self?.lastInsulinSettings {
                 self?.lastInsulinSettings = settings.insulin
                 self?.insulinEvaluator.reset()
+            }
+            if settings.sensorAlert != self?.lastSensorAlert {
+                self?.lastSensorAlert = settings.sensorAlert
+                self?.sensorEvaluator.reset()
+            }
+            if settings.alertsPaused != self?.lastPaused {
+                // A pause is a snooze with no end, so every alert that follows the shared snooze stops, and raises
+                // again as soon as the pause is lifted.
+                self?.lastPaused = settings.alertsPaused
+                if settings.alertsPaused {
+                    self?.alertEvaluator.snooze(until: .distantFuture)
+                } else {
+                    self?.alertEvaluator.resume()
+                    self?.model.snoozedUntil = nil
+                }
             }
             Task { @MainActor in
                 self?.refreshStatusItem()
@@ -125,6 +148,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             hideToMenuBar: { [weak self] in self?.hideToMenuBar() },
             showAlerts: { [weak self] in self?.showAlerts() },
             toggleInsulin: { [weak self] in self?.toggleInsulin() },
+            pauseAlerts: { [weak self] in self?.model.settings.alertsPaused = true },
             refreshNow: { [weak self] in self?.refreshNow() },
             snoozeAlerts: { [weak self] minutes in self?.snoozeAlerts(minutes: minutes) },
             resumeAlerts: { [weak self] in self?.resumeAlerts() },
@@ -294,11 +318,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Sensor
 
+    /// The snooze that holds back insulin and sensor alerts: no end while everything is paused, otherwise the timed snooze.
+    private func effectiveSnooze(_ now: Date) -> Date? {
+        model.settings.alertsPaused ? .distantFuture : model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
+    }
+
     private func evaluateSensor() {
         let now = Date()
-        let snoozed = model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
         guard let raised = sensorEvaluator.evaluate(
-            model.sensor, now: now, snoozedUntil: snoozed, durationDays: model.settings.sensorDurationDays)
+            model.sensor, now: now, settings: model.settings.sensorAlert, snoozedUntil: effectiveSnooze(now),
+            durationDays: model.settings.sensorDurationDays)
         else { return }
 
         Notifier.shared.post(
@@ -343,9 +372,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func evaluateInsulin() {
         let now = Date()
-        let snoozed = model.snoozedUntil.flatMap { $0 > now ? $0 : nil }
         guard let raised = insulinEvaluator.evaluate(
-            model.settings.insulin, now: now, calendar: .current, snoozedUntil: snoozed)
+            model.settings.insulin, now: now, calendar: .current, snoozedUntil: effectiveSnooze(now))
         else { return }
 
         let sound = model.settings.alerts.sound
@@ -388,7 +416,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showAlerts() {
         alertsController.show(
-            unit: model.settings.unit, settings: model.settings.alerts, insulin: model.settings.insulin,
+            model: model, unit: model.settings.unit, settings: model.settings.alerts, insulin: model.settings.insulin,
+            sensor: model.settings.sensorAlert,
             sendTest: { sound, done in
                 Notifier.shared.post(title: "Test alert", body: "This is how an alert will look.", sound: sound) { posted in
                     DispatchQueue.main.async {
@@ -397,26 +426,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             },
-            onSave: { [weak self] alerts, insulin in
+            applyAlerts: { [weak self] alerts in self?.model.settings.alerts = alerts },
+            applyInsulin: { [weak self] insulin in
                 guard let self else { return }
-                var settings = model.settings // one assignment, so the settings are saved once
-                settings.alerts = alerts
-                settings.insulin = insulin
-                model.settings = settings
-            })
+                // The last "administered" time belongs to the app, not the window (it can be tapped while the window is
+                // open); off means nothing about it stays saved.
+                var next = insulin
+                next.lastAdministeredAt = insulin.enabled ? model.settings.insulin.lastAdministeredAt : nil
+                if next != model.settings.insulin { model.settings.insulin = next }
+            },
+            applySensor: { [weak self] sensor in self?.model.settings.sensorAlert = sensor })
     }
 
     private func snoozeAlerts(minutes: Int) {
+        guard !model.settings.alertsPaused else { return } // already stopped until turned back on
         let until = Date().addingTimeInterval(TimeInterval(minutes * 60))
         alertEvaluator.snooze(until: until)
         model.snoozedUntil = until
     }
 
     private func resumeAlerts() {
+        model.settings.alertsPaused = false
         alertEvaluator.resume()
         model.snoozedUntil = nil
         evaluateAlerts()
         evaluateInsulin()
+        evaluateSensor()
     }
 
     private func refreshStatusItem() {
