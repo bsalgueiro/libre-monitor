@@ -50,7 +50,7 @@ Everything you need to install and use the widget. No programming knowledge requ
 
 <img src="docs/images/widget-compact.png" alt="The compact view: only the value, arrow, unit and time of the last reading" width="260" align="right">
 
-- Borderless, always-on-top corner widget: current value, trend arrow and a smooth graph with the 70-180 mg/dL band and a 100 reference line.
+- Borderless corner widget that can stay on top of your windows (your choice): current value, trend arrow and a smooth graph with the 70-180 mg/dL band and a 100 reference line.
 - Hover the graph for the value and time of any reading.
 - The graph can be hidden. The value, arrow, unit and last-update time then scale up to fill the widget, whatever size you
   make it. Each mode remembers its own size, so turning the graph back on restores the earlier layout.
