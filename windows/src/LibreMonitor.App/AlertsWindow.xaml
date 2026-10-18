@@ -11,6 +11,11 @@
         <SolidColorBrush x:Key="AccentBrush" Color="#5CD68A"/>
         <SolidColorBrush x:Key="LineBrush" Color="#33FFFFFF"/>
 
+        <!-- Inheriting the window's text colour did not reach the labels inside the tabs, so they stayed dark on the dark card. -->
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource TextBrush}"/>
+        </Style>
+
         <!-- Plain tabs that follow the theme: the system look would be a white box on the dark card. -->
         <Style TargetType="TabControl">
             <Setter Property="Background" Value="Transparent"/>
