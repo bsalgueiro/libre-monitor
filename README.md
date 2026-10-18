@@ -54,7 +54,7 @@ Everything you need to install and use the widget. No programming knowledge requ
 - Hover the graph for the value and time of any reading.
 - The graph can be hidden. The value, arrow, unit and last-update time then scale up to fill the widget, whatever size you
   make it. Each mode remembers its own size, so turning the graph back on restores the earlier layout.
-- 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark or follow-the-system theme.
+- 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark, transparent (no card, just the value and graph) or follow-the-system theme.
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
 - Shows when your sensor is due to end: hover the unit and age text, or open the menu. It is an estimate: 14 days after the
@@ -166,7 +166,7 @@ flag the single-file build.
 | Refresh now | Double-click the value. The widget updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded |
 | Open the menu | Right-click the widget |
 | Switch mg/dL and mmol/L | Menu > Units |
-| Light, dark or follow Windows | Menu > Appearance |
+| Light, dark, transparent or follow Windows | Menu > Appearance |
 | Set up low and high alerts | Menu > Alerts... |
 | Pause alerts | Menu > Snooze alerts (for a while, or until you turn them back on) |
 | Set up the insulin reminder | Menu > Set up the insulin reminder... (or Menu > Alerts...) |

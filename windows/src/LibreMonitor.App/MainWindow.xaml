@@ -57,6 +57,7 @@
                     <MenuItem x:Name="ThemeSystem" Header="Follow system" Click="Theme_Click" Tag="System"/>
                     <MenuItem x:Name="ThemeLight" Header="Light" Click="Theme_Click" Tag="Light"/>
                     <MenuItem x:Name="ThemeDark" Header="Dark" Click="Theme_Click" Tag="Dark"/>
+                    <MenuItem x:Name="ThemeTransparent" Header="Transparent" Click="Theme_Click" Tag="Transparent"/>
                 </MenuItem>
                 <Separator/>
                 <!-- Alerts -->

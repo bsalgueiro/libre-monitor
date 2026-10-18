@@ -80,8 +80,13 @@ struct WidgetView: View {
                 compactLayout(geometry.size, theme: theme, tint: tint, status: status)
             }
         }
+        // Fully transparent pixels let clicks through to the desktop, which would make a card-less widget impossible
+        // to drag or right-click. A fill that is invisible to the eye keeps the whole area catching the mouse.
+        .background(Color.black.opacity(model.settings.theme == .transparent ? 0.01 : 0))
         // Without a content shape only drawn pixels (the graph) are clickable, so the menu opened nowhere else.
         .contentShape(Rectangle())
+        // With no card behind them, a soft shadow keeps the text readable on any desktop.
+        .shadow(color: .black.opacity(model.settings.theme == .transparent ? 0.6 : 0), radius: 2)
         .onHover { hovering = $0 }
         .overlay {
             // A coloured border while the reading is inside an alert zone, whether or not notifications are snoozed.
@@ -390,6 +395,7 @@ struct WidgetView: View {
                 Text("Follow system").tag(ThemeChoice.system)
                 Text("Light").tag(ThemeChoice.light)
                 Text("Dark").tag(ThemeChoice.dark)
+                Text("Transparent").tag(ThemeChoice.transparent)
             }
             .pickerStyle(.inline)
             .labelsHidden()

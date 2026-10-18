@@ -242,8 +242,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         switch settings.theme {
         case .system: panel.appearance = nil
         case .light: panel.appearance = NSAppearance(named: .aqua)
-        case .dark: panel.appearance = NSAppearance(named: .darkAqua)
+        case .dark, .transparent: panel.appearance = NSAppearance(named: .darkAqua)
         }
+        panel.setCardVisible(settings.theme != .transparent)
     }
 
     private func showAbout() {
