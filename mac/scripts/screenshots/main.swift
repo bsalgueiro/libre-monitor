@@ -104,6 +104,13 @@ func card(_ model: AppModel, dark: Bool, width: CGFloat, height: CGFloat) -> som
 struct DesktopScene<Widget: View>: View {
     let widget: Widget
     let value: String
+    /// The whole scene follows one theme: dark windows with a dark widget, or light windows with a light one.
+    let dark: Bool
+
+    private var windowFill: Color { dark ? Color(red: 0.12, green: 0.13, blue: 0.16).opacity(0.95) : Color.white.opacity(0.94) }
+    private var sidebarFill: Color { dark ? Color.white.opacity(0.04) : Color.black.opacity(0.035) }
+    private var barColor: Color { dark ? Color.white : Color.black }
+    private var accentFill: Color { dark ? Color.blue.opacity(0.18) : Color.blue.opacity(0.10) }
 
     private func blob(_ colors: [Color], _ size: CGFloat, _ x: CGFloat, _ y: CGFloat) -> some View {
         Circle()
@@ -114,7 +121,7 @@ struct DesktopScene<Widget: View>: View {
     }
 
     private func skeleton(_ width: CGFloat, _ height: CGFloat = 9, _ opacity: Double = 0.16) -> some View {
-        RoundedRectangle(cornerRadius: height / 2).fill(Color.black.opacity(opacity)).frame(width: width, height: height)
+        RoundedRectangle(cornerRadius: height / 2).fill(barColor.opacity(dark ? opacity * 1.1 : opacity)).frame(width: width, height: height)
     }
 
     private func trafficLights() -> some View {
@@ -135,12 +142,12 @@ struct DesktopScene<Widget: View>: View {
                 .frame(width: 170, alignment: .leading)
                 .padding(22)
                 .frame(maxHeight: .infinity, alignment: .top)
-                .background(Color.black.opacity(0.035))
+                .background(sidebarFill)
 
                 VStack(alignment: .leading, spacing: 14) {
                     skeleton(280, 18, 0.2)
                     ForEach(0..<11, id: \.self) { i in skeleton(i % 4 == 3 ? 360 : 520, 8, 0.1) }
-                    RoundedRectangle(cornerRadius: 10).fill(Color.blue.opacity(0.10)).frame(height: 120)
+                    RoundedRectangle(cornerRadius: 10).fill(accentFill).frame(height: 120)
                     ForEach(0..<4, id: \.self) { i in skeleton(i % 2 == 0 ? 480 : 400, 8, 0.1) }
                 }
                 .padding(34)
@@ -148,7 +155,7 @@ struct DesktopScene<Widget: View>: View {
             }
         }
         .frame(width: 800, height: 520)
-        .background(Color.white.opacity(0.94))
+        .background(windowFill)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.35), radius: 28, y: 14)
     }
@@ -156,14 +163,14 @@ struct DesktopScene<Widget: View>: View {
     private func tableCell(row: Int, col: Int) -> some View {
         let width: CGFloat = CGFloat(34 + ((row * 7 + col * 13) % 5) * 12)
         let isHeader = row == 0
-        let background: Color = isHeader ? Color.black.opacity(0.06) : Color.clear
+        let background: Color = isHeader ? barColor.opacity(0.06) : Color.clear
         let barOpacity: Double = isHeader ? 0.22 : 0.12
         return ZStack(alignment: .leading) {
             Rectangle().fill(background)
             skeleton(width, 7, barOpacity).padding(.leading, 12)
         }
         .frame(height: 38)
-        .overlay(Rectangle().stroke(Color.black.opacity(0.06), lineWidth: 0.5))
+        .overlay(Rectangle().stroke(barColor.opacity(0.06), lineWidth: 0.5))
     }
 
     private func tableRow(_ row: Int) -> some View {
@@ -186,7 +193,7 @@ struct DesktopScene<Widget: View>: View {
             Spacer()
         }
         .frame(width: 600, height: 400)
-        .background(Color.white.opacity(0.95))
+        .background(windowFill)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: .black.opacity(0.35), radius: 26, y: 12)
     }
@@ -281,7 +288,16 @@ MainActor.assumeIsolated {
     write(card(makeModel(lowCurve(now: now), now: now, zone: .low), dark: true, width: 280, height: 172), to: "\(out)/alert-low.png", scale: 3)
     write(card(makeModel(highCurve(now: now), now: now, zone: .high), dark: true, width: 280, height: 172), to: "\(out)/alert-high.png", scale: 3)
 
-    let onDesktop = card(makeModel(inRange, now: now), dark: true, width: 280, height: 172)
-        .shadow(color: .black.opacity(0.4), radius: 18, y: 8)
-    write(DesktopScene(widget: onDesktop, value: "118"), to: "\(out)/desktop.jpg", scale: 1.5, jpeg: true)
+    for dark in [true, false] {
+        let onDesktop = card(makeModel(inRange, now: now), dark: dark, width: 280, height: 172)
+            .shadow(color: .black.opacity(0.4), radius: 18, y: 8)
+        write(DesktopScene(widget: onDesktop, value: "118", dark: dark), to: "\(out)/desktop-\(dark ? "dark" : "light").jpg", scale: 1.5, jpeg: true)
+    }
+
+    // The insulin reminder's syringe: amber with "!" once the dose is due, green with a tick once it is marked as administered.
+    let due = InsulinSettings(enabled: true, dosesPerDay: 1, firstDoseMinutes: 9 * 60)
+    var done = InsulinSettings(enabled: true, dosesPerDay: 1, firstDoseMinutes: 8 * 60)
+    done.lastAdministeredAt = Calendar.current.date(bySettingHour: 8, minute: 12, second: 0, of: now)
+    write(card(makeModel(inRange, now: now, insulin: due), dark: true, width: 280, height: 172), to: "\(out)/insulin-due.png", scale: 3)
+    write(card(makeModel(inRange, now: now, insulin: done), dark: true, width: 280, height: 172), to: "\(out)/insulin-done.png", scale: 3)
 }
