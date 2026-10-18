@@ -22,105 +22,149 @@
 </script>
 <style>
   :root {
-    --bg: #f6f7f9;
+    --bg: #f6f7f3;
     --surface: #ffffff;
-    --surface-2: #eef0f3;
-    --text: #1b1f24;
-    --muted: #5b6573;
-    --line: #dfe3e8;
-    --accent: #1f9d5b;
+    --surface-2: #eef1ea;
+    --text: #101a14;
+    --muted: #55625a;
+    --line: #e1e6dc;
+    --accent: #17a35b;
+    --accent-d: #0e7a44;
     --accent-ink: #ffffff;
+    --accent-soft: #e2f3e9;
     --low: #d63b3b;
-    --high: #c77a00;
-    --code: #eef0f3;
-    --shadow: 0 10px 30px rgba(20, 30, 45, .10);
+    --high: #b86e00;
+    --code: #eceee7;
+    --shadow: 0 24px 50px rgba(16, 26, 20, .16);
+    --glow: none;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #101317;
-      --surface: #171b21;
-      --surface-2: #1e232a;
-      --text: #e8ebef;
-      --muted: #98a2b0;
-      --line: #28303a;
-      --accent: #4cc87d;
-      --accent-ink: #08140d;
+      --bg: #070b10;
+      --surface: #0e141c;
+      --surface-2: #151d27;
+      --text: #e9eff6;
+      --muted: #8e9bab;
+      --line: #1d2733;
+      --accent: #35d487;
+      --accent-d: #35d487;
+      --accent-ink: #04140b;
+      --accent-soft: rgba(53, 212, 135, .12);
       --low: #ff6b6b;
       --high: #ffb347;
-      --code: #1e232a;
-      --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+      --code: #151d27;
+      --shadow: 0 30px 60px rgba(0, 0, 0, .6);
+      --glow: radial-gradient(600px 380px at 20% 0%, rgba(53,212,135,.22), transparent 70%), radial-gradient(700px 420px at 85% 8%, rgba(110,80,255,.24), transparent 70%);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #101317; --surface: #171b21; --surface-2: #1e232a; --text: #e8ebef; --muted: #98a2b0;
-    --line: #28303a; --accent: #4cc87d; --accent-ink: #08140d; --low: #ff6b6b; --high: #ffb347;
-    --code: #1e232a; --shadow: 0 10px 30px rgba(0, 0, 0, .45);
+    --bg: #070b10;
+    --surface: #0e141c;
+    --surface-2: #151d27;
+    --text: #e9eff6;
+    --muted: #8e9bab;
+    --line: #1d2733;
+    --accent: #35d487;
+    --accent-d: #35d487;
+    --accent-ink: #04140b;
+    --accent-soft: rgba(53, 212, 135, .12);
+    --low: #ff6b6b;
+    --high: #ffb347;
+    --code: #151d27;
+    --shadow: 0 30px 60px rgba(0, 0, 0, .6);
+    --glow: radial-gradient(600px 380px at 20% 0%, rgba(53,212,135,.22), transparent 70%), radial-gradient(700px 420px at 85% 8%, rgba(110,80,255,.24), transparent 70%);
   }
 
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
   body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font: 16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  a { color: var(--accent); text-decoration: none; }
+  body::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 900px; background: var(--glow); pointer-events: none; z-index: -1; }
+  body { position: relative; overflow-x: hidden; }
+  a { color: var(--accent-d); text-decoration: none; }
   a:hover { text-decoration: underline; }
   img { max-width: 100%; height: auto; display: block; }
   code {
-    background: var(--code); border-radius: 6px; padding: .12em .4em; font-size: .9em;
+    background: var(--code); border-radius: 6px; padding: .12em .4em; font-size: .88em;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-word;
   }
-  .wrap { width: min(1080px, 100% - 32px); margin-inline: auto; }
+  .wrap { width: min(1120px, 100% - 32px); margin-inline: auto; }
 
   /* top bar */
-  header.bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 88%, transparent);
-    backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
-  .bar .wrap { display: flex; align-items: center; gap: 20px; height: 56px; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; color: var(--text); }
-  .brand img { width: 28px; height: 28px; }
-  .bar nav { margin-left: auto; display: flex; gap: 18px; font-size: .94rem; }
+  header.bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 86%, transparent);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+  .bar .wrap { display: flex; align-items: center; gap: 22px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); letter-spacing: -.01em; }
+  .brand:hover { text-decoration: none; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .bar nav { margin-left: auto; display: flex; align-items: center; gap: 22px; font-size: .95rem; }
   .bar nav a { color: var(--muted); }
   .bar nav a:hover { color: var(--text); text-decoration: none; }
-  @media (max-width: 720px) { .bar nav a.hide-sm { display: none; } }
+  .bar nav a.pill { color: var(--bg); background: var(--text); padding: 8px 16px; border-radius: 999px; font-weight: 600; }
+  @media (max-width: 860px) { .bar nav a.hide-sm { display: none; } }
+
+  /* buttons */
+  .btns { display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 13px 22px; border-radius: 14px;
+    font-weight: 650; border: 1.5px solid var(--text); background: transparent; color: var(--text);
+  }
+  .btn:hover { text-decoration: none; background: var(--surface-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { background: var(--accent-d); border-color: var(--accent-d); color: var(--accent-ink); }
+  .btn svg { width: 20px; height: 20px; fill: currentColor; }
+  /* The Apple logo is heavier at the bottom than its box suggests, so it looks low beside the text: nudge it up. */
+  .btn svg.apple { transform: translateY(-1.5px); }
+  .small { font-size: .9rem; color: var(--muted); }
 
   /* hero */
-  .hero { padding: 40px 0 32px; text-align: center; }
-  .hero .logo { width: 80px; height: 80px; margin: 0 auto 16px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.25)); }
-  h1 { font-size: clamp(2rem, 4.4vw, 3rem); line-height: 1.1; margin: 0 0 12px; letter-spacing: -.02em; text-wrap: balance; }
-  .lead { font-size: clamp(1.05rem, 2vw, 1.28rem); color: var(--muted); max-width: 780px; margin: 0 auto 22px; }
-  .cta { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 14px; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 10px; padding: 12px 22px; border-radius: 12px;
-    font-weight: 600; border: 1px solid var(--line); background: var(--surface); color: var(--text);
+  .hero { padding: 64px 0 56px; }
+  .hero .wrap { display: grid; grid-template-columns: 1.02fr 1fr; gap: 48px; align-items: center; }
+  .eyebrow { display: inline-block; font-size: .88rem; font-weight: 600; color: var(--accent-d); background: var(--accent-soft); padding: 6px 14px; border-radius: 999px; }
+  h1 { font-size: clamp(2.2rem, 4.8vw, 3.6rem); line-height: 1.05; letter-spacing: -.03em; margin: 18px 0 16px; font-weight: 780; text-wrap: balance; }
+  .lead { font-size: 1.2rem; color: var(--muted); max-width: 520px; margin: 0 0 26px; }
+  .facts { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 20px 0 0; padding: 0; list-style: none; font-size: .9rem; color: var(--muted); }
+  .stage { position: relative; min-height: 400px; }
+  .stage::before { content: ""; position: absolute; inset: -20px; background: radial-gradient(closest-side, var(--accent-soft), transparent 72%); }
+  .stage img { position: absolute; border-radius: 16px; box-shadow: var(--shadow); }
+  .stage .a { width: 76%; right: 0; top: 0; }
+  .stage .b { width: 54%; left: 0; bottom: 0; }
+  @media (max-width: 860px) {
+    .hero { padding-top: 40px; }
+    .hero .wrap { grid-template-columns: 1fr; gap: 36px; }
+    .stage { min-height: 0; aspect-ratio: 1.15; }
   }
-  .btn:hover { text-decoration: none; border-color: var(--accent); }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-  .btn svg { width: 20px; height: 20px; fill: currentColor; }
-  .small { font-size: .88rem; color: var(--muted); }
-  .shots { display: flex; flex-wrap: wrap; gap: 28px; justify-content: center; margin-top: 44px; }
-  .shots figure { margin: 0; text-align: center; width: min(380px, 100%); }
-  .shots img { width: 100%; filter: drop-shadow(var(--shadow)); }
-  .shots figcaption { margin-top: 14px; color: var(--muted); font-size: .92rem; }
 
   .notice {
-    margin: 36px auto 0; max-width: 760px; padding: 14px 18px; border-radius: 12px; text-align: left;
+    padding: 14px 18px; border-radius: 14px; font-size: .95rem; margin-bottom: 0;
     background: color-mix(in srgb, var(--high) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--high) 40%, var(--line));
-    font-size: .95rem;
   }
+  .notice-wrap { padding-bottom: 8px; }
 
   /* sections */
-  section { padding: 56px 0; }
+  section { padding: 72px 0; }
   section.alt { background: var(--surface); border-block: 1px solid var(--line); }
-  h2 { font-size: clamp(1.6rem, 3vw, 2.1rem); margin: 0 0 8px; letter-spacing: -.01em; }
-  .sub { color: var(--muted); margin: 0 0 32px; max-width: 680px; }
+  h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); line-height: 1.1; margin: 0 0 12px; letter-spacing: -.025em; font-weight: 760; }
+  .sub { color: var(--muted); margin: 0 0 32px; max-width: 680px; font-size: 1.05rem; }
   h3 { font-size: 1.1rem; margin: 0 0 6px; }
 
+  /* three steps */
+  .steps3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; list-style: none; padding: 0; margin: 0; counter-reset: s; }
+  .steps3 > li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 26px; }
+  .steps3 > li::before {
+    content: counter(s); width: 38px; height: 38px; border-radius: 12px; background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center; font-weight: 750; margin-bottom: 16px;
+  }
+  .steps3 p { margin: 0 0 10px; color: var(--muted); font-size: .98rem; }
+  .steps3 ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .94rem; }
+  @media (max-width: 760px) { .steps3 { grid-template-columns: 1fr; } }
+
+  /* how it works */
   .flow { display: flex; flex-wrap: wrap; align-items: stretch; justify-content: center; gap: 10px; }
-  .flow .node { background: var(--surface-2); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; text-align: center; min-width: 150px; }
-  section.alt .flow .node { background: var(--bg); }
+  .flow .node { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; text-align: center; min-width: 150px; }
   .flow .node b { display: block; }
   .flow .node span { font-size: .85rem; color: var(--muted); }
   .flow .arrow { align-self: center; color: var(--muted); font-size: 1.4rem; }
@@ -128,68 +172,109 @@
   .flow .node svg { display: block; width: 30px; height: 30px; margin: 0 auto 8px; fill: none; stroke: var(--accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   @media (max-width: 720px) { .flow .arrow { transform: rotate(90deg); width: 100%; text-align: center; } }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  /* features */
+  .split { display: grid; grid-template-columns: 1.1fr 1fr; gap: 56px; align-items: center; }
+  .split.rev { grid-template-columns: 1fr 1.1fr; }
+  @media (max-width: 860px) { .split, .split.rev { grid-template-columns: 1fr; gap: 28px; } .split.rev > :first-child { order: 2; } }
+  .frame { border-radius: 20px; overflow: hidden; box-shadow: var(--shadow); line-height: 0; }
+  .frame img { width: 100%; }
+  .copy p { color: var(--muted); font-size: 1.05rem; margin: 0 0 20px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
   section.alt .card { background: var(--bg); }
   .card p { margin: 0; color: var(--muted); font-size: .96rem; }
+  .features { margin-top: 56px; }
+  .how-grid { display: block; columns: 3 300px; column-gap: 16px; }
+  .how-grid .card { break-inside: avoid; margin-bottom: 16px; }
+  dl.how { margin: 12px 0 0; }
+  dl.how dt { font-weight: 600; font-size: .95rem; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  dl.how dt:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+  dl.how dd { margin: 2px 0 0; color: var(--muted); font-size: .93rem; }
 
-  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
-  @media (max-width: 820px) { .split { grid-template-columns: 1fr; } }
-  .split img { margin-inline: auto; filter: drop-shadow(var(--shadow)); }
+  .compact { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 28px; margin-top: 40px; }
+  .compact img { width: 300px; filter: drop-shadow(var(--shadow)); }
+  .compact p { margin: 0; max-width: 340px; color: var(--muted); }
+
   .pair { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
-  .pair figure { margin: 0; text-align: center; }
-  .pair img { width: 250px; filter: drop-shadow(var(--shadow)); }
+  .pair figure { margin: 0; text-align: center; width: min(340px, 100%); }
+  .pair img { width: 100%; filter: drop-shadow(var(--shadow)); }
   .pair figcaption { margin-top: 10px; color: var(--muted); font-size: .9rem; }
-  .desk { max-width: 1000px; margin: 0 auto; }
-  .desk img { display: block; width: 100%; border-radius: 14px; filter: drop-shadow(var(--shadow)); }
-  .desk p { text-align: center; margin: 14px 0 0; }
-  .mac-row { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; align-items: flex-start; }
-  .mac-row img { filter: drop-shadow(var(--shadow)); }
+  .high-fig { margin: 22px 0 0; text-align: center; }
+  .high-fig img { width: 250px; max-width: 100%; margin: 0 auto; filter: drop-shadow(var(--shadow)); }
+  .high-fig figcaption { margin-top: 8px; color: var(--muted); font-size: .9rem; }
 
-  ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 0; display: grid; gap: 14px; }
-  ol.steps > li { counter-increment: step; display: grid; grid-template-columns: 40px 1fr; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
-  section.alt ol.steps > li { background: var(--bg); }
-  ol.steps > li::before {
+  .desk { max-width: 1000px; margin: 0 auto; }
+  .desk .frame { border-radius: 16px; }
+
+  /* getting started detail */
     content: counter(step); width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: var(--accent-ink);
     display: grid; place-items: center; font-weight: 700;
   }
-  ol.steps p { margin: 0; }
-  ol.steps ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); }
-  ol.steps ul li { display: list-item; }
 
   table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: .96rem; }
   section.alt table { background: var(--bg); }
   th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { background: var(--surface-2); font-size: .85rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
-  section.alt th { background: var(--surface-2); }
+  th { background: var(--surface-2); font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
   tr:last-child td { border-bottom: 0; }
   .t-amber { color: var(--high); font-weight: 600; }
   .t-red { color: var(--low); font-weight: 600; }
   .table-scroll { overflow-x: auto; }
 
-  .alerts-list { display: grid; gap: 12px; padding: 0; margin: 0; list-style: none; }
-  .alerts-list li { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
-  section.alt .alerts-list li { background: var(--bg); }
-  .alerts-list b { display: block; }
+  .alerts-list { display: grid; gap: 12px; padding: 0; margin: 0 0 22px; list-style: none; }
+  .alerts-list li { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; font-size: .97rem; color: var(--muted); }
+  .alerts-list b { display: block; color: var(--text); }
 
   .warn {
-    padding: 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--low) 40%, var(--line));
+    padding: 14px 18px; border-radius: 14px; border: 1px solid color-mix(in srgb, var(--low) 40%, var(--line));
     background: color-mix(in srgb, var(--low) 9%, var(--surface)); margin-top: 22px; font-size: .96rem;
   }
 
-  details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 4px 18px; margin-bottom: 12px; }
+  details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 2px 18px; margin-bottom: 12px; }
   section.alt details { background: var(--bg); }
   summary { cursor: pointer; padding: 12px 0; font-weight: 600; }
   details[open] summary { border-bottom: 1px solid var(--line); margin-bottom: 12px; }
   details p, details ol { color: var(--muted); }
   details ol { padding-left: 20px; }
 
-  .legal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px; }
 
-  footer { padding: 40px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: .92rem; }
-  footer .wrap { display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: center; }
-  footer p { margin: 0; max-width: 640px; }
-  footer nav { display: flex; gap: 18px; flex-wrap: wrap; }
+  /* closing call to action */
+  .cta { padding: 24px 0 72px; }
+  .cta .box { background: linear-gradient(135deg, #0e7a44, #17a35b); box-shadow: 0 0 80px rgba(53,212,135,.12); color: #fff; border-radius: 28px; padding: 56px 28px; text-align: center; }
+  .cta h2 { color: #fff; }
+  .cta p { margin: 0 auto 26px; max-width: 520px; opacity: .92; font-size: 1.08rem; }
+  .cta .btns { justify-content: center; }
+  .cta .btn { background: #fff; border-color: #fff; color: #101a14; }
+  .cta .btn:hover { background: #e9f6ee; }
+  .cta .small { color: #fff; opacity: .85; margin-top: 18px; }
+  .cta .small a { color: #fff; text-decoration: underline; }
+
+
+  /* a little movement: gentle hovers and a soft reveal on scroll. All of it is switched off for reduced motion. */
+  .card, .steps3 > li, .flow .node, .alerts-list li, details, .frame, .btn, .bar nav a, .stage img {
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease, color .22s ease;
+  }
+  .card:hover, .steps3 > li:hover, .alerts-list li:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); box-shadow: 0 12px 28px rgba(16, 26, 20, .10); }
+  .flow .node:hover { transform: translateY(-2px); border-color: var(--accent); }
+  .btn:hover { transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .frame:hover { transform: translateY(-3px); }
+  details:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  summary { transition: color .2s ease; }
+  summary:hover { color: var(--accent-d); }
+  .stage:hover .a { transform: translateY(-4px); }
+  .stage:hover .b { transform: translateY(3px) rotate(-1deg); }
+  .js .reveal { opacity: 0; transform: translateY(14px); transition: opacity .6s ease, transform .6s ease; }
+  .js .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+    .js .reveal { opacity: 1; transform: none; }
+  }
+
+  footer { padding: 36px 0 56px; border-top: 1px solid var(--line); color: var(--muted); font-size: .92rem; }
+  footer .wrap { display: grid; gap: 14px; }
+  footer p { margin: 0; max-width: 760px; }
+  footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -203,7 +288,8 @@
       <a class="hide-sm" href="#alerts">Alerts</a>
       <a class="hide-sm" href="#help">Help</a>
       <a class="hide-sm" href="#about">About</a>
-      <a href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
+      <a class="hide-sm" href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
+      <a class="pill" href="#download">Download</a>
     </nav>
   </div>
 </header>
@@ -213,39 +299,72 @@
 <!-- hero -->
 <div class="hero">
   <div class="wrap">
-    <img class="logo" src="images/icon.png" alt="Libre Monitor Desktop app icon">
-    <h1>Your FreeStyle Libre glucose, always visible on your desktop.</h1>
-    <p class="lead">A LibreLink desktop widget for Windows and macOS. Free and open source.</p>
-
-    <div class="cta">
-      <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-win-x64.exe">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.6-1.2L21 3v8.5h-9.4V4.3ZM3 12.5h7.5v7.1L3 18.5v-6Zm8.6 0H21V21l-9.4-1.3v-7.2Z"/></svg>
-        Download for Windows
-      </a>
-      <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-mac.zip">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09ZM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
-        Download for Mac
-      </a>
-      <a class="btn" href="https://github.com/bsalgueiro/libre-monitor/releases/latest">All downloads</a>
+    <div>
+      <span class="eyebrow">Free · Open source · Windows &amp; Mac</span>
+      <h1>Your FreeStyle Libre glucose, always visible on your desktop.</h1>
+      <p class="lead">A small widget that keeps your value, trend and graph next to whatever you are working on, so you do not have to pick up your phone.</p>
+      <div class="btns" id="download">
+        <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-win-x64.exe">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3V5.5Zm8.6-1.2L21 3v8.5h-9.4V4.3ZM3 12.5h7.5v7.1L3 18.5v-6Zm8.6 0H21V21l-9.4-1.3v-7.2Z"/></svg>
+          Download for Windows
+        </a>
+        <a class="btn primary" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-mac.zip">
+          <svg class="apple" viewBox="0 0 24 24" aria-hidden="true"><path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09ZM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"/></svg>
+          Download for Mac
+        </a>
+      </div>
+      <p class="small" style="margin:14px 0 0"><a href="https://github.com/bsalgueiro/libre-monitor/releases/latest">All downloads and older versions</a></p>
+      <ul class="facts">
+        <li>Windows 10 or 11 (64-bit)</li>
+        <li>macOS 13 or newer, Apple Silicon or Intel</li>
+        <li>MIT licence</li>
+        <li>No ads, no account with us</li>
+      </ul>
     </div>
-    <p class="small">Windows 10 or 11 (64-bit) &nbsp;·&nbsp; macOS 13 or newer, Apple Silicon or Intel</p>
-
-    <div class="shots">
-      <figure>
-        <img src="images/widget-dark.png" alt="The widget in the dark theme: 118 mg/dL, a steady arrow and a six-hour graph">
-        <figcaption>Dark mode</figcaption>
-      </figure>
-      <figure>
-        <img src="images/widget-light.png" alt="The widget in the light theme">
-        <figcaption>Light mode</figcaption>
-      </figure>
-    </div>
-    <div class="notice">
-      <b>Not a medical device. Do not make treatment decisions from this app.</b>
-      A free hobby project, not made for money: it is not sold and has no ads. Independent, not affiliated with or endorsed by Abbott. It relies on an unofficial service and can stop working without warning.
+    <div class="stage">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="images/widget-dark.png">
+        <img class="a" src="images/widget-light.png" alt="The widget showing 118 mg/dL, a steady arrow and a six-hour graph">
+      </picture>
+      <img class="b" src="images/alert-low.png" alt="The widget during a low alert: a red value and a red border">
     </div>
   </div>
 </div>
+
+<div class="wrap notice-wrap">
+  <div class="notice">
+    <b>Not a medical device. Do not make treatment decisions from this app.</b>
+    A free hobby project, not made for money: it is not sold and has no ads. Independent, not affiliated with or endorsed by Abbott. It relies on an unofficial service and can stop working without warning.
+  </div>
+</div>
+
+<!-- getting started -->
+<section id="get-started">
+  <div class="wrap">
+    <h2>Getting started</h2>
+    <p class="sub">Three steps, and you only do them once.</p>
+    <ol class="steps3">
+      <li>
+        <h3>Invite a follower</h3>
+        <p>In the LibreLink phone app open <i>Connected apps &gt; LibreLinkUp</i> and invite a second email address.</p>
+        <p>Then install the official LibreLinkUp app on a phone, create the account there with that email and accept the invitation. There is no website sign-up (see <a href="https://www.librelinkup.com">www.librelinkup.com</a>). This also clears the terms and email verification that signing in needs.</p>
+      </li>
+      <li>
+        <h3>Download</h3>
+        <p>Get the file for your computer from the <a href="https://github.com/bsalgueiro/libre-monitor/releases/latest">latest release</a>. There is nothing else to install.</p>
+        <ul><li>Windows: <code>LibreMonitor-win-x64.exe</code></li><li>Mac: <code>LibreMonitor-mac.zip</code></li></ul>
+      </li>
+      <li>
+        <h3>Sign in</h3>
+        <p>Start it and sign in with the <b>follower</b> account, not your main one. Your value appears within a minute.</p>
+        <ul>
+          <li>Windows: run the exe. If Windows shows a blue warning, see <a href="#warnings">first-open warnings</a>.</li>
+          <li>Mac: unzip, drag <b>LibreMonitor.app</b> into Applications and open it. macOS warns the first time, see <a href="#warnings">first-open warnings</a>. The app has no Dock icon: look for the widget and the menu bar item.</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+</section>
 
 <!-- how it works -->
 <section class="alt" id="how">
@@ -267,59 +386,36 @@
 <!-- features -->
 <section id="features">
   <div class="wrap">
-    <h2>What it does</h2>
-    <p class="sub">A glance at your glucose value, trend and graph, without picking up your phone.</p>
-    <div class="split" style="margin-bottom:40px">
-      <div class="grid" style="grid-template-columns:1fr 1fr">
-        <div class="card"><h3>Always in view</h3><p>Value, trend and graph in a small widget that can stay on top. Hidden? The tray or menu bar still shows the value.</p></div>
-        <div class="card"><h3>Hover for detail</h3><p>Hover the graph for the value and time of any reading.</p></div>
-        <div class="card"><h3>Customize</h3><p>Resize it, hide the graph, choose 3, 6 or 12 hours, mg/dL or mmol/L, light or dark.</p></div>
-        <div class="card"><h3>Read-only, no history</h3><p>It never changes your account or talks to the sensor, and keeps no readings on your computer. For history, use LibreView.</p></div>
+    <div class="split">
+      <div class="frame">
+        <picture>
+          <source media="(prefers-color-scheme: dark)" srcset="images/desktop-dark.jpg">
+          <img src="images/desktop-light.jpg" alt="A desktop with two windows open and the Libre Monitor Desktop widget in the top-right corner, showing 118 mg/dL and a graph" width="1000">
+        </picture>
       </div>
-      <div>
-        <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="330">
-        <p class="small" style="text-align:center;margin-top:10px">Hide the graph and the value fills the widget.</p>
+      <div class="copy">
+        <h2>On your desktop, wherever you want.</h2>
+        <p>A glance at your glucose value, trend and graph, without picking up your phone. Put the widget in the corner you like, on top of your windows or behind them.</p>
+        <p class="small" style="margin:0">Hidden? The tray or menu bar still shows the value.</p>
       </div>
     </div>
-    <div class="grid">
+
+    <div class="grid features">
+      <div class="card"><h3>Always in view</h3><p>Value, trend and graph in a small widget that can stay on top.</p></div>
+      <div class="card"><h3>Hover for detail</h3><p>Hover the graph for the value and time of any reading.</p></div>
+      <div class="card"><h3>Customize</h3><p>Resize it, hide the graph, choose 3, 6 or 12 hours, mg/dL or mmol/L, light or dark.</p></div>
+      <div class="card"><h3>Read-only, no history</h3><p>It never changes your account or talks to the sensor, and keeps no readings on your computer. For history, use LibreView.</p></div>
       <div class="card"><h3>Optional alerts</h3><p>Your own low and high limits: a notification, a sound and a coloured border, with reminders and snooze.</p></div>
       <div class="card"><h3>Sensor end date</h3><p>See when your sensor ends, with optional alerts.</p></div>
       <div class="card"><h3>Insulin reminder</h3><p>Set an optional reminder at your usual time, with an icon to help you remember it.</p></div>
       <div class="card"><h3>Your login stays yours</h3><p>Stored encrypted on your PC or in your Mac's Keychain. Sent only to LibreView.</p></div>
     </div>
     <p class="small" style="margin-top:18px">The colours for low, in range and high are for display only. They are not alarms.</p>
-  </div>
-</section>
 
-<!-- desktop -->
-<section class="alt">
-  <div class="wrap">
-    <h2>On your desktop</h2>
-    <p class="sub">Wherever you want.</p>
-    <div class="desk">
-      <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="images/desktop-dark.jpg">
-        <img src="images/desktop-light.jpg" alt="A desktop with two windows open and the Libre Monitor Desktop widget in the top-right corner, showing 118 mg/dL and a graph" width="1000">
-      </picture>
+    <div class="compact">
+      <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="300">
+      <p>Hide the graph and the value fills the widget, at any size.</p>
     </div>
-  </div>
-</section>
-
-<!-- getting started -->
-<section class="alt" id="get-started">
-  <div class="wrap">
-    <h2 style="margin-bottom:28px">Getting started</h2>
-    <ol class="steps">
-      <li><div><p><b>Invite a follower.</b> In the LibreLink phone app open <i>Connected apps &gt; LibreLinkUp</i> and invite a second email address.</p></div></li>
-      <li><div><p><b>Create the follower account.</b> Install the official LibreLinkUp app on a phone and create the account there with that email, then accept the invitation. There is no website sign-up (see <a href="https://www.librelinkup.com">www.librelinkup.com</a>). This also clears the terms and email verification that signing in needs.</p></div></li>
-      <li><div><p><b>Download.</b> Get the file for your computer from the <a href="https://github.com/bsalgueiro/libre-monitor/releases/latest">latest release</a>.</p>
-        <ul><li>Windows: <code>LibreMonitor-win-x64.exe</code></li><li>Mac: <code>LibreMonitor-mac.zip</code></li></ul></div></li>
-      <li><div><p><b>Start it and sign in</b> with the <b>follower</b> account, not your main one.</p>
-        <ul>
-          <li>Windows: run the exe. If Windows shows a blue warning, see <a href="#warnings">first-open warnings</a>.</li>
-          <li>Mac: unzip, drag <b>LibreMonitor.app</b> into Applications and open it. macOS warns the first time, see <a href="#warnings">first-open warnings</a>. The app has no Dock icon: look for the widget and the menu bar item.</li>
-        </ul></div></li>
-    </ol>
   </div>
 </section>
 
@@ -346,65 +442,40 @@
   </div>
 </section>
 
-<!-- using -->
-<section class="alt" id="using">
-  <div class="wrap">
-    <h2>Using the widget</h2>
-    <p class="sub">Position, size and preferences are remembered. Right-click the widget to open the menu.</p>
-    <div class="table-scroll">
-      <table>
-        <tr><th>To do this</th><th>Do this</th></tr>
-        <tr><td>Move it</td><td>Drag it</td></tr>
-        <tr><td>Resize it</td><td>Drag any edge or corner</td></tr>
-        <tr><td>Change the time range</td><td>Mouse wheel over the widget, or the menu</td></tr>
-        <tr><td>Hide or show the graph</td><td>Menu &gt; Show graph (untick it for a compact widget with just the value)</td></tr>
-        <tr><td>See a reading's value and time</td><td>Hover the graph</td></tr>
-        <tr><td>See when the sensor ends</td><td>Hover the unit and age text, or open the menu</td></tr>
-        <tr><td>Set how long your sensor lasts</td><td>Menu &gt; Sensor duration (14 or 15 days)</td></tr>
-        <tr><td>Refresh now</td><td>Double-click the value. It updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded</td></tr>
-        <tr><td>Switch mg/dL and mmol/L</td><td>Menu &gt; Units</td></tr>
-        <tr><td>Light, dark or follow the system</td><td>Menu &gt; Appearance</td></tr>
-        <tr><td>Set up low and high alerts</td><td>Menu &gt; Alerts…</td></tr>
-        <tr><td>Pause alerts</td><td>Menu &gt; Snooze alerts (for a while, or until you turn them back on)</td></tr>
-        <tr><td>Set up the insulin reminder</td><td>Menu &gt; Set up the insulin reminder… (or Menu &gt; Alerts…)</td></tr>
-        <tr><td>Mark an insulin dose as administered</td><td>Click the syringe and confirm (or Menu &gt; Insulin: mark as administered)</td></tr>
-        <tr><td>Turn the insulin reminder off</td><td>Menu &gt; Turn off the insulin reminder</td></tr>
-        <tr><td>Snap to a screen corner</td><td>Menu &gt; Move to corner</td></tr>
-        <tr><td>Hide it to the tray or menu bar</td><td>Click the ✕, or Menu &gt; Hide to tray</td></tr>
-        <tr><td>Bring it back</td><td>Click the tray or menu bar icon</td></tr>
-        <tr><td>Turn the tray icon off</td><td>Menu &gt; untick Show tray icon (the ✕ then exits instead of hiding)</td></tr>
-        <tr><td>Sign out</td><td>Menu &gt; Sign out and exit</td></tr>
-        <tr><td>Quit</td><td>Menu &gt; Exit, or the tray icon's menu</td></tr>
-      </table>
-    </div>
-  </div>
-</section>
-
 <!-- alerts -->
 <section id="alerts">
   <div class="wrap">
     <h2>Alerts</h2>
     <p class="sub">Open <i>Menu &gt; Alerts…</i> to turn on a low alert, a high alert, or both, and set your own limits in mg/dL or mmol/L. They are <b>off until you turn them on</b>. Use <i>Send test alert</i> to see what one looks like.</p>
-    <div class="split">
-      <div class="pair">
-        <figure><img src="images/alert-low.png" alt="A low reading: red value and a red border around the widget"><figcaption>Low</figcaption></figure>
-        <figure><img src="images/alert-high.png" alt="A high reading: amber value and an amber border around the widget"><figcaption>High</figcaption></figure>
+    <div class="split rev">
+      <div>
+        <ul class="alerts-list">
+          <li><b>When</b>It alerts you when a reading goes below the low limit or above the high limit. The widget border turns red (low) or amber (high) while the reading stays out of range.</li>
+          <li><b>Reminders</b>While still out of range you can be reminded every 15, 30 or 60 minutes, or not at all.</li>
+          <li><b>Snooze</b>Pause notifications for 30 minutes, 1 hour or 2 hours, or until you turn them back on. If you are still out of range when it ends, you are alerted then.</li>
+        </ul>
       </div>
-      <ul class="alerts-list">
-        <li><b>When it alerts</b>Once a reading goes below the low limit or above the high limit. The widget border turns red (low) or amber (high) while the reading stays out of range.</li>
-        <li><b>Reminders</b>While still out of range you can be reminded every 15, 30 or 60 minutes, or not at all.</li>
-        <li><b>Snooze</b>Pause notifications for 30 minutes, 1 hour or 2 hours, or until you turn them back on. If you are still out of range when it ends, you are alerted then.</li>
-      </ul>
+      <div>
+        <div class="frame">
+          <picture>
+            <source media="(prefers-color-scheme: dark)" srcset="images/alert-notification-dark.jpg">
+            <img src="images/alert-notification-light.jpg" alt="A low glucose alert on a Mac: a notification reading 'Low glucose alert, 62 mg/dL', and the widget below it with a red value and a red border" width="560">
+          </picture>
+        </div>
+        <p class="small" style="margin:10px 0 0;text-align:center">A low alert: a system notification, and a red border around the widget.</p>
+        <figure class="high-fig"><img src="images/alert-high.png" alt="A high reading: amber value and an amber border around the widget"><figcaption>High: an amber border</figcaption></figure>
+      </div>
     </div>
     <div class="warn"><b>Do not rely on these alerts for safety.</b> They only work while this app is running, your computer is on and awake, and your phone is uploading to LibreView. Readings can arrive minutes late, and your system can hide notifications (for example in Focus assist or Do not disturb). Keep your sensor's own alarms on.</div>
-    <h3 style="margin-top:40px">Insulin reminder</h3>
+
+    <h3 style="margin-top:48px;font-size:1.4rem">Insulin reminder</h3>
     <p class="sub">Optional. Set the time of your daily insulin and get a reminder. A small syringe on the widget turns green when you mark the dose as administered, so you can see at a glance whether you already did. It is <b>off until you turn it on</b>.</p>
-    <div class="shots" style="margin:24px 0 28px">
-      <figure style="width:min(340px,100%)">
+    <div class="pair">
+      <figure>
         <img src="images/insulin-due.png" alt="The widget with the insulin reminder's syringe in amber with an exclamation mark: the dose is due and not marked as administered">
         <figcaption>Due: not marked yet</figcaption>
       </figure>
-      <figure style="width:min(340px,100%)">
+      <figure>
         <img src="images/insulin-done.png" alt="The widget with the insulin reminder's syringe in green with a tick: the dose is marked as administered">
         <figcaption>Marked as administered</figcaption>
       </figure>
@@ -413,8 +484,49 @@
   </div>
 </section>
 
+<!-- using -->
+<section class="alt" id="using">
+  <div class="wrap">
+    <h2>Using the widget</h2>
+    <p class="sub">Position, size and preferences are remembered. Right-click the widget to open the menu.</p>
+    <div class="grid how-grid">
+      <div class="card"><h3>Place it</h3><dl class="how">
+        <dt>Move it</dt><dd>Drag it</dd>
+        <dt>Resize it</dt><dd>Drag any edge or corner</dd>
+        <dt>Snap to a screen corner</dt><dd>Menu &gt; Move to corner</dd>
+        <dt>Hide it to the tray or menu bar</dt><dd>Click the ✕, or Menu &gt; Hide to tray</dd>
+        <dt>Bring it back</dt><dd>Click the tray or menu bar icon</dd>
+        <dt>Turn the tray icon off</dt><dd>Menu &gt; untick Show tray icon (the ✕ then exits instead of hiding)</dd>
+      </dl></div>
+      <div class="card"><h3>Look</h3><dl class="how">
+        <dt>Hide or show the graph</dt><dd>Menu &gt; Show graph (untick it for a compact widget with just the value)</dd>
+        <dt>Change the time range</dt><dd>Mouse wheel over the widget, or the menu</dd>
+        <dt>Switch mg/dL and mmol/L</dt><dd>Menu &gt; Units</dd>
+        <dt>Light, dark or follow the system</dt><dd>Menu &gt; Appearance</dd>
+        <dt>See a reading's value and time</dt><dd>Hover the graph</dd>
+      </dl></div>
+      <div class="card"><h3>Data</h3><dl class="how">
+        <dt>Refresh now</dt><dd>Double-click the value. It updates by itself every minute, so a refresh is only needed now and then; repeated clicks are ignored so the service is not overloaded</dd>
+        <dt>See when the sensor ends</dt><dd>Hover the unit and age text, or open the menu</dd>
+        <dt>Set how long your sensor lasts</dt><dd>Menu &gt; Sensor duration (14 or 15 days)</dd>
+      </dl></div>
+      <div class="card"><h3>Alerts and insulin</h3><dl class="how">
+        <dt>Set up low and high alerts</dt><dd>Menu &gt; Alerts…</dd>
+        <dt>Pause alerts</dt><dd>Menu &gt; Snooze alerts (for a while, or until you turn them back on)</dd>
+        <dt>Set up the insulin reminder</dt><dd>Menu &gt; Set up the insulin reminder… (or Menu &gt; Alerts…)</dd>
+        <dt>Mark an insulin dose as administered</dt><dd>Click the syringe and confirm (or Menu &gt; Insulin: mark as administered)</dd>
+        <dt>Turn the insulin reminder off</dt><dd>Menu &gt; Turn off the insulin reminder</dd>
+      </dl></div>
+      <div class="card"><h3>Leave</h3><dl class="how">
+        <dt>Sign out</dt><dd>Menu &gt; Sign out and exit</dd>
+        <dt>Quit</dt><dd>Menu &gt; Exit, or the tray icon's menu</dd>
+      </dl></div>
+    </div>
+  </div>
+</section>
+
 <!-- help -->
-<section class="alt" id="help">
+<section id="help">
   <div class="wrap">
     <h2>Troubleshoot</h2>
     <p class="sub">The widget says what is wrong in the small status text next to the value.</p>
@@ -431,12 +543,43 @@
   </div>
 </section>
 
+<!-- faq -->
+<section class="alt" id="faq">
+  <div class="wrap">
+    <h2>FAQ</h2>
+        <details>
+      <summary>Does it talk to my sensor?</summary>
+      <p>No. Your phone reads the sensor and uploads to LibreView. This app only reads what the phone has already uploaded, through the LibreLinkUp follower service.</p>
+    </details>
+    <details>
+      <summary>Does it store my glucose readings?</summary>
+      <p>No. There is no history and no export. It keeps your encrypted login and your preferences, and for the insulin reminder one time: when you last tapped “administered”. For history, use LibreView.</p>
+    </details>
+    <details>
+      <summary>Where is my login sent?</summary>
+      <p>Only to LibreView. It is stored encrypted on your PC (Windows) or in your Keychain (Mac). Nothing goes to any other server, and the code is open for you to check.</p>
+    </details>
+    <details>
+      <summary>Why do I need a second, follower account?</summary>
+      <p>The unofficial service this app uses is the one meant for people who follow someone else’s glucose, so it needs a follower login. You can follow your own account, using a second email address.</p>
+    </details>
+    <details>
+      <summary>Can I use it to decide on treatment or insulin?</summary>
+      <p>No. It is not a medical device. Alerts and the insulin reminder are memory aids and can fail, so keep your sensor’s own alarms on and follow your care team’s instructions.</p>
+    </details>
+    <details>
+      <summary>It stopped working. Why?</summary>
+      <p>It relies on a service Abbott does not publish for third parties, which can change without warning. See the <a href="#help">troubleshooting table</a>, check for a newer version, and if it still fails please <a href="https://github.com/bsalgueiro/libre-monitor/issues">tell us on GitHub</a>.</p>
+    </details>
+  </div>
+</section>
+
 <!-- open source -->
 <section id="open-source">
   <div class="wrap">
-    <h2>Free and open source</h2>
-    <p class="sub">The code is on GitHub. Read it, build it yourself, report problems or send improvements.</p>
-    <div class="legal-grid">
+    <h2>Built in the open</h2>
+    <p class="sub">The code is on GitHub: read it, build it yourself, report problems or send improvements. Contributions are welcome.</p>
+    <div class="cols">
       <div class="card"><h3>Licence</h3><p>Code under the <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/LICENSE">MIT licence</a>. Documentation under <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/LICENSE-DOCS.md">CC BY 4.0</a>. Bundled software is listed in the <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/THIRD-PARTY-NOTICES.md">third-party notices</a>.</p></div>
       <div class="card"><h3>Build and contribute</h3><p>Developer instructions for the Windows (.NET) and macOS (Swift) apps are in the <a href="https://github.com/bsalgueiro/libre-monitor#for-developers">README</a>. Before sending changes, read <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/CONTRIBUTING.md">CONTRIBUTING</a>: the app stays read-only, keeps no glucose data, and sends nothing anywhere except LibreView.</p></div>
       <div class="card"><h3>Security</h3><p>Found a security problem? Report it privately, as described in <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/SECURITY.md">SECURITY</a>.</p></div>
@@ -448,8 +591,8 @@
 <section class="alt" id="about">
   <div class="wrap">
     <h2>About</h2>
-    <p class="sub">Created by a diabetic patient tired of having to pick up the phone to check my glucose levels. Now they are always on my screen, next to whatever I am working on: no phone to unlock, no app to open. It started as a tool for myself, and I am sharing it, free and open source, in case it helps others in the same situation.</p>
-    <div class="legal-grid">
+    <p class="sub">Created by a diabetic patient, who happens to be a software developer, tired of having to pick up the phone to check my glucose levels. It started as a tool for myself, and I am sharing it, free and open source, in case it helps others in the same situation.</p>
+    <div class="cols">
       <div class="card"><h3>Independent</h3><p>Not affiliated with Abbott in any way: it is not made, approved or supported by them. FreeStyle, Libre, LibreLink, LibreLinkUp and LibreView are Abbott's trademarks, used here only to say what this software works with.</p></div>
       <div class="card"><h3>Not for profit</h3><p>A free hobby project, made as a personal project and not for money. It is not sold, has no ads and earns nothing.</p></div>
       <div class="card"><h3>Use with care</h3><p>Not a medical device. It relies on an interface that Abbott does not publish for third parties, which may change or stop working at any time. Provided as is, without warranty.</p></div>
@@ -457,10 +600,24 @@
   </div>
 </section>
 
+<!-- closing -->
+<section class="cta">
+  <div class="wrap"><div class="box">
+    <h2>Give it a try</h2>
+    <p>Free, open source and read-only. If it helps, or breaks, we would like to hear about it.</p>
+    <div class="btns">
+      <a class="btn" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-win-x64.exe">Download for Windows</a>
+      <a class="btn" href="https://github.com/bsalgueiro/libre-monitor/releases/latest/download/LibreMonitor-mac.zip">Download for Mac</a>
+    </div>
+    <p class="small"><a href="https://github.com/bsalgueiro/libre-monitor/issues">Report a problem or share an idea</a></p>
+  </div></div>
+</section>
+
 </main>
 
 <footer>
   <div class="wrap">
+    <p><b>Not a medical device.</b> Independent, not affiliated with Abbott. Provided as is, without warranty.</p>
     <nav>
       <a href="https://github.com/bsalgueiro/libre-monitor">GitHub</a>
       <a href="https://github.com/bsalgueiro/libre-monitor/releases">Releases</a>
@@ -469,5 +626,18 @@
   </div>
 </footer>
 
+
+<script>
+  // Fade sections in as they scroll into view. Without JavaScript, or if anything fails, everything simply shows.
+  try {
+    if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      document.documentElement.classList.add('js');
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('main section .wrap > *, .notice').forEach(function (el, i) { el.classList.add('reveal'); io.observe(el); });
+    }
+  } catch (e) { document.documentElement.classList.remove('js'); }
+</script>
 </body>
 </html>
