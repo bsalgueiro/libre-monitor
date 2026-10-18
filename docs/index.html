@@ -9,7 +9,7 @@
 <meta property="og:title" content="Libre Monitor Desktop">
 <meta property="og:site_name" content="Libre Monitor Desktop">
 <meta property="og:description" content="Your FreeStyle Libre glucose, always visible on your desktop. A free, open-source, read-only desktop app for Windows and macOS, not a phone app.">
-<meta property="og:image" content="https://bsalgueiro.github.io/libre-monitor/images/widget-dark.png">
+<meta property="og:image" content="https://bsalgueiro.github.io/libre-monitor/images/desktop-dark.jpg">
 <meta property="og:type" content="website">
 <link rel="icon" href="images/icon.png">
 <script type="application/ld+json">
@@ -140,6 +140,9 @@
   .pair figure { margin: 0; text-align: center; }
   .pair img { width: 250px; filter: drop-shadow(var(--shadow)); }
   .pair figcaption { margin-top: 10px; color: var(--muted); font-size: .9rem; }
+  .desk { max-width: 1000px; margin: 0 auto; }
+  .desk img { display: block; width: 100%; border-radius: 14px; filter: drop-shadow(var(--shadow)); }
+  .desk p { text-align: center; margin: 14px 0 0; }
   .mac-row { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; align-items: flex-start; }
   .mac-row img { filter: drop-shadow(var(--shadow)); }
 
@@ -229,7 +232,7 @@
 
     <div class="shots">
       <figure>
-        <img src="images/widget-dark.png" alt="The widget in the dark theme: 121 mg/dL, a steady arrow and a six-hour graph">
+        <img src="images/widget-dark.png" alt="The widget in the dark theme: 118 mg/dL, a steady arrow and a six-hour graph">
         <figcaption>Dark mode</figcaption>
       </figure>
       <figure>
@@ -268,14 +271,14 @@
     <p class="sub">A glance at your glucose value, trend and graph, without picking up your phone.</p>
     <div class="split" style="margin-bottom:40px">
       <div class="grid" style="grid-template-columns:1fr 1fr">
-        <div class="card"><h3>Always in view</h3><p>Value, trend and graph in a small always-on-top widget. Hidden? The tray or menu bar still shows the value.</p></div>
+        <div class="card"><h3>Always in view</h3><p>Value, trend and graph in a small widget that can stay on top. Hidden? The tray or menu bar still shows the value.</p></div>
         <div class="card"><h3>Hover for detail</h3><p>Hover the graph for the value and time of any reading.</p></div>
         <div class="card"><h3>Customize</h3><p>Resize it, hide the graph, choose 3, 6 or 12 hours, mg/dL or mmol/L, light or dark.</p></div>
         <div class="card"><h3>Read-only, no history</h3><p>It never changes your account or talks to the sensor, and keeps no readings on your computer. For history, use LibreView.</p></div>
       </div>
       <div>
-        <img src="images/mac-light.png" alt="The widget on macOS in the light theme: 121 mg/dL, a steady arrow and a six-hour graph" width="360">
-        <p class="small" style="text-align:center;margin-top:10px">The widget on macOS. Resize it to any size you like.</p>
+        <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="330">
+        <p class="small" style="text-align:center;margin-top:10px">Hide the graph and the value fills the widget.</p>
       </div>
     </div>
     <div class="grid">
@@ -288,28 +291,16 @@
   </div>
 </section>
 
-<!-- windows -->
+<!-- desktop -->
 <section class="alt">
   <div class="wrap">
-    <h2>On Windows</h2>
-    <p class="sub">Move it, resize it, change it to use it your way. Activate alerts to use Windows notifications.</p>
-    <div class="mac-row">
-      <img src="images/win-graph.png" alt="The Windows widget with the graph visible: 171 mg/dL, a steady arrow and a twelve-hour graph" width="190">
-      <img src="images/alert-low.png" alt="The Windows widget with a low reading: red value and a red border" width="250">
-      <img src="images/win-menu.png" alt="The Windows right-click menu" width="190">
-    </div>
-  </div>
-</section>
-
-<!-- mac -->
-<section>
-  <div class="wrap">
-    <h2>On a Mac</h2>
-    <p class="sub">The same widget, native to macOS, with a menu bar item and Notification Centre alerts.</p>
-    <div class="mac-row">
-      <img src="images/mac-compact.png" alt="The macOS widget with the graph hidden" width="250">
-      <img src="images/mac-alert-low.png" alt="The macOS widget with a red alert border and a reading tooltip" width="250">
-      <img src="images/mac-menu.png" alt="The macOS right-click menu" width="300">
+    <h2>On your desktop</h2>
+    <p class="sub">Wherever you want.</p>
+    <div class="desk">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="images/desktop-dark.jpg">
+        <img src="images/desktop-light.jpg" alt="A desktop with two windows open and the Libre Monitor Desktop widget in the top-right corner, showing 118 mg/dL and a graph" width="1000">
+      </picture>
     </div>
   </div>
 </section>
@@ -400,16 +391,24 @@
         <figure><img src="images/alert-high.png" alt="A high reading: amber value and an amber border around the widget"><figcaption>High</figcaption></figure>
       </div>
       <ul class="alerts-list">
-        <li><b>When it alerts</b>Once, when a reading goes below the low limit or above the high limit. The widget border turns red (low) or amber (high) while the reading stays out of range.</li>
+        <li><b>When it alerts</b>Once a reading goes below the low limit or above the high limit. The widget border turns red (low) or amber (high) while the reading stays out of range.</li>
         <li><b>Reminders</b>While still out of range you can be reminded every 15, 30 or 60 minutes, or not at all.</li>
-        <li><b>No repeats at the limit</b>After an alert, the reading has to come back at least 5 mg/dL (about 0.3 mmol/L) inside the range before the next crossing counts as new.</li>
         <li><b>Snooze</b>Pause notifications for 30 minutes, 1 hour or 2 hours, or until you turn them back on. If you are still out of range when it ends, you are alerted then.</li>
-        <li><b>Old readings are ignored</b>A reading more than 10 minutes old does not trigger an alert.</li>
       </ul>
     </div>
     <div class="warn"><b>Do not rely on these alerts for safety.</b> They only work while this app is running, your computer is on and awake, and your phone is uploading to LibreView. Readings can arrive minutes late, and your system can hide notifications (for example in Focus assist or Do not disturb). Keep your sensor's own alarms on.</div>
     <h3 style="margin-top:40px">Insulin reminder</h3>
     <p class="sub">Optional. Set the time of your daily insulin and get a reminder. A small syringe on the widget turns green when you mark the dose as administered, so you can see at a glance whether you already did. It is <b>off until you turn it on</b>.</p>
+    <div class="shots" style="margin:24px 0 28px">
+      <figure style="width:min(340px,100%)">
+        <img src="images/insulin-due.png" alt="The widget with the insulin reminder's syringe in amber with an exclamation mark: the dose is due and not marked as administered">
+        <figcaption>Due: not marked yet</figcaption>
+      </figure>
+      <figure style="width:min(340px,100%)">
+        <img src="images/insulin-done.png" alt="The widget with the insulin reminder's syringe in green with a tick: the dose is marked as administered">
+        <figcaption>Marked as administered</figcaption>
+      </figure>
+    </div>
     <div class="warn"><b>A memory aid, not a medical tool.</b> It only knows what you tap, saves just your times and when you last tapped, records no amounts, and gives no dosing advice. Follow your care team’s instructions.</div>
   </div>
 </section>
@@ -439,9 +438,8 @@
     <p class="sub">The code is on GitHub. Read it, build it yourself, report problems or send improvements.</p>
     <div class="legal-grid">
       <div class="card"><h3>Licence</h3><p>Code under the <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/LICENSE">MIT licence</a>. Documentation under <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/LICENSE-DOCS.md">CC BY 4.0</a>. Bundled software is listed in the <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/THIRD-PARTY-NOTICES.md">third-party notices</a>.</p></div>
-      <div class="card"><h3>Contribute</h3><p>Read <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/CONTRIBUTING.md">CONTRIBUTING</a> first: the app stays read-only, keeps no glucose data, and sends nothing anywhere except LibreView.</p></div>
+      <div class="card"><h3>Build and contribute</h3><p>Developer instructions for the Windows (.NET) and macOS (Swift) apps are in the <a href="https://github.com/bsalgueiro/libre-monitor#for-developers">README</a>. Before sending changes, read <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/CONTRIBUTING.md">CONTRIBUTING</a>: the app stays read-only, keeps no glucose data, and sends nothing anywhere except LibreView.</p></div>
       <div class="card"><h3>Security</h3><p>Found a security problem? Report it privately, as described in <a href="https://github.com/bsalgueiro/libre-monitor/blob/main/SECURITY.md">SECURITY</a>.</p></div>
-      <div class="card"><h3>Build it yourself</h3><p>Developer instructions for the Windows (.NET) and macOS (Swift) apps are in the <a href="https://github.com/bsalgueiro/libre-monitor#for-developers">README</a>.</p></div>
     </div>
   </div>
 </section>
