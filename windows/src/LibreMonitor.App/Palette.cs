@@ -7,6 +7,7 @@ public enum ThemeChoice
     System,
     Light,
     Dark,
+    Transparent,
 }
 
 /// <summary>A complete set of colours for one look. Range colours are darker in the light theme to keep contrast on white.</summary>
@@ -37,6 +38,17 @@ public sealed record Theme(
         InRange: Color.FromRgb(0x5C, 0xD6, 0x8A),
         High: Color.FromRgb(0xFF, 0xB8, 0x4D),
         Low: Color.FromRgb(0xFF, 0x6B, 0x6B));
+
+    /// <summary>
+    /// The dark look with no card: only the value and graph show over the desktop. The background keeps an alpha of 1,
+    /// not 0, because a layered window passes clicks through pixels that are fully transparent, and the widget must stay draggable.
+    /// The colour is still the dark card's, which the Alerts window uses for its own background.
+    /// </summary>
+    public static readonly Theme Transparent = Dark with
+    {
+        CardBackground = Color.FromArgb(0x01, 0x17, 0x1C, 0x23),
+        CardBorder = Colors.Transparent,
+    };
 
     public static readonly Theme Light = new(
         CardBackground: Color.FromArgb(0xDC, 0xFA, 0xFB, 0xFD),

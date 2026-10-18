@@ -517,6 +517,7 @@ public partial class MainWindow : Window
         {
             ThemeChoice.Light => Theme.Light,
             ThemeChoice.Dark => Theme.Dark,
+            ThemeChoice.Transparent => Theme.Transparent,
             _ => SystemUsesLightTheme() ? Theme.Light : Theme.Dark,
         };
 
@@ -1010,6 +1011,7 @@ public partial class MainWindow : Window
         ThemeSystem.IsChecked = _settings.Theme == ThemeChoice.System;
         ThemeLight.IsChecked = _settings.Theme == ThemeChoice.Light;
         ThemeDark.IsChecked = _settings.Theme == ThemeChoice.Dark;
+        ThemeTransparent.IsChecked = _settings.Theme == ThemeChoice.Transparent;
     }
 
     private void Unit_Click(object sender, RoutedEventArgs e)

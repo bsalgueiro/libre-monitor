@@ -193,7 +193,9 @@
 
   .compact { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 28px; margin-top: 40px; }
   .compact img { width: 300px; filter: drop-shadow(var(--shadow)); }
-  .compact p { margin: 0; max-width: 340px; color: var(--muted); }
+  .compact figure { margin: 0; text-align: center; }
+  .compact figcaption { margin-top: 12px; max-width: 320px; color: var(--muted); font-size: .95rem; }
+  .compact img.round { border-radius: 16px; width: 300px; filter: drop-shadow(var(--shadow)); }
 
   .pair { display: flex; flex-wrap: wrap; gap: 22px; justify-content: center; }
   .pair figure { margin: 0; text-align: center; width: min(340px, 100%); }
@@ -403,7 +405,7 @@
     <div class="grid features">
       <div class="card"><h3>Always in view</h3><p>Value, trend and graph in a small widget that can stay on top.</p></div>
       <div class="card"><h3>Hover for detail</h3><p>Hover the graph for the value and time of any reading.</p></div>
-      <div class="card"><h3>Customize</h3><p>Resize it, hide the graph, choose 3, 6 or 12 hours, mg/dL or mmol/L, light or dark.</p></div>
+      <div class="card"><h3>Customize</h3><p>Resize it, hide the graph, choose 3, 6 or 12 hours, mg/dL or mmol/L, light, dark or transparent.</p></div>
       <div class="card"><h3>Read-only, no history</h3><p>It never changes your account or talks to the sensor, and keeps no readings on your computer. For history, use LibreView.</p></div>
       <div class="card"><h3>Optional alerts</h3><p>Your own low and high limits: a notification, a sound and a coloured border, with reminders and snooze.</p></div>
       <div class="card"><h3>Sensor end date</h3><p>See when your sensor ends, with optional alerts.</p></div>
@@ -413,8 +415,14 @@
     <p class="small" style="margin-top:18px">The colours for low, in range and high are for display only. They are not alarms.</p>
 
     <div class="compact">
-      <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="300">
-      <p>Hide the graph and the value fills the widget, at any size.</p>
+      <figure>
+        <img src="images/widget-compact.png" alt="The compact view: just the value, the trend arrow and the time of the reading" width="300">
+        <figcaption>Hide the graph and the value fills the widget, at any size.</figcaption>
+      </figure>
+      <figure>
+        <img class="round" src="images/widget-transparent.jpg" alt="The transparent look: the value and graph drawn straight over a wallpaper, with no card behind them" width="300">
+        <figcaption>Or go transparent: no card, just the numbers over your wallpaper.</figcaption>
+      </figure>
     </div>
   </div>
 </section>
@@ -502,7 +510,7 @@
         <dt>Hide or show the graph</dt><dd>Menu &gt; Show graph (untick it for a compact widget with just the value)</dd>
         <dt>Change the time range</dt><dd>Mouse wheel over the widget, or the menu</dd>
         <dt>Switch mg/dL and mmol/L</dt><dd>Menu &gt; Units</dd>
-        <dt>Light, dark or follow the system</dt><dd>Menu &gt; Appearance</dd>
+        <dt>Light, dark, transparent or follow the system</dt><dd>Menu &gt; Appearance</dd>
         <dt>See a reading's value and time</dt><dd>Hover the graph</dd>
       </dl></div>
       <div class="card"><h3>Data</h3><dl class="how">
@@ -561,7 +569,7 @@
     </details>
     <details>
       <summary>Why do I need a second, follower account?</summary>
-      <p>The unofficial service this app uses is the one meant for people who follow someone else’s glucose, so it needs a follower login. You can follow your own account, using a second email address.</p>
+      <p>This app reads from LibreLinkUp, Abbott’s own service for people who follow someone else’s glucose, so it needs a follower login. You can follow your own account, using a second email address. Abbott does not publish this service for third-party apps, which is why this app is unofficial and can break without warning.</p>
     </details>
     <details>
       <summary>Can I use it to decide on treatment or insulin?</summary>

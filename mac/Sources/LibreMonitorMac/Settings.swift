@@ -9,6 +9,8 @@ enum ThemeChoice: String, Codable, CaseIterable {
     case system
     case light
     case dark
+    /// The dark look with no card: only the value and graph show over the desktop.
+    case transparent
 }
 
 struct WidgetSettings: Codable, Equatable {

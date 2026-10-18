@@ -62,7 +62,10 @@ final class WidgetPanel: NSPanel {
 
     /// Native blur behind the SwiftUI content, rounded to match the card shape.
     static func makeContent(rootView: some View) -> NSView {
+        let container = NSView()
         let effect = RoundedBlurView()
+        effect.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(effect)
         effect.material = .popover
         effect.blendingMode = .behindWindow
         effect.state = .active
@@ -70,13 +73,24 @@ final class WidgetPanel: NSPanel {
 
         let hosting = NSHostingView(rootView: rootView)
         hosting.translatesAutoresizingMaskIntoConstraints = false
-        effect.addSubview(hosting)
+        container.addSubview(hosting)
         NSLayoutConstraint.activate([
-            hosting.leadingAnchor.constraint(equalTo: effect.leadingAnchor),
-            hosting.trailingAnchor.constraint(equalTo: effect.trailingAnchor),
-            hosting.topAnchor.constraint(equalTo: effect.topAnchor),
-            hosting.bottomAnchor.constraint(equalTo: effect.bottomAnchor),
+            effect.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            effect.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            effect.topAnchor.constraint(equalTo: container.topAnchor),
+            effect.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+            hosting.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            hosting.topAnchor.constraint(equalTo: container.topAnchor),
+            hosting.bottomAnchor.constraint(equalTo: container.bottomAnchor),
         ])
-        return effect
+        return container
+    }
+
+    /// Shows or hides the blurred card behind the content. Hidden, the window has no shadow either: it would outline the text.
+    func setCardVisible(_ visible: Bool) {
+        contentView?.subviews.compactMap { $0 as? NSVisualEffectView }.forEach { $0.isHidden = !visible }
+        hasShadow = visible
+        invalidateShadow()
     }
 }
