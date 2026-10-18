@@ -87,8 +87,6 @@ The colours for low, in range and high are for display only. They are not alarms
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/desktop-dark.jpg">
   <img src="docs/images/desktop-light.jpg" alt="A desktop with two windows open and the Libre Monitor Desktop widget in the top-right corner" width="680">
 </picture>
-<br>
-<sub>An illustration: the windows are placeholders and the readings are made up.</sub>
 </div>
 
 ## Getting started
