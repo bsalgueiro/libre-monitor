@@ -66,10 +66,14 @@ struct GraphRenderer {
             .filter { $0.timestamp >= start.addingTimeInterval(-gapBreak) }
             .sorted { $0.timestamp < $1.timestamp }
 
+        // The line starts exactly at the left edge, at the value the glucose had there, instead of pinning an older reading to it.
+        let line = GraphWindow.clipToWindow(points, start: start, maxGap: gapBreak)
+
         // Keep the target band visible even when the data is flat, and stretch to fit highs and lows.
         var lowest = 54.0
         var highest = 200.0
-        if let minValue = points.map(\.mgPerDl).min(), let maxValue = points.map(\.mgPerDl).max() {
+        let scaleSource = line.isEmpty ? points : line
+        if let minValue = scaleSource.map(\.mgPerDl).min(), let maxValue = scaleSource.map(\.mgPerDl).max() {
             lowest = min(lowest, minValue - 10)
             highest = max(highest, maxValue + 10)
         }
@@ -94,7 +98,7 @@ struct GraphRenderer {
             Gradient(colors: [theme.ink.opacity(theme.fillOpacity), theme.ink.opacity(0)]),
             startPoint: CGPoint(x: 0, y: padTop), endPoint: CGPoint(x: 0, y: baseline))
 
-        for run in splitAtGaps(points) {
+        for run in splitAtGaps(line) {
             let xy = run.map { CGPoint(x: x($0.timestamp), y: y($0.mgPerDl)) }
             if xy.count == 1 {
                 let dot = CGRect(x: xy[0].x - 1.6, y: xy[0].y - 1.6, width: 3.2, height: 3.2)

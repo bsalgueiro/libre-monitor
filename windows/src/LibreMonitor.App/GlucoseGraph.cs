@@ -87,12 +87,16 @@ public sealed class GlucoseGraph : FrameworkElement
             .OrderBy(r => r.TimestampUtc)
             .ToList();
 
+        // The line starts exactly at the left edge, at the value the glucose had there, instead of pinning an older reading to it.
+        var line = GraphWindow.ClipToWindow(points, start, GapBreak);
+
         // Keep the target band visible even when the data is flat, and stretch to fit highs and lows.
         double lo = 54, hi = 200;
-        if (points.Count > 0)
+        var scaleSource = line.Count > 0 ? line : points;
+        if (scaleSource.Count > 0)
         {
-            lo = Math.Min(lo, points.Min(p => p.MgPerDl) - 10);
-            hi = Math.Max(hi, points.Max(p => p.MgPerDl) + 10);
+            lo = Math.Min(lo, scaleSource.Min(p => p.MgPerDl) - 10);
+            hi = Math.Max(hi, scaleSource.Max(p => p.MgPerDl) + 10);
         }
         lo = Math.Max(lo, 20);
         hi = Math.Min(hi, 500);
@@ -113,7 +117,7 @@ public sealed class GlucoseGraph : FrameworkElement
         areaBrush.Freeze();
         var baseline = PadTop + plotH;
 
-        foreach (var run in SplitAtGaps(points))
+        foreach (var run in line.Count > 0 ? SplitAtGaps(line) : [])
         {
             var xy = run.Select(r => new Point(X(r.TimestampUtc), Y(r.MgPerDl))).ToList();
             if (xy.Count == 1)
