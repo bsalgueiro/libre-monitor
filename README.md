@@ -55,6 +55,10 @@ Everything you need to install and use the widget. No programming knowledge requ
 - The graph can be hidden. The value, arrow, unit and last-update time then scale up to fill the widget, whatever size you
   make it. Each mode remembers its own size, so turning the graph back on restores the earlier layout.
 - 3, 6 or 12 hour range, mg/dL or mmol/L, and a light, dark, transparent (no card, just the value and graph) or follow-the-system theme.
+- The transparent look draws only the value and graph over your wallpaper, with no card behind them:
+
+  <img src="docs/images/widget-transparent.jpg" alt="The transparent look: the value and graph drawn over a wallpaper, with no card behind them" width="300">
+
 - A tray icon (Windows) or menu bar item (Mac) showing the current value on a coloured tile.
 - Optional low and high [alerts](#alerts) with your own limits: a system notification, a sound and a coloured widget border, with reminders and snooze.
 - Shows when your sensor is due to end: hover the unit and age text, or open the menu. It is an estimate: 14 days after the

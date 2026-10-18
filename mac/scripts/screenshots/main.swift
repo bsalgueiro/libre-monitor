@@ -66,8 +66,9 @@ func highCurve(now: Date) -> GlucoseSnapshot {
 
 @MainActor
 func makeModel(_ snapshot: GlucoseSnapshot, now: Date, showGraph: Bool = true, hours: Int = 6, zone: AlertKind? = nil,
-               insulin: InsulinSettings? = nil) -> AppModel {
+               insulin: InsulinSettings? = nil, theme: ThemeChoice = .system) -> AppModel {
     var settings = WidgetSettings()
+    settings.theme = theme
     settings.showGraph = showGraph
     settings.hours = hours
     if let insulin { settings.insulin = insulin }
@@ -95,6 +96,22 @@ func card(_ model: AppModel, dark: Bool, width: CGFloat, height: CGFloat) -> som
         .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(line, lineWidth: 1))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .environment(\.colorScheme, dark ? .dark : .light)
+}
+
+/// The transparent look: no card at all, the value and graph over a colourful wallpaper (an abstract one, not a real desktop).
+@MainActor
+func transparentScene(_ model: AppModel) -> some View {
+    ZStack {
+        LinearGradient(colors: [Color(red: 0.10, green: 0.12, blue: 0.35), Color(red: 0.32, green: 0.16, blue: 0.52), Color(red: 0.08, green: 0.30, blue: 0.48)],
+                       startPoint: .topLeading, endPoint: .bottomTrailing)
+        Circle().fill(Color(red: 0.95, green: 0.45, blue: 0.55).opacity(0.55)).frame(width: 200, height: 200).blur(radius: 40).offset(x: -120, y: -50)
+        Circle().fill(Color(red: 0.2, green: 0.6, blue: 0.85).opacity(0.5)).frame(width: 220, height: 220).blur(radius: 46).offset(x: 130, y: 70)
+        WidgetView(model: model, actions: stubActions())
+            .frame(width: 280, height: 172)
+            .environment(\.colorScheme, .dark)
+    }
+    .frame(width: 380, height: 232)
+    .clipShape(RoundedRectangle(cornerRadius: 18))
 }
 
 // MARK: - The desktop scene
@@ -364,6 +381,8 @@ MainActor.assumeIsolated {
     write(card(makeModel(inRange, now: now, showGraph: false), dark: true, width: 260, height: 132), to: "\(out)/widget-compact.png", scale: 3)
     write(card(makeModel(lowCurve(now: now), now: now, zone: .low), dark: true, width: 280, height: 172), to: "\(out)/alert-low.png", scale: 3)
     write(card(makeModel(highCurve(now: now), now: now, zone: .high), dark: true, width: 280, height: 172), to: "\(out)/alert-high.png", scale: 3)
+
+    write(transparentScene(makeModel(inRange, now: now, theme: .transparent)), to: "\(out)/widget-transparent.jpg", scale: 2, jpeg: true)
 
     for dark in [true, false] {
         let onDesktop = card(makeModel(inRange, now: now), dark: dark, width: 280, height: 172)
